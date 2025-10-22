@@ -6,6 +6,7 @@ from urllib.parse import unquote
 
 from fasta2a.schema import AgentCard  # type: ignore
 from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from jsonrpcserver import async_dispatch
 from pydantic import BaseModel
@@ -42,6 +43,15 @@ def create_app() -> FastAPI:
         title="A2A Registry",
         description="Agent-to-Agent Registry Service with GraphQL",
         version=__version__,
+    )
+
+    # Add CORS middleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # In production, specify exact origins
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     # Try to initialize GraphQL extension storage and setup GraphQL API if available
