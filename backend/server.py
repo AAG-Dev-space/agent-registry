@@ -79,7 +79,7 @@ async def get_current_user(
     if not token_data or not token_data.username:
         return None
 
-    user_dict = storage.get_user(token_data.username)
+    user_dict = await storage.get_user(token_data.username)
     if not user_dict:
         return None
 
@@ -370,7 +370,7 @@ def create_app() -> FastAPI:
     @app.post("/auth/login", response_model=Token)
     async def login(request: LoginRequest) -> Token:
         """Login and get JWT token."""
-        user_dict = storage.get_user(request.username)
+        user_dict = await storage.get_user(request.username)
         if not user_dict:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -398,12 +398,12 @@ def create_app() -> FastAPI:
     async def register(request: RegisterRequest) -> dict[str, Any]:
         """Register a new user."""
         # Check if user already exists
-        if storage.get_user(request.username):
+        if await storage.get_user(request.username):
             raise HTTPException(status_code=400, detail="Username already registered")
 
         # Create user with hashed password
         hashed_password = get_password_hash(request.password)
-        success = storage.create_user(
+        success = await storage.create_user(
             username=request.username,
             email=request.email or "",
             hashed_password=hashed_password,

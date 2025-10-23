@@ -435,12 +435,16 @@ class FileStorage(StorageBackend):
         self.agents_file = self.data_dir / "agents.json"
         self.extensions_file = self.data_dir / "extensions.json"
         self.health_status_file = self.data_dir / "health_status.json"
+        self.users_file = self.data_dir / "users.json"
         self._agents: dict[str, AgentCard] = {}
         self._extensions: dict[str, ExtensionInfo] = {}
         self._health_status: dict[str, dict] = {}
+        self._users: dict[str, dict] = {}
         self._load_agents()
         self._load_extensions()
         self._load_health_status()
+        self._load_users()
+        self._initialize_default_users()
 
     def _load_agents(self) -> None:
         """Load agents from file."""
@@ -752,6 +756,74 @@ class FileStorage(StorageBackend):
             if isinstance(health_check_config, dict) and health_check_config.get("url"):
                 result.append((agent_id, health_check_config))
         return result
+
+    def _load_users(self) -> None:
+        """Load users from file."""
+        try:
+            if self.users_file.exists():
+                with open(self.users_file, encoding="utf-8") as f:
+                    data = json.load(f)
+                    self._users = dict(data.items())
+                logger.info(f"Loaded {len(self._users)} users from {self.users_file}")
+        except Exception as e:
+            logger.warning(f"Failed to load users from file: {e}")
+            self._users = {}
+
+    def _save_users(self) -> None:
+        """Save users to file."""
+        try:
+            with open(self.users_file, "w", encoding="utf-8") as f:
+                json.dump(self._users, f, ensure_ascii=False, indent=2)
+            logger.info(f"Saved {len(self._users)} users to {self.users_file}")
+        except Exception as e:
+            logger.error(f"Failed to save users to file: {e}")
+
+    def _initialize_default_users(self) -> None:
+        """Initialize default users from config if they don't exist."""
+        from backend.auth import RoleConfig, get_password_hash
+
+        try:
+            role_config = RoleConfig()
+            for user_data in role_config.default_users:
+                username = user_data["username"]
+                # Only create if user doesn't already exist
+                if username not in self._users:
+                    password = user_data["password"]
+                    self._users[username] = {
+                        "username": username,
+                        "email": user_data.get("email", ""),
+                        "hashed_password": get_password_hash(password),
+                        "role": user_data.get("role", "user"),
+                        "disabled": False,
+                    }
+                    logger.info(f"Initialized default user: {username}")
+            # Save users after initialization
+            self._save_users()
+        except Exception as e:
+            logger.warning(f"Failed to initialize default users: {e}")
+
+    async def get_user(self, username: str) -> dict | None:
+        """Get user by username."""
+        return self._users.get(username)
+
+    async def create_user(
+        self, username: str, email: str, hashed_password: str, role: str = "user"
+    ) -> dict:
+        """Create a new user."""
+        if username in self._users:
+            raise ValueError(f"User {username} already exists")
+
+        user = {
+            "username": username,
+            "email": email,
+            "hashed_password": hashed_password,
+            "role": role,
+            "disabled": False,
+        }
+        self._users[username] = user
+        self._save_users()
+        logger.info(f"Created new user: {username}")
+        return user
 
 
 def get_storage_backend() -> StorageBackend:
