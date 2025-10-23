@@ -195,3 +195,4 @@ frontend/pnpm-debug.log*
 frontend/lerna-debug.log*
 frontend/.DS_Store
 frontend/*.local
+/data/
