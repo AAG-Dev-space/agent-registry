@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Loader2, AlertCircle, Copy, Check, Code, Trash2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Loader2, AlertCircle, Copy, Check, Code, Trash2, CheckCircle, XCircle, AlertTriangle, Activity } from 'lucide-react';
 import { agentApi } from '../api/client';
-import type { AgentCard } from '../types/agent';
+import type { AgentCard, HealthStatus } from '../types/agent';
 
 export default function AgentDetail() {
   const { agentId } = useParams<{ agentId: string }>();
@@ -170,6 +170,84 @@ export default function AgentDetail() {
             </div>
           </div>
         </div>
+
+        {/* Health Status Section */}
+        {agent.health_status && (
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 md:p-8 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity className="h-5 w-5 text-gray-700" />
+              <h2 className="text-base font-semibold text-gray-900">Health Status</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Status */}
+              <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+                <div className="text-xs text-gray-500 mb-2">Current Status</div>
+                <div className="flex items-center gap-2">
+                  {agent.health_status.status === 'active' && (
+                    <>
+                      <CheckCircle className="h-5 w-5 text-success-600" />
+                      <span className="text-sm font-semibold text-success-700">Active</span>
+                    </>
+                  )}
+                  {agent.health_status.status === 'inactive' && (
+                    <>
+                      <XCircle className="h-5 w-5 text-error-600" />
+                      <span className="text-sm font-semibold text-error-700">Inactive</span>
+                    </>
+                  )}
+                  {agent.health_status.status === 'deprecated' && (
+                    <>
+                      <XCircle className="h-5 w-5 text-gray-600" />
+                      <span className="text-sm font-semibold text-gray-700">Deprecated</span>
+                    </>
+                  )}
+                  {agent.health_status.status === 'unknown' && (
+                    <>
+                      <AlertTriangle className="h-5 w-5 text-gray-600" />
+                      <span className="text-sm font-semibold text-gray-700">Unknown</span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Last Check */}
+              <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+                <div className="text-xs text-gray-500 mb-2">Last Health Check</div>
+                <div className="text-sm font-semibold text-gray-900">
+                  {agent.health_status.last_check_at
+                    ? new Date(agent.health_status.last_check_at).toLocaleString()
+                    : 'Never'}
+                </div>
+              </div>
+
+              {/* Failure Count */}
+              <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+                <div className="text-xs text-gray-500 mb-2">Consecutive Failures</div>
+                <div className="text-sm font-semibold text-gray-900">
+                  {agent.health_status.failure_count || 0}
+                  <span className="text-xs text-gray-500 ml-1">/ 3</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Status Message */}
+            {agent.health_status.status === 'inactive' && (
+              <div className="mt-4 p-3 rounded-lg bg-error-50 border border-error-200">
+                <p className="text-sm text-error-700">
+                  This agent has failed {agent.health_status.failure_count} consecutive health checks and is marked as inactive.
+                </p>
+              </div>
+            )}
+            {agent.health_status.status === 'active' && agent.health_status.failure_count > 0 && (
+              <div className="mt-4 p-3 rounded-lg bg-yellow-50 border border-yellow-200">
+                <p className="text-sm text-yellow-700">
+                  This agent has {agent.health_status.failure_count} recent failure(s). It will be marked inactive after 3 consecutive failures.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* URL Section */}
         <div className="rounded-2xl border border-gray-200 bg-white p-6 md:p-8 mb-6">

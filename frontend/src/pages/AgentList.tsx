@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Loader2, AlertCircle, Bot, Wrench, Database, ArrowRight } from 'lucide-react';
+import { Loader2, AlertCircle, Bot, Wrench, Database, ArrowRight, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { agentApi } from '../api/client';
-import type { AgentCard as AgentCardType } from '../types/agent';
+import type { AgentCard as AgentCardType, HealthStatus } from '../types/agent';
 
 export default function AgentList() {
   const [agents, setAgents] = useState<AgentCardType[]>([]);
@@ -60,6 +60,48 @@ export default function AgentList() {
       return <Database {...iconProps} />;
     }
     return <Bot {...iconProps} />;
+  };
+
+  const getHealthBadge = (healthStatus?: HealthStatus) => {
+    if (!healthStatus) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 text-gray-600">
+          <AlertTriangle className="h-3 w-3" />
+          Unknown
+        </span>
+      );
+    }
+
+    switch (healthStatus.status) {
+      case 'active':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-success-50 text-success-700">
+            <CheckCircle className="h-3 w-3" />
+            Active
+          </span>
+        );
+      case 'inactive':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-error-50 text-error-700">
+            <XCircle className="h-3 w-3" />
+            Inactive
+          </span>
+        );
+      case 'deprecated':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 text-gray-700">
+            <XCircle className="h-3 w-3" />
+            Deprecated
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 text-gray-600">
+            <AlertTriangle className="h-3 w-3" />
+            Unknown
+          </span>
+        );
+    }
   };
 
   return (
@@ -157,9 +199,12 @@ export default function AgentList() {
                     to={`/agents/${encodeURIComponent(agent.name)}`}
                     className="block rounded-2xl border border-gray-200 bg-white p-5 md:p-6 transition-all hover:shadow-theme-md group"
                   >
-                    {/* Icon */}
-                    <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl mb-5">
-                      {getIconForAgent(agent.name)}
+                    {/* Icon and Status */}
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
+                        {getIconForAgent(agent.name)}
+                      </div>
+                      {getHealthBadge(agent.health_status)}
                     </div>
 
                     {/* Agent Name */}

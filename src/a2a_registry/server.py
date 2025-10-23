@@ -1,6 +1,7 @@
 """A2A Registry server using FastAPI and FastA2A schemas with dual transport support."""
 
 import logging
+from contextlib import asynccontextmanager
 from typing import Any
 from urllib.parse import unquote
 
@@ -18,6 +19,7 @@ from . import (
     jsonrpc_server,  # noqa: F401
 )
 from .config import config
+from .health_scheduler import health_scheduler
 from .storage import storage
 
 GRAPHQL_AVAILABLE = False
@@ -37,12 +39,29 @@ class AgentSearchRequest(BaseModel):
     query: str
 
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for startup and shutdown events."""
+    # Startup
+    logger.info("Starting A2A Registry...")
+    health_scheduler.start()
+    logger.info("Health scheduler started")
+
+    yield
+
+    # Shutdown
+    logger.info("Shutting down A2A Registry...")
+    health_scheduler.stop()
+    logger.info("Health scheduler stopped")
+
+
 def create_app() -> FastAPI:
     """Create FastAPI application for A2A Registry."""
     app = FastAPI(
         title="A2A Registry",
-        description="Agent-to-Agent Registry Service with GraphQL",
+        description="Agent-to-Agent Registry Service with Health Monitoring",
         version=__version__,
+        lifespan=lifespan,
     )
 
     # Add CORS middleware
@@ -134,18 +153,31 @@ def create_app() -> FastAPI:
 
     @app.get("/agents/{agent_id}", response_model=dict[str, Any])
     async def get_agent(agent_id: str) -> dict[str, Any]:
-        """Get an agent by ID."""
+        """Get an agent by ID with health status."""
         agent_card = await storage.get_agent(agent_id)
         if agent_card:
-            return {"agent_card": dict(agent_card)}
+            # Include health status
+            health_status = await storage.get_agent_health_status(agent_id)
+            return {
+                "agent_card": dict(agent_card),
+                "health_status": health_status,
+            }
         else:
             raise HTTPException(status_code=404, detail="Agent not found")
 
     @app.get("/agents", response_model=dict[str, Any])
     async def list_agents() -> dict[str, Any]:
-        """List all registered agents."""
+        """List all registered agents with health status."""
         agents = await storage.list_agents()
-        return {"agents": [dict(agent) for agent in agents], "count": len(agents)}
+        # Enrich each agent with health status
+        enriched_agents = []
+        for agent in agents:
+            agent_id = agent.get("name")
+            health_status = await storage.get_agent_health_status(agent_id) if agent_id else None
+            enriched_agent = dict(agent)
+            enriched_agent["health_status"] = health_status
+            enriched_agents.append(enriched_agent)
+        return {"agents": enriched_agents, "count": len(enriched_agents)}
 
     @app.delete("/agents/{agent_id}", response_model=dict[str, Any])
     async def unregister_agent(agent_id: str) -> dict[str, Any]:
@@ -260,6 +292,52 @@ def create_app() -> FastAPI:
     async def health_check() -> dict[str, str]:
         """Health check endpoint."""
         return {"status": "healthy", "service": "A2A Registry"}
+
+    @app.post("/agents/{agent_id}/health/check")
+    async def trigger_health_check(agent_id: str) -> dict[str, Any]:
+        """Manually trigger a health check for a specific agent."""
+        agent_card = await storage.get_agent(agent_id)
+        if not agent_card:
+            raise HTTPException(status_code=404, detail="Agent not found")
+
+        health_config = agent_card.get("health_check", {})
+        if not health_config or not health_config.get("url"):
+            raise HTTPException(
+                status_code=400, detail="Agent does not have health check configured"
+            )
+
+        # Run health check
+        is_healthy = await health_scheduler.check_agent_health(agent_id, health_config)
+
+        # Get updated status
+        health_status = await storage.get_agent_health_status(agent_id)
+
+        return {
+            "agent_id": agent_id,
+            "is_healthy": is_healthy,
+            "health_status": health_status,
+        }
+
+    @app.get("/agents/{agent_id}/health/status")
+    async def get_agent_health_status_endpoint(agent_id: str) -> dict[str, Any]:
+        """Get health status for a specific agent."""
+        agent_card = await storage.get_agent(agent_id)
+        if not agent_card:
+            raise HTTPException(status_code=404, detail="Agent not found")
+
+        health_status = await storage.get_agent_health_status(agent_id)
+        if not health_status:
+            # Agent exists but has no health status yet
+            health_status = {
+                "status": "unknown",
+                "last_check_at": None,
+                "failure_count": 0,
+            }
+
+        return {
+            "agent_id": agent_id,
+            "health_status": health_status,
+        }
 
     @app.post("/jsonrpc")
     async def jsonrpc_endpoint(request: Request) -> JSONResponse:

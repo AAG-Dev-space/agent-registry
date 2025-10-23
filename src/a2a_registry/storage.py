@@ -108,6 +108,24 @@ class StorageBackend(ABC):
         """Search agents by name, description, or capabilities."""
         pass
 
+    # Health monitoring methods
+    @abstractmethod
+    async def update_agent_health_status(
+        self, agent_id: str, status: str, last_check_at: datetime | None = None
+    ) -> bool:
+        """Update agent health status (active/inactive/deprecated)."""
+        pass
+
+    @abstractmethod
+    async def get_agent_health_status(self, agent_id: str) -> dict | None:
+        """Get agent health status information."""
+        pass
+
+    @abstractmethod
+    async def get_agents_for_health_check(self) -> list[tuple[str, dict]]:
+        """Get list of agents that need health checking with their health_check config."""
+        pass
+
     # Extension-related abstract methods
     @abstractmethod
     async def store_extension(self, extension_info: ExtensionInfo) -> bool:
@@ -155,6 +173,8 @@ class InMemoryStorage(StorageBackend):
     def __init__(self) -> None:
         self._agents: dict[str, AgentCard] = {}
         self._extensions: dict[str, ExtensionInfo] = {}
+        # Health status tracking: agent_id -> {status, last_check_at, failure_count}
+        self._health_status: dict[str, dict] = {}
 
     async def register_agent(self, agent_card: AgentCard) -> bool:
         """Register an agent in the registry."""
@@ -162,6 +182,12 @@ class InMemoryStorage(StorageBackend):
         if not agent_id:
             return False
         self._agents[agent_id] = agent_card
+        # Initialize health status as active
+        self._health_status[agent_id] = {
+            "status": "active",
+            "last_check_at": datetime.now(UTC),
+            "failure_count": 0,
+        }
         logger.info(f"Registered agent: {agent_id}")
         return True
 
@@ -314,6 +340,43 @@ class InMemoryStorage(StorageBackend):
 
         return True
 
+    # Health monitoring methods
+    async def update_agent_health_status(
+        self, agent_id: str, status: str, last_check_at: datetime | None = None
+    ) -> bool:
+        """Update agent health status (active/inactive/deprecated)."""
+        if agent_id not in self._agents:
+            return False
+
+        if agent_id not in self._health_status:
+            self._health_status[agent_id] = {
+                "status": status,
+                "last_check_at": last_check_at or datetime.now(UTC),
+                "failure_count": 0,
+            }
+        else:
+            self._health_status[agent_id]["status"] = status
+            self._health_status[agent_id]["last_check_at"] = (
+                last_check_at or datetime.now(UTC)
+            )
+
+        logger.info(f"Updated health status for {agent_id}: {status}")
+        return True
+
+    async def get_agent_health_status(self, agent_id: str) -> dict | None:
+        """Get agent health status information."""
+        return self._health_status.get(agent_id)
+
+    async def get_agents_for_health_check(self) -> list[tuple[str, dict]]:
+        """Get list of agents that need health checking with their health_check config."""
+        result = []
+        for agent_id, agent_card in self._agents.items():
+            # Get health_check configuration from agent_card
+            health_check_config = agent_card.get("health_check", {})
+            if isinstance(health_check_config, dict) and health_check_config.get("url"):
+                result.append((agent_id, health_check_config))
+        return result
+
 
 class FileStorage(StorageBackend):
     """File-based persistent storage for agent registry."""
@@ -323,10 +386,13 @@ class FileStorage(StorageBackend):
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.agents_file = self.data_dir / "agents.json"
         self.extensions_file = self.data_dir / "extensions.json"
+        self.health_status_file = self.data_dir / "health_status.json"
         self._agents: dict[str, AgentCard] = {}
         self._extensions: dict[str, ExtensionInfo] = {}
+        self._health_status: dict[str, dict] = {}
         self._load_agents()
         self._load_extensions()
+        self._load_health_status()
 
     def _load_agents(self) -> None:
         """Load agents from file."""
@@ -380,13 +446,65 @@ class FileStorage(StorageBackend):
         except Exception as e:
             logger.error(f"Failed to save extensions to file: {e}")
 
+    def _load_health_status(self) -> None:
+        """Load health status from file."""
+        try:
+            if self.health_status_file.exists():
+                with open(self.health_status_file, encoding="utf-8") as f:
+                    data = json.load(f)
+                    # Convert ISO datetime strings back to datetime objects
+                    for agent_id, status_info in data.items():
+                        if "last_check_at" in status_info and isinstance(
+                            status_info["last_check_at"], str
+                        ):
+                            status_info["last_check_at"] = datetime.fromisoformat(
+                                status_info["last_check_at"]
+                            )
+                    self._health_status = data
+                logger.info(
+                    f"Loaded {len(self._health_status)} health statuses from {self.health_status_file}"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to load health status from file: {e}")
+            self._health_status = {}
+
+    def _save_health_status(self) -> None:
+        """Save health status to file."""
+        try:
+            # Convert datetime objects to ISO strings for JSON serialization
+            data = {}
+            for agent_id, status_info in self._health_status.items():
+                serialized_info = dict(status_info)
+                if "last_check_at" in serialized_info and isinstance(
+                    serialized_info["last_check_at"], datetime
+                ):
+                    serialized_info["last_check_at"] = serialized_info[
+                        "last_check_at"
+                    ].isoformat()
+                data[agent_id] = serialized_info
+
+            with open(self.health_status_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            logger.debug(
+                f"Saved {len(self._health_status)} health statuses to {self.health_status_file}"
+            )
+        except Exception as e:
+            logger.error(f"Failed to save health status to file: {e}")
+
     async def register_agent(self, agent_card: AgentCard) -> bool:
         """Register an agent in the registry."""
         agent_id = agent_card.get("name")
         if not agent_id:
             return False
         self._agents[agent_id] = agent_card
+        # Initialize health status as active
+        self._health_status[agent_id] = {
+            "status": "active",
+            "last_check_at": datetime.now(UTC),
+            "failure_count": 0,
+        }
         self._save_agents()
+        self._save_health_status()
         logger.info(f"Registered agent: {agent_id}")
         return True
 
@@ -548,6 +666,44 @@ class FileStorage(StorageBackend):
             self._save_extensions()
 
         return True
+
+    # Health monitoring methods
+    async def update_agent_health_status(
+        self, agent_id: str, status: str, last_check_at: datetime | None = None
+    ) -> bool:
+        """Update agent health status (active/inactive/deprecated)."""
+        if agent_id not in self._agents:
+            return False
+
+        if agent_id not in self._health_status:
+            self._health_status[agent_id] = {
+                "status": status,
+                "last_check_at": last_check_at or datetime.now(UTC),
+                "failure_count": 0,
+            }
+        else:
+            self._health_status[agent_id]["status"] = status
+            self._health_status[agent_id]["last_check_at"] = (
+                last_check_at or datetime.now(UTC)
+            )
+
+        self._save_health_status()
+        logger.info(f"Updated health status for {agent_id}: {status}")
+        return True
+
+    async def get_agent_health_status(self, agent_id: str) -> dict | None:
+        """Get agent health status information."""
+        return self._health_status.get(agent_id)
+
+    async def get_agents_for_health_check(self) -> list[tuple[str, dict]]:
+        """Get list of agents that need health checking with their health_check config."""
+        result = []
+        for agent_id, agent_card in self._agents.items():
+            # Get health_check configuration from agent_card
+            health_check_config = agent_card.get("health_check", {})
+            if isinstance(health_check_config, dict) and health_check_config.get("url"):
+                result.append((agent_id, health_check_config))
+        return result
 
 
 def get_storage_backend() -> StorageBackend:

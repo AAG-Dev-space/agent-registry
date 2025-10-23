@@ -272,6 +272,23 @@ class VectorEnhancedStorage(StorageBackend):
         """Remove agent from all extension declarations."""
         return await self.backend.remove_agent_from_extensions(agent_id)
 
+    # Health monitoring methods (delegated to backend)
+    async def update_agent_health_status(
+        self, agent_id: str, status: str, last_check_at: Any = None
+    ) -> bool:
+        """Update agent health status."""
+        return await self.backend.update_agent_health_status(
+            agent_id, status, last_check_at
+        )
+
+    async def get_agent_health_status(self, agent_id: str) -> dict | None:
+        """Get agent health status information."""
+        return await self.backend.get_agent_health_status(agent_id)
+
+    async def get_agents_for_health_check(self) -> list[tuple[str, dict]]:
+        """Get list of agents that need health checking."""
+        return await self.backend.get_agents_for_health_check()
+
     def __getattr__(self, name: str) -> Any:
         """Delegate unknown attributes to the underlying backend."""
         return getattr(self.backend, name)
