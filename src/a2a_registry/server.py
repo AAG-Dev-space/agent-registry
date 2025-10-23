@@ -6,9 +6,10 @@ from typing import Any
 from urllib.parse import unquote
 
 from fasta2a.schema import AgentCard  # type: ignore
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Depends, FastAPI, HTTPException, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jsonrpcserver import async_dispatch
 from pydantic import BaseModel
 
@@ -17,6 +18,15 @@ from pydantic import BaseModel
 from . import (
     __version__,
     jsonrpc_server,  # noqa: F401
+)
+from .auth import (
+    Token,
+    User,
+    check_permission,
+    create_access_token,
+    decode_access_token,
+    get_password_hash,
+    verify_password,
 )
 from .config import config
 from .health_scheduler import health_scheduler
@@ -37,6 +47,71 @@ class AgentSearchRequest(BaseModel):
     """Request to search for agents."""
 
     query: str
+
+
+class LoginRequest(BaseModel):
+    """Login request."""
+
+    username: str
+    password: str
+
+
+class RegisterRequest(BaseModel):
+    """User registration request."""
+
+    username: str
+    password: str
+    email: str | None = None
+
+
+# Security
+security = HTTPBearer(auto_error=False)
+
+
+async def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(security),
+) -> User | None:
+    """Get current user from JWT token (optional)."""
+    if not credentials:
+        return None
+
+    token_data = decode_access_token(credentials.credentials)
+    if not token_data or not token_data.username:
+        return None
+
+    user_dict = storage.get_user(token_data.username)
+    if not user_dict:
+        return None
+
+    return User(
+        username=user_dict["username"],
+        email=user_dict.get("email"),
+        role=user_dict["role"],
+        disabled=user_dict.get("disabled", False),
+    )
+
+
+async def require_user(current_user: User | None = Depends(get_current_user)) -> User:
+    """Require authenticated user."""
+    if not current_user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if current_user.disabled:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return current_user
+
+
+async def require_admin(current_user: User = Depends(require_user)) -> User:
+    """Require admin role."""
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required",
+        )
+    return current_user
 
 
 @asynccontextmanager
@@ -180,14 +255,17 @@ def create_app() -> FastAPI:
         return {"agents": enriched_agents, "count": len(enriched_agents)}
 
     @app.delete("/agents/{agent_id}", response_model=dict[str, Any])
-    async def unregister_agent(agent_id: str) -> dict[str, Any]:
-        """Unregister an agent."""
+    async def unregister_agent(
+        agent_id: str, admin: User = Depends(require_admin)
+    ) -> dict[str, Any]:
+        """Unregister an agent (Admin only)."""
         # First remove agent from extensions
         extensions_removed = await storage.remove_agent_from_extensions(agent_id)
 
         # Then remove the agent
         success = await storage.unregister_agent(agent_id)
         if success:
+            logger.info(f"Admin {admin.username} deleted agent: {agent_id}")
             return {
                 "success": True,
                 "message": "Agent unregistered successfully",
@@ -287,6 +365,65 @@ def create_app() -> FastAPI:
         except Exception as e:
             logger.error(f"Error getting extensions for agent {agent_id}: {e}")
             raise HTTPException(status_code=500, detail=str(e)) from e
+
+    # Authentication endpoints
+    @app.post("/auth/login", response_model=Token)
+    async def login(request: LoginRequest) -> Token:
+        """Login and get JWT token."""
+        user_dict = storage.get_user(request.username)
+        if not user_dict:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+            )
+
+        if not verify_password(request.password, user_dict["hashed_password"]):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+            )
+
+        if user_dict.get("disabled", False):
+            raise HTTPException(status_code=400, detail="Inactive user")
+
+        # Create access token
+        access_token = create_access_token(
+            data={"sub": user_dict["username"], "role": user_dict["role"]}
+        )
+
+        logger.info(f"User logged in: {request.username} (role: {user_dict['role']})")
+        return Token(access_token=access_token, token_type="bearer")
+
+    @app.post("/auth/register", response_model=dict[str, Any])
+    async def register(request: RegisterRequest) -> dict[str, Any]:
+        """Register a new user."""
+        # Check if user already exists
+        if storage.get_user(request.username):
+            raise HTTPException(status_code=400, detail="Username already registered")
+
+        # Create user with hashed password
+        hashed_password = get_password_hash(request.password)
+        success = storage.create_user(
+            username=request.username,
+            email=request.email or "",
+            hashed_password=hashed_password,
+            role="user",  # New users are always 'user' role
+        )
+
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to create user")
+
+        logger.info(f"New user registered: {request.username}")
+        return {
+            "success": True,
+            "message": "User registered successfully",
+            "username": request.username,
+        }
+
+    @app.get("/auth/me", response_model=User)
+    async def get_me(current_user: User = Depends(require_user)) -> User:
+        """Get current user info."""
+        return current_user
 
     @app.get("/health")
     async def health_check() -> dict[str, str]:

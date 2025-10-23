@@ -388,10 +388,15 @@ class InMemoryStorage(StorageBackend):
 
             for user_data in role_config.default_users:
                 username = user_data["username"]
+                # Truncate password to 72 bytes for bcrypt compatibility
+                password = user_data["password"]
+                password_bytes = password.encode('utf-8')[:72]
+                truncated_password = password_bytes.decode('utf-8', errors='ignore')
+
                 self._users[username] = {
                     "username": username,
                     "email": user_data.get("email", ""),
-                    "hashed_password": get_password_hash(user_data["password"]),
+                    "hashed_password": get_password_hash(truncated_password),
                     "role": user_data.get("role", "user"),
                     "disabled": False,
                 }

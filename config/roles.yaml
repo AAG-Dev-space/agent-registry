@@ -24,10 +24,10 @@ jwt:
 # Default admin user (for initial setup)
 default_users:
   - username: "admin"
-    password: "admin123"  # Change this in production!
+    password: "admin"  # Change this in production!
     role: "admin"
     email: "admin@example.com"
   - username: "user"
-    password: "user123"
+    password: "user"
     role: "user"
     email: "user@example.com"

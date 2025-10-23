@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Loader2, AlertCircle, Copy, Check, Code, Trash2, CheckCircle, XCircle, AlertTriangle, Activity } from 'lucide-react';
 import { agentApi } from '../api/client';
+import { useAuth } from '../contexts/AuthContext';
 import type { AgentCard, HealthStatus } from '../types/agent';
 
 export default function AgentDetail() {
   const { agentId } = useParams<{ agentId: string }>();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [agent, setAgent] = useState<AgentCard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -126,14 +128,16 @@ export default function AgentDetail() {
                 )}
               </div>
             </div>
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              className="flex items-center gap-2 px-4 py-2 bg-error-500 hover:bg-error-600 disabled:bg-error-400 text-white rounded-lg font-medium shadow-theme-xs transition-colors"
-            >
-              <Trash2 size={18} />
-              {deleting ? 'Deleting...' : 'Delete'}
-            </button>
+            {isAdmin && (
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex items-center gap-2 px-4 py-2 bg-error-500 hover:bg-error-600 disabled:bg-error-400 text-white rounded-lg font-medium shadow-theme-xs transition-colors"
+              >
+                <Trash2 size={18} />
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            )}
           </div>
 
           {/* Tags */}

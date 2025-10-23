@@ -14,7 +14,8 @@ from pydantic import BaseModel
 logger = logging.getLogger(__name__)
 
 # Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Use pbkdf2_sha256 instead of bcrypt due to bcrypt library compatibility issues
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 
 # Models
@@ -154,13 +155,17 @@ role_config = RoleConfig()
 
 # Utility functions
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against its hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify a password against its hash. Truncate to 72 bytes for bcrypt compatibility."""
+    # bcrypt has a 72-byte password limit, truncate if needed
+    password_bytes = plain_password.encode('utf-8')[:72]
+    return pwd_context.verify(password_bytes.decode('utf-8', errors='ignore'), hashed_password)
 
 
 def get_password_hash(password: str) -> str:
-    """Hash a password."""
-    return pwd_context.hash(password)
+    """Hash a password. Truncate to 72 bytes for bcrypt compatibility."""
+    # bcrypt has a 72-byte password limit, truncate if needed
+    password_bytes = password.encode('utf-8')[:72]
+    return pwd_context.hash(password_bytes.decode('utf-8', errors='ignore'))
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:

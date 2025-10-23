@@ -1,8 +1,10 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, LogOut, User } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function Layout() {
   const location = useLocation();
+  const { user, logout, isAuthenticated } = useAuth();
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -40,10 +42,42 @@ export default function Layout() {
               </Link>
               <Link
                 to="/register"
-                className="inline-flex items-center justify-center rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-colors"
+                className="inline-flex items-center justify-center rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-theme-xs hover:text-brand-600 transition-colors"
               >
                 Submit Agent
               </Link>
+
+              {/* Auth Section */}
+              {isAuthenticated && user ? (
+                <div className="flex items-center gap-4 ml-4 pl-4 border-l border-gray-200">
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-gray-600" />
+                    <span className="text-sm text-gray-700">
+                      {user.username}
+                      {user.role === 'admin' && (
+                        <span className="ml-2 px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-700">
+                          Admin
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                  <button
+                    onClick={logout}
+                    className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  to="/login"
+                  className="ml-4 pl-4 border-l border-gray-200 inline-flex items-center gap-1.5 text-sm text-gray-700 hover:text-brand-500 transition-colors"
+                >
+                  <User className="h-4 w-4" />
+                  Login
+                </Link>
+              )}
             </nav>
           </div>
         </div>
