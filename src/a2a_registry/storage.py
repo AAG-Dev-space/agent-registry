@@ -175,6 +175,9 @@ class InMemoryStorage(StorageBackend):
         self._extensions: dict[str, ExtensionInfo] = {}
         # Health status tracking: agent_id -> {status, last_check_at, failure_count}
         self._health_status: dict[str, dict] = {}
+        # User storage: username -> {username, email, hashed_password, role, disabled}
+        self._users: dict[str, dict] = {}
+        self._initialize_default_users()
 
     async def register_agent(self, agent_card: AgentCard) -> bool:
         """Register an agent in the registry."""
@@ -376,6 +379,46 @@ class InMemoryStorage(StorageBackend):
             if isinstance(health_check_config, dict) and health_check_config.get("url"):
                 result.append((agent_id, health_check_config))
         return result
+
+    # User management methods
+    def _initialize_default_users(self) -> None:
+        """Initialize default users from config."""
+        try:
+            from .auth import get_password_hash, role_config
+
+            for user_data in role_config.default_users:
+                username = user_data["username"]
+                self._users[username] = {
+                    "username": username,
+                    "email": user_data.get("email", ""),
+                    "hashed_password": get_password_hash(user_data["password"]),
+                    "role": user_data.get("role", "user"),
+                    "disabled": False,
+                }
+            logger.info(f"Initialized {len(self._users)} default users")
+        except Exception as e:
+            logger.warning(f"Failed to initialize default users: {e}")
+
+    def get_user(self, username: str) -> dict | None:
+        """Get user by username."""
+        return self._users.get(username)
+
+    def create_user(
+        self, username: str, email: str, hashed_password: str, role: str = "user"
+    ) -> bool:
+        """Create a new user."""
+        if username in self._users:
+            return False
+
+        self._users[username] = {
+            "username": username,
+            "email": email,
+            "hashed_password": hashed_password,
+            "role": role,
+            "disabled": False,
+        }
+        logger.info(f"Created user: {username} with role: {role}")
+        return True
 
 
 class FileStorage(StorageBackend):

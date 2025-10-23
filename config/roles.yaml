@@ -1,0 +1,33 @@
+# Role-based Access Control Configuration
+
+roles:
+  admin:
+    permissions:
+      - agent:register
+      - agent:read
+      - agent:delete
+      - agent:health_check
+    description: "Administrator with full access to all operations"
+
+  user:
+    permissions:
+      - agent:register
+      - agent:read
+    description: "Regular user can register and view agents"
+
+# JWT Configuration
+jwt:
+  secret_key: "${JWT_SECRET_KEY:your-secret-key-change-in-production}"
+  algorithm: "HS256"
+  access_token_expire_minutes: 1440  # 24 hours
+
+# Default admin user (for initial setup)
+default_users:
+  - username: "admin"
+    password: "admin123"  # Change this in production!
+    role: "admin"
+    email: "admin@example.com"
+  - username: "user"
+    password: "user123"
+    role: "user"
+    email: "user@example.com"
