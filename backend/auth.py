@@ -55,8 +55,9 @@ class RoleConfig:
         """Initialize role configuration."""
         if config_path is None:
             # Default to config/roles.yaml relative to project root
+            # backend/auth.py -> backend/ -> a2a-registry/ -> config/roles.yaml
             config_path = str(
-                Path(__file__).parent.parent.parent / "config" / "roles.yaml"
+                Path(__file__).parent.parent / "config" / "roles.yaml"
             )
 
         self.config_path = config_path
