@@ -152,9 +152,10 @@ export default function AgentList() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {filteredAgents.map((agent) => (
-                  <div
+                  <Link
                     key={agent.name}
-                    className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6 transition-all hover:shadow-theme-md group cursor-pointer"
+                    to={`/agents/${encodeURIComponent(agent.name)}`}
+                    className="block rounded-2xl border border-gray-200 bg-white p-5 md:p-6 transition-all hover:shadow-theme-md group"
                   >
                     {/* Icon */}
                     <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl mb-5">
@@ -195,7 +196,7 @@ export default function AgentList() {
                       <span>View details</span>
                       <ArrowRight className="h-4 w-4" />
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
