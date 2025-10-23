@@ -76,16 +76,17 @@ Repository = "https://github.com/allenday/a2a-registry"
 Issues = "https://github.com/allenday/a2a-registry/issues"
 
 [project.scripts]
-a2a-registry = "a2a_registry.cli:main"
+a2a-registry = "backend.cli:main"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
+include = ["backend*"]
 
 [tool.setuptools.package-data]
-"a2a_registry.proto.generated" = ["*.proto"]
+"backend.proto.generated" = ["*.proto"]
 
 [tool.setuptools.dynamic]
-version = {attr = "a2a_registry.__version__"}
+version = {attr = "backend.__version__"}
 
 [tool.black]
 line-length = 88
@@ -139,8 +140,8 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
-"src/a2a_registry/proto/generated/*" = ["ALL"]
-"src/a2a_registry/_version.py" = ["ALL"]
+"backend/proto/generated/*" = ["ALL"]
+"backend/_version.py" = ["ALL"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -150,9 +151,8 @@ disallow_untyped_defs = true
 exclude = [
     "build/",
     "dist/",
-    "third_party/",
-    "src/a2a_registry/proto/generated/",
-    "src/a2a_registry/grpc_server.py",
+    "backend/proto/generated/",
+    "backend/grpc_server.py",
 ]
 
 [tool.pytest.ini_options]

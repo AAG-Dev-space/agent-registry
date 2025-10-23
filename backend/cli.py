@@ -18,7 +18,7 @@ def serve(host: str, port: int, reload: bool) -> None:
     """Start the A2A Registry JSON-RPC server."""
     click.echo(f"Starting A2A Registry server on {host}:{port}")
     uvicorn.run(
-        "a2a_registry.server:create_app",
+        "backend.server:create_app",
         host=host,
         port=port,
         reload=reload,

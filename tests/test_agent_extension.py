@@ -5,8 +5,8 @@ import pytest
 from typing import Dict, Any
 from fastapi.testclient import TestClient
 
-from a2a_registry.server import create_app
-from a2a_registry import A2A_PROTOCOL_VERSION
+from backend.server import create_app
+from backend import A2A_PROTOCOL_VERSION
 
 # Utility function to generate test extension data
 def create_agent_extension(
