@@ -1,13 +1,19 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Sparkles, LogOut, User } from 'lucide-react';
+import { Sparkles, LogOut, User, ChevronDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useState } from 'react';
 
 export default function Layout() {
   const location = useLocation();
   const { user, logout, isAuthenticated } = useAuth();
+  const [wikiDropdownOpen, setWikiDropdownOpen] = useState(false);
 
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const isWikiActive = () => {
+    return location.pathname.startsWith('/wiki');
   };
 
   return (
@@ -32,6 +38,53 @@ export default function Layout() {
               >
                 Home
               </Link>
+
+              {/* Wiki Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setWikiDropdownOpen(!wikiDropdownOpen)}
+                  className={`flex items-center gap-1 text-sm font-medium transition-colors ${
+                    isWikiActive() ? 'text-gray-900' : 'text-gray-700 hover:text-brand-500'
+                  }`}
+                >
+                  Wiki
+                  <ChevronDown className={`h-4 w-4 transition-transform ${wikiDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {wikiDropdownOpen && (
+                  <>
+                    {/* Backdrop to close dropdown when clicking outside */}
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setWikiDropdownOpen(false)}
+                    />
+                    <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
+                      <Link
+                        to="/wiki/getting-started"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-500 transition-colors"
+                        onClick={() => setWikiDropdownOpen(false)}
+                      >
+                        Getting Started
+                      </Link>
+                      <Link
+                        to="/wiki/how-to-use"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-500 transition-colors"
+                        onClick={() => setWikiDropdownOpen(false)}
+                      >
+                        How to Use
+                      </Link>
+                      <Link
+                        to="/wiki/roadmap"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-500 transition-colors"
+                        onClick={() => setWikiDropdownOpen(false)}
+                      >
+                        Roadmap
+                      </Link>
+                    </div>
+                  </>
+                )}
+              </div>
+
               <Link
                 to="/agents"
                 className={`text-sm font-medium transition-colors ${
