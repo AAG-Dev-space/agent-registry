@@ -3,6 +3,8 @@ services:
     image: a2a-registry-backend:latest
     container_name: a2a-registry-backend
     restart: unless-stopped
+    ports:
+      - "7601:8000"
     environment:
       - STORAGE_TYPE=file
       - STORAGE_DATA_DIR=/app/data
@@ -25,7 +27,7 @@ services:
     container_name: a2a-registry-frontend
     restart: unless-stopped
     ports:
-      - "${PORT:-80}:80"
+      - "7600:80"
     depends_on:
       - backend
     networks:
