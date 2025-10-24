@@ -1,8 +1,6 @@
 services:
   backend:
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile.backend
+    image: a2a-registry-backend:latest
     container_name: a2a-registry-backend
     restart: unless-stopped
     environment:
@@ -23,9 +21,7 @@ services:
       start_period: 10s
 
   frontend:
-    build:
-      context: ..
-      dockerfile: deploy/Dockerfile.frontend
+    image: a2a-registry-frontend:latest
     container_name: a2a-registry-frontend
     restart: unless-stopped
     ports:

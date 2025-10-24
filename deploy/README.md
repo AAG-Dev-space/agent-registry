@@ -9,7 +9,14 @@ Docker를 사용하여 A2A Agent Registry를 배포하는 방법을 설명합니
 
 ## 🚀 빠른 시작
 
-### 1. 환경 변수 설정 (선택사항)
+### 1. Docker 이미지 빌드
+
+```bash
+cd deploy
+./build.sh
+```
+
+### 2. 환경 변수 설정 (선택사항)
 
 배포 디렉토리에 `.env` 파일을 생성하여 환경 변수를 설정할 수 있습니다:
 
@@ -20,14 +27,13 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 PORT=80
 ```
 
-### 2. Docker Compose로 실행
+### 3. Docker Compose로 실행
 
 ```bash
-cd deploy
-docker-compose up -d
+docker compose up -d
 ```
 
-### 3. 애플리케이션 접속
+### 4. 애플리케이션 접속
 
 브라우저에서 `http://localhost` (또는 설정한 포트)로 접속합니다.
 
