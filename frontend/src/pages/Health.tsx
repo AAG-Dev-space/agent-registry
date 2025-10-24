@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { Activity, CheckCircle, XCircle, Loader2, RefreshCw } from 'lucide-react';
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Use /api for Docker deployment (proxied by nginx)
+// Set VITE_API_URL environment variable for different backends
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
 
 interface HealthStatus {
   status: string;

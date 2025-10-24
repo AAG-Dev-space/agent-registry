@@ -148,7 +148,7 @@ export default function AgentDetail() {
                   key={idx}
                   className="px-3 py-1.5 rounded-lg text-sm font-medium bg-brand-50 text-brand-700 border border-brand-200"
                 >
-                  {skill.name}
+                  {skill.id}
                 </span>
               ))}
             </div>
@@ -296,7 +296,7 @@ export default function AgentDetail() {
                   className="p-4 rounded-lg bg-gray-50 border border-gray-100"
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-sm font-semibold text-gray-900">{skill.name}</h3>
+                    <h3 className="text-sm font-semibold text-gray-900">{skill.id}</h3>
                     {skill.id && (
                       <code className="text-xs text-gray-500 font-mono bg-white px-2 py-1 rounded border border-gray-200">
                         {skill.id}

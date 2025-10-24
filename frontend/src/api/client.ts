@@ -1,7 +1,9 @@
 import axios from 'axios';
 import type { AgentCard, RegisterAgentRequest, AgentSearchRequest, AgentSearchResponse } from '../types/agent';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Use /api for Docker deployment (proxied by nginx)
+// Set VITE_API_URL environment variable for different backends
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

@@ -9,8 +9,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy only requirements first for better caching
+# Copy project files for installation
 COPY pyproject.toml ./
+COPY backend ./backend
 
 # Install dependencies in a virtual environment
 RUN python -m venv /opt/venv
