@@ -1,11 +1,18 @@
 export interface AgentSkill {
   id: string;
+  name: string;
   description: string;
+  tags: string[];
+  examples?: string[];
+  input_modes: string[];
+  output_modes: string[];
   parameters?: Record<string, any>;
 }
 
 export interface AgentCapabilities {
-  skills?: AgentSkill[];
+  streaming?: boolean;
+  push_notifications?: boolean;
+  state_transition_history?: boolean;
   extensions?: Array<{
     uri: string;
     description?: string;

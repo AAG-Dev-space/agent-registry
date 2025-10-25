@@ -22,13 +22,23 @@ export default function RegisterAgent() {
 
   const [newSkill, setNewSkill] = useState<AgentSkill>({
     id: '',
+    name: '',
     description: '',
+    tags: [],
+    examples: [],
+    input_modes: ['text/plain'],
+    output_modes: ['text/plain'],
   });
 
   const [enableHealthCheck, setEnableHealthCheck] = useState(false);
   const [healthCheckUrl, setHealthCheckUrl] = useState('');
   const [healthCheckTimeout, setHealthCheckTimeout] = useState(10);
   const [healthCheckExpectedStatus, setHealthCheckExpectedStatus] = useState(200);
+
+  const [enableCapabilities, setEnableCapabilities] = useState(false);
+  const [streaming, setStreaming] = useState(false);
+  const [pushNotifications, setPushNotifications] = useState(false);
+  const [stateTransitionHistory, setStateTransitionHistory] = useState(false);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -38,12 +48,20 @@ export default function RegisterAgent() {
   };
 
   const handleAddSkill = () => {
-    if (newSkill.id && newSkill.description) {
+    if (newSkill.id && newSkill.name && newSkill.description) {
       setFormData((prev) => ({
         ...prev,
         skills: [...(prev.skills || []), newSkill],
       }));
-      setNewSkill({ id: '', description: '' });
+      setNewSkill({
+        id: '',
+        name: '',
+        description: '',
+        tags: [],
+        examples: [],
+        input_modes: ['text/plain'],
+        output_modes: ['text/plain'],
+      });
     }
   };
 
@@ -69,6 +87,15 @@ export default function RegisterAgent() {
           url: healthCheckUrl,
           timeout: healthCheckTimeout,
           expected_status: healthCheckExpectedStatus,
+        };
+      }
+
+      // Add capabilities if enabled
+      if (enableCapabilities) {
+        agentData.capabilities = {
+          streaming,
+          push_notifications: pushNotifications,
+          state_transition_history: stateTransitionHistory,
         };
       }
 
@@ -288,6 +315,92 @@ export default function RegisterAgent() {
                 Add Skill
               </button>
             </div>
+          </div>
+
+          {/* Capabilities */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-base font-medium text-gray-900">Capabilities (Optional)</h2>
+                <p className="text-sm text-gray-500 mt-1">Define what your agent can do</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={enableCapabilities}
+                  onChange={(e) => setEnableCapabilities(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+              </label>
+            </div>
+
+            {enableCapabilities && (
+              <div className="space-y-4">
+                {/* Streaming */}
+                <div className="flex items-start gap-4 p-4 rounded-lg bg-gray-50 border border-gray-100">
+                  <input
+                    type="checkbox"
+                    id="streaming"
+                    checked={streaming}
+                    onChange={(e) => setStreaming(e.target.checked)}
+                    className="mt-1 h-4 w-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500"
+                  />
+                  <div className="flex-1">
+                    <label htmlFor="streaming" className="block text-sm font-medium text-gray-900 cursor-pointer">
+                      Streaming Support
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Agent can stream responses in real-time (e.g., like ChatGPT)
+                    </p>
+                  </div>
+                </div>
+
+                {/* Push Notifications */}
+                <div className="flex items-start gap-4 p-4 rounded-lg bg-gray-50 border border-gray-100">
+                  <input
+                    type="checkbox"
+                    id="pushNotifications"
+                    checked={pushNotifications}
+                    onChange={(e) => setPushNotifications(e.target.checked)}
+                    className="mt-1 h-4 w-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500"
+                  />
+                  <div className="flex-1">
+                    <label htmlFor="pushNotifications" className="block text-sm font-medium text-gray-900 cursor-pointer">
+                      Push Notifications
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Agent can proactively send updates to clients (e.g., task completion alerts)
+                    </p>
+                  </div>
+                </div>
+
+                {/* State Transition History */}
+                <div className="flex items-start gap-4 p-4 rounded-lg bg-gray-50 border border-gray-100">
+                  <input
+                    type="checkbox"
+                    id="stateTransitionHistory"
+                    checked={stateTransitionHistory}
+                    onChange={(e) => setStateTransitionHistory(e.target.checked)}
+                    className="mt-1 h-4 w-4 text-brand-600 border-gray-300 rounded focus:ring-brand-500"
+                  />
+                  <div className="flex-1">
+                    <label htmlFor="stateTransitionHistory" className="block text-sm font-medium text-gray-900 cursor-pointer">
+                      State Transition History
+                    </label>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Agent tracks and exposes task state change history (pending → processing → completed)
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
+                  <p className="text-sm text-blue-700">
+                    <strong>A2A Protocol:</strong> These capabilities help clients understand what your agent can do and how to interact with it.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Health Check */}

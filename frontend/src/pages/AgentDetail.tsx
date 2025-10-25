@@ -324,6 +324,57 @@ export default function AgentDetail() {
           <div className="rounded-2xl border border-gray-200 bg-white p-6 md:p-8 mb-6">
             <h2 className="text-base font-semibold text-gray-900 mb-4">Capabilities</h2>
 
+            {/* Core Capabilities */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Streaming</span>
+                  {agent.capabilities.streaming ? (
+                    <CheckCircle className="h-5 w-5 text-success-600" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-gray-400" />
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {agent.capabilities.streaming
+                    ? 'Supports real-time streaming responses'
+                    : 'Does not support streaming'}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Push Notifications</span>
+                  {agent.capabilities.push_notifications ? (
+                    <CheckCircle className="h-5 w-5 text-success-600" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-gray-400" />
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {agent.capabilities.push_notifications
+                    ? 'Can send push notifications to clients'
+                    : 'Does not send push notifications'}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">State History</span>
+                  {agent.capabilities.state_transition_history ? (
+                    <CheckCircle className="h-5 w-5 text-success-600" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-gray-400" />
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {agent.capabilities.state_transition_history
+                    ? 'Tracks state transition history'
+                    : 'Does not track state history'}
+                </p>
+              </div>
+            </div>
+
             {agent.capabilities.extensions && agent.capabilities.extensions.length > 0 && (
               <div className="mb-4">
                 <h3 className="text-sm font-medium text-gray-700 mb-3">Extensions</h3>

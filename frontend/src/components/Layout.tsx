@@ -58,7 +58,7 @@ export default function Layout() {
                       className="fixed inset-0 z-10"
                       onClick={() => setWikiDropdownOpen(false)}
                     />
-                    <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
+                    <div className="absolute top-full left-0 mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-20">
                       <Link
                         to="/wiki/getting-started"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-500 transition-colors"
@@ -72,6 +72,13 @@ export default function Layout() {
                         onClick={() => setWikiDropdownOpen(false)}
                       >
                         How to Use
+                      </Link>
+                      <Link
+                        to="/wiki/terms-and-specs"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-500 transition-colors"
+                        onClick={() => setWikiDropdownOpen(false)}
+                      >
+                        Terms & Specs
                       </Link>
                       <Link
                         to="/wiki/roadmap"
