@@ -40,6 +40,8 @@ export interface AgentCard {
   version: string;
   protocol_version: string;
   preferred_transport?: string;
+  default_input_modes?: string[];
+  default_output_modes?: string[];
   capabilities?: AgentCapabilities;
   skills?: AgentSkill[];
   metadata?: Record<string, any>;
