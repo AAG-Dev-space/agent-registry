@@ -578,49 +578,6 @@ export default function AgentDetail() {
                 </button>
               </div>
             </div>
-
-            {/* Step 3: Available Skills */}
-            {agent.skills && agent.skills.length > 0 && (
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">3. Available Skills</h3>
-                <p className="text-sm text-gray-600 mb-3">
-                  This agent supports {agent.skills.length} skill{agent.skills.length > 1 ? 's' : ''}:
-                </p>
-                <div className="space-y-3">
-                  {agent.skills.slice(0, 3).map((skill) => (
-                    <div key={skill.id} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900">{skill.name}</p>
-                          <p className="text-xs text-gray-600 mt-1">{skill.description}</p>
-                        </div>
-                        <span className="text-xs bg-brand-100 text-brand-700 px-2 py-1 rounded font-mono">
-                          {skill.id}
-                        </span>
-                      </div>
-                      {skill.examples && skill.examples.length > 0 && (
-                        <div className="mt-3">
-                          <p className="text-xs font-medium text-gray-700 mb-2">Example prompts:</p>
-                          <ul className="space-y-1">
-                            {skill.examples.slice(0, 2).map((example, idx) => (
-                              <li key={idx} className="text-xs text-gray-600 flex items-start gap-2">
-                                <span className="text-brand-500 mt-0.5">→</span>
-                                <span className="italic">"{example}"</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  {agent.skills.length > 3 && (
-                    <p className="text-xs text-gray-500 text-center">
-                      +{agent.skills.length - 3} more skill{agent.skills.length - 3 > 1 ? 's' : ''} available
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
