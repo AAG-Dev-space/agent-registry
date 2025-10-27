@@ -25,7 +25,7 @@ export default function Layout() {
             {/* Logo and Title */}
             <Link to="/" className="flex items-center gap-2">
               <Sparkles className="h-6 w-6 text-brand-500" />
-              <span className="text-lg font-semibold text-gray-900">A2A Agent Registry</span>
+              <span className="text-lg font-semibold text-gray-900">Agent Registry</span>
             </Link>
 
             {/* Navigation Links */}

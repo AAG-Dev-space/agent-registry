@@ -111,10 +111,10 @@ export default function AgentList() {
         <section className="pt-8 pb-12">
           <div className="max-w-3xl">
             <h1 className="text-title-lg font-bold text-gray-900 mb-4">
-              Discover A2A Agents
+              Discover Agents
             </h1>
             <p className="text-theme-xl text-gray-500">
-              Browse and discover powerful A2A agents to enhance your AI applications.
+              Browse and discover powerful agents to enhance your AI applications.
             </p>
           </div>
         </section>
