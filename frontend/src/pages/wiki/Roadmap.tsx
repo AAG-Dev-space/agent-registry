@@ -359,6 +359,17 @@ export default function Roadmap() {
                   </p>
                 </div>
               </div>
+              <div className="flex items-start gap-3">
+                <input type="checkbox" className="mt-1" disabled />
+                <div>
+                  <h3 className="font-medium text-gray-900">
+                    {t('사용자 인증 개선', 'Improve User Authentication')}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {t('Email 토큰 기반 인증 시스템 구현 및 보안 강화', 'Implement email token-based authentication and enhance security')}
+                  </p>
+                </div>
+              </div>
             </div>
           </section>
 
