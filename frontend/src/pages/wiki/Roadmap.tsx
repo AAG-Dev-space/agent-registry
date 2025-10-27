@@ -21,8 +21,8 @@ export default function Roadmap() {
           </div>
           <p className="text-theme-xl text-gray-500">
             {t(
-              'A2A Agent Registry의 향후 계획 및 개발 로드맵',
-              'Future plans and development roadmap for A2A Agent Registry'
+              'Agent Registry의 향후 계획 및 개발 로드맵',
+              'Future plans and development roadmap for Agent Registry'
             )}
           </p>
         </div>
@@ -369,8 +369,8 @@ export default function Roadmap() {
             </h2>
             <p className="text-sm text-gray-700 mb-4">
               {t(
-                'A2A Agent Registry를 개선하기 위한 여러분의 아이디어를 듣고 싶습니다! 여러분의 피드백은 기능 우선순위를 정하고 더 나은 플랫폼을 구축하는 데 도움이 됩니다.',
-                "We'd love to hear your ideas for improving the A2A Agent Registry! Your feedback helps us prioritize features and build a better platform."
+                'Agent Registry를 개선하기 위한 여러분의 아이디어를 듣고 싶습니다! 여러분의 피드백은 기능 우선순위를 정하고 더 나은 플랫폼을 구축하는 데 도움이 됩니다.',
+                "We'd love to hear your ideas for improving the Agent Registry! Your feedback helps us prioritize features and build a better platform."
               )}
             </p>
             <a
