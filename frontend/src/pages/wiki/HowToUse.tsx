@@ -20,34 +20,10 @@ export default function HowToUse() {
 
   const apiUrl = getApiUrl();
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      // Try modern Clipboard API first (requires HTTPS or localhost)
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      // Fallback for HTTP or older browsers
-      const textArea = document.createElement('textarea');
-      textArea.value = text;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-999999px';
-      textArea.style.top = '-999999px';
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-
-      try {
-        document.execCommand('copy');
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-      } catch (execErr) {
-        console.error('Copy failed:', execErr);
-        alert('Copy failed. Please copy manually: ' + text);
-      } finally {
-        document.body.removeChild(textArea);
-      }
-    }
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const exampleAgentCard = {
