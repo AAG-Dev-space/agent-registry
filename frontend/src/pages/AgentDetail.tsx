@@ -43,6 +43,19 @@ export default function AgentDetail() {
     setTimeout(() => setCopiedUrl(false), 2000);
   };
 
+  // Get API URL dynamically
+  const getApiUrl = () => {
+    const currentUrl = window.location.origin;
+    // If running on port 7600 (frontend), backend is on 7601
+    if (currentUrl.includes(':7600')) {
+      return currentUrl.replace(':7600', ':7601');
+    }
+    // Otherwise assume backend is on /api
+    return `${currentUrl}/api`;
+  };
+
+  const apiUrl = getApiUrl();
+
   const handleDelete = async () => {
     if (!agentId || !confirm('Are you sure you want to delete this agent?')) return;
 
@@ -440,12 +453,12 @@ export default function AgentDetail() {
               <div className="relative">
                 <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
                   <code className="text-xs text-gray-100 font-mono">
-                    {`curl http://localhost:7601/agents/${agent.name}`}
+                    {`curl ${apiUrl}/agents/${encodeURIComponent(agent.name)}`}
                   </code>
                 </div>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(`curl http://localhost:7601/agents/${agent.name}`);
+                    navigator.clipboard.writeText(`curl ${apiUrl}/agents/${encodeURIComponent(agent.name)}`);
                     setCopiedUrl(true);
                     setTimeout(() => setCopiedUrl(false), 2000);
                   }}

@@ -7,6 +7,19 @@ export default function HowToUse() {
   const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
 
+  // Get API URL dynamically
+  const getApiUrl = () => {
+    const currentUrl = window.location.origin;
+    // If running on port 7600 (frontend), backend is on 7601
+    if (currentUrl.includes(':7600')) {
+      return currentUrl.replace(':7600', ':7601');
+    }
+    // Otherwise assume backend is on /api
+    return `${currentUrl}/api`;
+  };
+
+  const apiUrl = getApiUrl();
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -305,15 +318,31 @@ export default function HowToUse() {
                 <div className="relative">
                   <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
                     <code className="text-xs text-gray-100 font-mono">
-                      curl http://localhost:7601/agents/chatbot-assistant
+                      curl {apiUrl}/agents/chatbot-assistant
                     </code>
                   </div>
                   <button
-                    onClick={() => copyToClipboard('curl http://localhost:7601/agents/chatbot-assistant')}
+                    onClick={() => copyToClipboard(`curl ${apiUrl}/agents/chatbot-assistant`)}
                     className="absolute top-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors"
                   >
                     {copied ? <Check size={16} /> : <Copy size={16} />}
                   </button>
+                </div>
+
+                {/* URL Encoding Note */}
+                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <p className="text-xs text-yellow-800 mb-2">
+                    <strong>{t('참고:', 'Note:')}</strong> {t(
+                      '에이전트 이름에 공백이나 특수문자가 있는 경우 URL 인코딩이 필요합니다.',
+                      'If the agent name contains spaces or special characters, URL encoding is required.'
+                    )}
+                  </p>
+                  <div className="bg-gray-900 rounded p-2">
+                    <code className="text-xs text-gray-100 font-mono">
+                      # {t('공백이 있는 이름 (예: "Meeting Agent")', 'Name with space (e.g., "Meeting Agent")')}<br/>
+                      curl {apiUrl}/agents/Meeting%20Agent
+                    </code>
+                  </div>
                 </div>
 
                 {/* Response Example */}
