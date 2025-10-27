@@ -41,8 +41,8 @@ Thumbs.db
 !README.md
 docs
 
-# Data and logs
-data
+# Data and logs (sample data is included in Docker image)
+# data folder contains sample agents and will be included in the image
 *.log
 logs
 
