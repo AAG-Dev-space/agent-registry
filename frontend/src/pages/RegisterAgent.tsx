@@ -299,6 +299,15 @@ export default function RegisterAgent() {
               <div>
                 <input
                   type="text"
+                  placeholder="Skill Name (e.g., Get Weather)"
+                  value={newSkill.name}
+                  onChange={(e) => setNewSkill((prev) => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
                   placeholder="Skill Description"
                   value={newSkill.description}
                   onChange={(e) => setNewSkill((prev) => ({ ...prev, description: e.target.value }))}
@@ -308,7 +317,7 @@ export default function RegisterAgent() {
               <button
                 type="button"
                 onClick={handleAddSkill}
-                disabled={!newSkill.id || !newSkill.description}
+                disabled={!newSkill.id || !newSkill.name || !newSkill.description}
                 className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-lg font-medium transition-colors"
               >
                 <PlusCircle size={18} />
