@@ -79,6 +79,20 @@ export default function AgentDetail() {
 
   const apiUrl = getApiUrl();
 
+  // Get endpoint URL based on platform
+  const getEndpointUrl = () => {
+    const platform = agent?.metadata?.platform || 'generic';
+    const baseUrl = agent?.url || '';
+
+    if (platform === 'agno') {
+      // Agno uses /a2a/message/send endpoint
+      return `${baseUrl}/a2a/message/send`;
+    }
+
+    // Generic uses base URL
+    return baseUrl;
+  };
+
   // Get message example based on platform
   const getMessageExample = () => {
     const platform = agent?.metadata?.platform || 'generic';
@@ -614,14 +628,14 @@ export default function AgentDetail() {
               <div className="relative">
                 <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
                   <pre className="text-xs text-gray-100 font-mono">
-{`curl -X POST ${agent.url} \\
+{`curl -X POST ${getEndpointUrl()} \\
   -H "Content-Type: application/json" \\
   -d '${JSON.stringify(getMessageExample(), null, 2)}'`}
                   </pre>
                 </div>
                 <button
                   onClick={async () => {
-                    const curlCommand = `curl -X POST ${agent.url} \\
+                    const curlCommand = `curl -X POST ${getEndpointUrl()} \\
   -H "Content-Type: application/json" \\
   -d '${JSON.stringify(getMessageExample(), null, 2)}'`;
                     await copyToClipboard(curlCommand);
