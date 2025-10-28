@@ -79,6 +79,50 @@ export default function AgentDetail() {
 
   const apiUrl = getApiUrl();
 
+  // Get message example based on platform
+  const getMessageExample = () => {
+    const platform = agent?.metadata?.platform || 'generic';
+    const exampleMessage = agent?.skills && agent.skills[0]?.examples?.[0] || 'Hello, can you help me?';
+
+    if (platform === 'agno') {
+      // Agno uses A2A v0.3.0 standard
+      return {
+        jsonrpc: '2.0',
+        method: 'message/send',
+        params: {
+          message: {
+            role: 'user',
+            parts: [
+              {
+                kind: 'text',
+                text: exampleMessage
+              }
+            ]
+          }
+        },
+        id: 'request-123'
+      };
+    }
+
+    // Generic JSON-RPC format
+    return {
+      jsonrpc: '2.0',
+      method: 'message/send',
+      params: {
+        message: {
+          role: 'user',
+          parts: [
+            {
+              type: 'text',
+              content: exampleMessage
+            }
+          ]
+        }
+      },
+      id: '1'
+    };
+  };
+
   const handleDelete = async () => {
     if (!agentId || !confirm('Are you sure you want to delete this agent?')) return;
 
@@ -556,7 +600,14 @@ export default function AgentDetail() {
 
             {/* Step 2: Send Message */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">2. Send Message (JSON-RPC)</h3>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="text-sm font-semibold text-gray-900">2. Send Message (JSON-RPC)</h3>
+                {agent.metadata?.platform && agent.metadata.platform !== 'generic' && (
+                  <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded">
+                    {agent.metadata.platform}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-gray-600 mb-3">
                 Call the agent using JSON-RPC 2.0 over HTTP:
               </p>
@@ -565,47 +616,15 @@ export default function AgentDetail() {
                   <pre className="text-xs text-gray-100 font-mono">
 {`curl -X POST ${agent.url} \\
   -H "Content-Type: application/json" \\
-  -d '{
-  "jsonrpc": "2.0",
-  "method": "message/send",
-  "params": {
-    "message": {
-      "role": "user",
-      "parts": [
-        {
-          "type": "text",
-          "content": "${agent.skills && agent.skills[0]?.examples?.[0] || 'Hello, can you help me?'}"
-        }
-      ]
-    }
-  },
-  "id": "1"
-}'`}
+  -d '${JSON.stringify(getMessageExample(), null, 2)}'`}
                   </pre>
                 </div>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     const curlCommand = `curl -X POST ${agent.url} \\
   -H "Content-Type: application/json" \\
-  -d '{
-  "jsonrpc": "2.0",
-  "method": "message/send",
-  "params": {
-    "message": {
-      "role": "user",
-      "parts": [
-        {
-          "type": "text",
-          "content": "${agent.skills && agent.skills[0]?.examples?.[0] || 'Hello, can you help me?'}"
-        }
-      ]
-    }
-  },
-  "id": "1"
-}'`;
-                    navigator.clipboard.writeText(curlCommand);
-                    setCopiedUrl(true);
-                    setTimeout(() => setCopiedUrl(false), 2000);
+  -d '${JSON.stringify(getMessageExample(), null, 2)}'`;
+                    await copyToClipboard(curlCommand);
                   }}
                   className="absolute top-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors"
                   title="Copy to clipboard"
