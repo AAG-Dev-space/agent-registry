@@ -97,15 +97,18 @@ export default function AgentDetail() {
   const getMessageExample = () => {
     const platform = agent?.metadata?.platform || 'generic';
     const exampleMessage = agent?.skills && agent.skills[0]?.examples?.[0] || 'Hello, can you help me?';
+    const agentIdFromMeta = agent?.metadata?.agentId || 'your-agent-id';
 
     if (platform === 'agno') {
-      // Agno uses A2A v0.3.0 standard
+      // Agno uses A2A v0.3.0 standard with /a2a/message/send endpoint
       return {
         jsonrpc: '2.0',
         method: 'message/send',
         params: {
           message: {
             role: 'user',
+            agentId: agentIdFromMeta,
+            messageId: 'msg-123',
             parts: [
               {
                 kind: 'text',
@@ -628,14 +631,14 @@ export default function AgentDetail() {
               <div className="relative">
                 <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
                   <pre className="text-xs text-gray-100 font-mono">
-{`curl -X POST ${getEndpointUrl()} \\
+{`curl --noproxy "*" -X POST ${getEndpointUrl()} \\
   -H "Content-Type: application/json" \\
   -d '${JSON.stringify(getMessageExample(), null, 2)}'`}
                   </pre>
                 </div>
                 <button
                   onClick={async () => {
-                    const curlCommand = `curl -X POST ${getEndpointUrl()} \\
+                    const curlCommand = `curl --noproxy "*" -X POST ${getEndpointUrl()} \\
   -H "Content-Type: application/json" \\
   -d '${JSON.stringify(getMessageExample(), null, 2)}'`;
                     await copyToClipboard(curlCommand);

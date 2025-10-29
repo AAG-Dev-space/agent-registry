@@ -41,6 +41,7 @@ export default function RegisterAgent() {
   const [stateTransitionHistory, setStateTransitionHistory] = useState(false);
 
   const [platform, setPlatform] = useState<string>('generic');
+  const [agentId, setAgentId] = useState<string>('');
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -106,6 +107,11 @@ export default function RegisterAgent() {
         agentData.metadata = {};
       }
       agentData.metadata.platform = platform;
+
+      // Add agentId for Agno platform
+      if (platform === 'agno' && agentId) {
+        agentData.metadata.agentId = agentId;
+      }
 
       await agentApi.registerAgent(agentData);
       setSuccess(true);
@@ -286,6 +292,28 @@ export default function RegisterAgent() {
                   </p>
                 </div>
               </div>
+
+              {/* Agno Agent ID */}
+              {platform === 'agno' && (
+                <div>
+                  <label htmlFor="agentId" className="block text-theme-sm font-medium text-gray-700 mb-2">
+                    Agent ID <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="agentId"
+                    name="agentId"
+                    required={platform === 'agno'}
+                    value={agentId}
+                    onChange={(e) => setAgentId(e.target.value)}
+                    placeholder="e.g., web-search-agent"
+                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                  />
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    Agno agent의 고유 ID (예: web-search-agent)
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
