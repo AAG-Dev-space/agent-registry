@@ -830,8 +830,13 @@ def get_storage_backend() -> StorageBackend:
     """Get the appropriate storage backend based on environment configuration."""
     storage_type = config.storage_type
     data_dir = config.storage_data_dir
+    database_url = config.database_url
 
-    if storage_type == "file":
+    if storage_type == "postgres" or storage_type == "postgresql":
+        logger.info(f"Using PostgreSQL storage backend: {database_url.split('@')[1] if '@' in database_url else 'database'}")
+        from .postgres_storage import PostgreSQLStorage
+        return PostgreSQLStorage(database_url)
+    elif storage_type == "file":
         logger.info(f"Using file storage backend with data directory: {data_dir}")
         return FileStorage(data_dir)
     else:
