@@ -21,22 +21,17 @@ async def register_agent(
     agent_card: AgentCard,
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[UserModel, Depends(get_current_active_user)],
-    verify: bool = True,
 ):
     """Register a new agent or update existing one.
 
     Requires authentication. Any authenticated user can register agents.
 
-    The agent will be verified by calling its URL to check if it responds
-    with a valid agent card. Set verify=false to skip verification.
-
     Args:
         agent_card: Agent card information
-        verify: Whether to verify agent A2A support (default: True)
     """
     try:
         service = AgentService(db)
-        agent = await service.register_agent(agent_card.model_dump(), verify=verify)
+        agent = await service.register_agent(agent_card.model_dump())
 
         return AgentResponse(**agent)
 

@@ -3,7 +3,6 @@
 import logging
 from datetime import UTC, datetime
 
-import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,81 +24,17 @@ class AgentService:
         """Initialize agent service with database session."""
         self.db = db
 
-    async def verify_agent_a2a_support(self, url: str, timeout: float = 5.0) -> dict:
-        """Verify if agent supports A2A protocol by calling it.
-
-        Args:
-            url: Agent URL
-            timeout: Request timeout in seconds
-
-        Returns:
-            dict with verification results:
-                - supported: bool
-                - agent_card: dict (if available)
-                - error: str (if failed)
-                - response_time_ms: float
-
-        Raises:
-            None - returns error info in dict instead
-        """
-        import time
-
-        start_time = time.time()
-        result = {
-            "supported": False,
-            "agent_card": None,
-            "error": None,
-            "response_time_ms": 0,
-        }
-
-        try:
-            async with httpx.AsyncClient(timeout=timeout) as client:
-                # Try to get agent card via A2A protocol
-                # Most A2A agents should respond to GET / with their agent card
-                response = await client.get(url, headers={"Accept": "application/json"})
-
-                result["response_time_ms"] = (time.time() - start_time) * 1000
-
-                if response.status_code == 200:
-                    try:
-                        data = response.json()
-                        # Check if response looks like an agent card
-                        if isinstance(data, dict) and ("name" in data or "url" in data):
-                            result["supported"] = True
-                            result["agent_card"] = data
-                            logger.info(f"Agent at {url} verified successfully")
-                        else:
-                            result["error"] = "Response does not look like an agent card"
-                    except Exception as e:
-                        result["error"] = f"Failed to parse JSON: {str(e)}"
-                else:
-                    result["error"] = f"HTTP {response.status_code}: {response.text[:100]}"
-
-        except httpx.TimeoutException:
-            result["error"] = f"Connection timeout after {timeout}s"
-            result["response_time_ms"] = timeout * 1000
-        except httpx.ConnectError as e:
-            result["error"] = f"Connection failed: {str(e)}"
-        except Exception as e:
-            result["error"] = f"Unexpected error: {str(e)}"
-
-        if not result["supported"]:
-            logger.warning(f"Agent verification failed for {url}: {result['error']}")
-
-        return result
-
-    async def register_agent(self, agent_card: dict, verify: bool = True) -> dict:
+    async def register_agent(self, agent_card: dict) -> dict:
         """Register a new agent or update existing one.
 
         Args:
             agent_card: Agent card dictionary
-            verify: Whether to verify agent A2A support (default: True)
 
         Returns:
-            Registered agent as dictionary with verification result
+            Registered agent as dictionary
 
         Raises:
-            ValueError: If agent_card is invalid or verification fails
+            ValueError: If agent_card is invalid
         """
         agent_id = agent_card.get("name")
         if not agent_id:
@@ -108,19 +43,6 @@ class AgentService:
         agent_url = agent_card.get("url")
         if not agent_url:
             raise ValueError("Agent URL is required")
-
-        # Verify agent A2A support if requested
-        verification_result = None
-        if verify:
-            verification_result = await self.verify_agent_a2a_support(agent_url)
-
-            if not verification_result["supported"]:
-                error_msg = verification_result.get("error", "Unknown error")
-                raise ValueError(
-                    f"Agent verification failed: {error_msg}. "
-                    "The agent must be accessible and respond with a valid agent card. "
-                    "Use verify=false query parameter to skip verification."
-                )
 
         # Check if agent already exists
         result = await self.db.execute(
@@ -157,15 +79,12 @@ class AgentService:
             )
             self.db.add(agent_model)
 
-            # Initialize health status with verification result
-            initial_status = "healthy" if verification_result and verification_result["supported"] else "unknown"
-            response_time = verification_result.get("response_time_ms") if verification_result else None
-
+            # Initialize health status as unknown
             health_status = HealthStatusModel(
                 agent_name=agent_id,
-                status=initial_status,
+                status="unknown",
                 last_check_at=utc_now(),
-                response_time_ms=response_time,
+                response_time_ms=None,
                 failure_count=0,
             )
             self.db.add(health_status)
@@ -173,16 +92,8 @@ class AgentService:
             await self.db.commit()
             await self.db.refresh(agent_model)
 
-            logger.info(f"Registered new agent: {agent_id} (verification: {verification_result is not None})")
-
-            # Return agent data with verification info
-            agent_data = agent_model.to_dict()
-            if verification_result:
-                agent_data["verification"] = {
-                    "verified": verification_result["supported"],
-                    "response_time_ms": verification_result["response_time_ms"],
-                }
-            return agent_data
+            logger.info(f"Registered new agent: {agent_id}")
+            return agent_model.to_dict()
 
     async def get_agent(self, agent_id: str) -> dict | None:
         """Get agent by ID.
