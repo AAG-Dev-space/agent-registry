@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.extension import ExtensionModel
+from backend.app.models.extension import ExtensionModel
 
 logger = logging.getLogger(__name__)
 

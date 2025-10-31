@@ -9,7 +9,7 @@ import yaml
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from app.core.config import get_settings
+from backend.app.core.config import get_settings
 
 logger = logging.getLogger(__name__)
 settings = get_settings()

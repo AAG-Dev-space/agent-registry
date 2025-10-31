@@ -6,10 +6,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_active_user, get_db, require_admin
-from app.models.user import UserModel
-from app.schemas.agent import AgentCard, AgentListResponse, AgentResponse, AgentSearchRequest
-from app.services.agent_service import AgentService
+from backend.app.core.deps import get_current_active_user, get_db, require_admin
+from backend.app.models.user import UserModel
+from backend.app.schemas.agent import AgentCard, AgentListResponse, AgentResponse, AgentSearchRequest
+from backend.app.services.agent_service import AgentService
 
 logger = logging.getLogger(__name__)
 

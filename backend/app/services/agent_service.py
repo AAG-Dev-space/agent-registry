@@ -6,8 +6,8 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.agent import AgentModel
-from app.models.health import HealthStatusModel
+from backend.app.models.agent import AgentModel
+from backend.app.models.health import HealthStatusModel
 
 logger = logging.getLogger(__name__)
 

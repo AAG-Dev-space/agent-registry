@@ -8,9 +8,9 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
-from app.core.security import decode_access_token, role_config
-from app.models.user import UserModel
+from backend.app.core.database import get_db
+from backend.app.core.security import decode_access_token, role_config
+from backend.app.models.user import UserModel
 
 logger = logging.getLogger(__name__)
 

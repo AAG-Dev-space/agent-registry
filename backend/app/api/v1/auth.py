@@ -9,11 +9,11 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
-from app.core.deps import get_current_active_user, get_db
-from app.core.security import create_access_token, get_password_hash, verify_password
-from app.models.user import UserModel
-from app.schemas.auth import LoginRequest, RegisterRequest, Token, UserResponse
+from backend.app.core.config import get_settings
+from backend.app.core.deps import get_current_active_user, get_db
+from backend.app.core.security import create_access_token, get_password_hash, verify_password
+from backend.app.models.user import UserModel
+from backend.app.schemas.auth import LoginRequest, RegisterRequest, Token, UserResponse
 
 logger = logging.getLogger(__name__)
 settings = get_settings()

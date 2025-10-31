@@ -6,11 +6,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import api_router
-from app.core.config import get_settings
-from app.core.database import close_db, init_db
-from app.core.security import get_password_hash, role_config
-from app.models.user import UserModel
+from backend.app.api.v1 import api_router
+from backend.app.core.config import get_settings
+from backend.app.core.database import close_db, init_db
+from backend.app.core.security import get_password_hash, role_config
+from backend.app.models.user import UserModel
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
 
 async def initialize_default_users():
     """Initialize default users from role config."""
-    from app.core.database import async_session_maker
+    from backend.app.core.database import async_session_maker
     from sqlalchemy import select
 
     async with async_session_maker() as session:

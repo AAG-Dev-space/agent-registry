@@ -6,10 +6,10 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.deps import get_current_active_user, get_db
-from app.models.user import UserModel
-from app.schemas.health import HealthStatusResponse
-from app.services.health_service import HealthService
+from backend.app.core.deps import get_current_active_user, get_db
+from backend.app.models.user import UserModel
+from backend.app.schemas.health import HealthStatusResponse
+from backend.app.services.health_service import HealthService
 
 logger = logging.getLogger(__name__)
 
