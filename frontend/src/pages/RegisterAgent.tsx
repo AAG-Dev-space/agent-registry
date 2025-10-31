@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, Loader2, CheckCircle, AlertCircle, PlusCircle, X } from 'lucide-react';
+import { Save, Loader2, CheckCircle, AlertCircle, PlusCircle, X, Check, XCircle } from 'lucide-react';
 import { agentApi } from '../api/client';
 import type { AgentCard, AgentSkill } from '../types/agent';
 
@@ -10,7 +10,16 @@ export default function RegisterAgent() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState<AgentCard>({
+  // Health Check verification state
+  const [healthCheckUrl, setHealthCheckUrl] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [verificationMessage, setVerificationMessage] = useState('');
+
+  // A2A Support toggle
+  const [supportsA2A, setSupportsA2A] = useState(false);
+
+  const [formData, setFormData] = useState<Partial<AgentCard>>({
     name: '',
     description: '',
     url: '',
@@ -30,24 +39,75 @@ export default function RegisterAgent() {
     output_modes: ['text/plain'],
   });
 
-  const [enableHealthCheck, setEnableHealthCheck] = useState(false);
-  const [healthCheckUrl, setHealthCheckUrl] = useState('');
-  const [healthCheckTimeout, setHealthCheckTimeout] = useState(10);
-  const [healthCheckExpectedStatus, setHealthCheckExpectedStatus] = useState(200);
-
   const [enableCapabilities, setEnableCapabilities] = useState(false);
   const [streaming, setStreaming] = useState(false);
   const [pushNotifications, setPushNotifications] = useState(false);
   const [stateTransitionHistory, setStateTransitionHistory] = useState(false);
 
-  const [platform, setPlatform] = useState<string>('generic');
-  const [agentId, setAgentId] = useState<string>('');
+  const [platform, setPlatform] = useState<string>('none');
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Health Check 자동 검증
+  const handleHealthCheckVerification = async () => {
+    if (!healthCheckUrl) return;
+
+    setVerifying(true);
+    setVerificationStatus('idle');
+    setVerificationMessage('');
+
+    const startTime = performance.now();
+
+    try {
+      // Directly call the health check URL
+      const response = await fetch(healthCheckUrl, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      const responseTime = Math.round(performance.now() - startTime);
+
+      if (response.ok) {
+        try {
+          const data = await response.json();
+
+          // Check if response looks like an agent card (has name or url)
+          if (typeof data === 'object' && (data.name || data.url)) {
+            setVerificationStatus('success');
+            setVerificationMessage(`✓ Agent verified successfully (${responseTime}ms)`);
+
+            // Auto-fill agent card data if available
+            setFormData(prev => ({
+              ...prev,
+              name: prev.name || data.name,
+              description: prev.description || data.description,
+              version: prev.version || data.version,
+            }));
+          } else {
+            setVerificationStatus('error');
+            setVerificationMessage(`✗ Response does not look like an agent card`);
+          }
+        } catch (parseErr) {
+          setVerificationStatus('error');
+          setVerificationMessage(`✗ Failed to parse JSON response`);
+        }
+      } else {
+        setVerificationStatus('error');
+        setVerificationMessage(`✗ HTTP ${response.status}: ${response.statusText}`);
+      }
+    } catch (err: any) {
+      setVerificationStatus('error');
+      setVerificationMessage(`✗ Connection error: ${err.message}`);
+    } finally {
+      setVerifying(false);
+    }
   };
 
   const handleAddSkill = () => {
@@ -77,21 +137,23 @@ export default function RegisterAgent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validation
+    if (verificationStatus !== 'success') {
+      setError('Please verify the health check URL first');
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setSuccess(false);
 
     try {
-      // Prepare agent data with health check if enabled
-      const agentData = { ...formData };
-
-      if (enableHealthCheck && healthCheckUrl) {
-        agentData.health_check = {
-          url: healthCheckUrl,
-          timeout: healthCheckTimeout,
-          expected_status: healthCheckExpectedStatus,
-        };
-      }
+      // Prepare agent data
+      const agentData: any = {
+        ...formData,
+        url: healthCheckUrl, // Use health check URL as agent URL
+      };
 
       // Add capabilities if enabled
       if (enableCapabilities) {
@@ -102,15 +164,23 @@ export default function RegisterAgent() {
         };
       }
 
-      // Add platform to metadata
+      // Add metadata
       if (!agentData.metadata) {
         agentData.metadata = {};
       }
-      agentData.metadata.platform = platform;
 
-      // Add agentId for Agno platform
-      if (platform === 'agno' && agentId) {
-        agentData.metadata.agentId = agentId;
+      // Add platform if selected
+      if (platform !== 'none') {
+        agentData.metadata.platform = platform;
+      }
+
+      // Add A2A support info
+      agentData.metadata.supports_a2a = supportsA2A;
+
+      // If A2A is not supported, remove protocol fields
+      if (!supportsA2A) {
+        delete agentData.protocol_version;
+        delete agentData.preferred_transport;
       }
 
       await agentApi.registerAgent(agentData);
@@ -201,64 +271,123 @@ export default function RegisterAgent() {
                 />
               </div>
 
+              {/* Health Check URL with Verification */}
               <div>
-                <label htmlFor="url" className="block text-theme-sm font-medium text-gray-700 mb-2">
-                  Agent URL *
+                <label htmlFor="healthCheckUrl" className="block text-theme-sm font-medium text-gray-700 mb-2">
+                  Agent Health Check Endpoint *
                 </label>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    id="healthCheckUrl"
+                    required
+                    value={healthCheckUrl}
+                    onChange={(e) => {
+                      setHealthCheckUrl(e.target.value);
+                      setVerificationStatus('idle');
+                      setVerificationMessage('');
+                    }}
+                    placeholder="https://my-agent.example.com/health"
+                    className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleHealthCheckVerification}
+                    disabled={!healthCheckUrl || verifying}
+                    className="px-4 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors"
+                  >
+                    {verifying ? (
+                      <Loader2 className="animate-spin" size={20} />
+                    ) : (
+                      'Verify'
+                    )}
+                  </button>
+                </div>
+
+                {/* Verification Status */}
+                {verificationStatus === 'success' && (
+                  <div className="mt-2 flex items-center gap-2 text-sm text-green-600">
+                    <Check size={16} />
+                    <span>{verificationMessage}</span>
+                  </div>
+                )}
+                {verificationStatus === 'error' && (
+                  <div className="mt-2 flex items-center gap-2 text-sm text-red-600">
+                    <XCircle size={16} />
+                    <span>{verificationMessage}</span>
+                  </div>
+                )}
+                {verificationStatus === 'idle' && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Click "Verify" to check if the agent is accessible
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* A2A Support Section */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-base font-medium text-gray-900">A2A Protocol Support</h2>
+                <p className="text-sm text-gray-500 mt-1">Does this agent support A2A protocol?</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
                 <input
-                  type="url"
-                  id="url"
-                  name="url"
-                  required
-                  value={formData.url}
-                  onChange={handleInputChange}
-                  placeholder="https://my-agent.example.com"
-                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                  type="checkbox"
+                  checked={supportsA2A}
+                  onChange={(e) => setSupportsA2A(e.target.checked)}
+                  className="sr-only peer"
                 />
-              </div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+              </label>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="version" className="block text-theme-sm font-medium text-gray-700 mb-2">
-                    Version *
-                  </label>
-                  <input
-                    type="text"
-                    id="version"
-                    name="version"
-                    required
-                    value={formData.version}
-                    onChange={handleInputChange}
-                    placeholder="0.1.0"
-                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
-                  />
+            {supportsA2A && (
+              <div className="space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="version" className="block text-theme-sm font-medium text-gray-700 mb-2">
+                      Agent Version *
+                    </label>
+                    <input
+                      type="text"
+                      id="version"
+                      name="version"
+                      required={supportsA2A}
+                      value={formData.version}
+                      onChange={handleInputChange}
+                      placeholder="0.1.0"
+                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="protocol_version" className="block text-theme-sm font-medium text-gray-700 mb-2">
+                      Protocol Version *
+                    </label>
+                    <input
+                      type="text"
+                      id="protocol_version"
+                      name="protocol_version"
+                      required={supportsA2A}
+                      value={formData.protocol_version}
+                      onChange={handleInputChange}
+                      placeholder="0.3.0"
+                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label htmlFor="protocol_version" className="block text-theme-sm font-medium text-gray-700 mb-2">
-                    Protocol Version *
-                  </label>
-                  <input
-                    type="text"
-                    id="protocol_version"
-                    name="protocol_version"
-                    required
-                    value={formData.protocol_version}
-                    onChange={handleInputChange}
-                    placeholder="0.3.0"
-                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor="preferred_transport" className="block text-theme-sm font-medium text-gray-700 mb-2">
-                    Preferred Transport
+                    Preferred Transport *
                   </label>
                   <select
                     id="preferred_transport"
                     name="preferred_transport"
+                    required={supportsA2A}
                     value={formData.preferred_transport}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
@@ -281,45 +410,23 @@ export default function RegisterAgent() {
                     onChange={(e) => setPlatform(e.target.value)}
                     className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
                   >
-                    <option value="generic">Generic (기본)</option>
+                    <option value="none">Select platform (optional)</option>
                     <option value="agno">Agno</option>
-                    <option value="langchain">LangChain</option>
+                    <option value="adk">ADK (Agent Development Kit)</option>
                     <option value="autogen">AutoGen</option>
-                    <option value="custom">Custom</option>
+                    <option value="langgraph">LangGraph</option>
                   </select>
                   <p className="text-xs text-gray-500 mt-1.5">
-                    사용하는 Agent 개발 플랫폼을 선택하세요
+                    Select the development framework used to build this agent
                   </p>
                 </div>
               </div>
-
-              {/* Agno Agent ID */}
-              {platform === 'agno' && (
-                <div>
-                  <label htmlFor="agentId" className="block text-theme-sm font-medium text-gray-700 mb-2">
-                    Agent ID <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="agentId"
-                    name="agentId"
-                    required={platform === 'agno'}
-                    value={agentId}
-                    onChange={(e) => setAgentId(e.target.value)}
-                    placeholder="e.g., web-search-agent"
-                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
-                  />
-                  <p className="text-xs text-gray-500 mt-1.5">
-                    Agno agent의 고유 ID (예: web-search-agent)
-                  </p>
-                </div>
-              )}
-            </div>
+            )}
           </div>
 
           {/* Skills */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6">
-            <h2 className="text-base font-medium text-gray-900 mb-5">Skills</h2>
+            <h2 className="text-base font-medium text-gray-900 mb-5">Skills (Optional)</h2>
 
             {/* Existing Skills */}
             {formData.skills && formData.skills.length > 0 && (
@@ -420,7 +527,7 @@ export default function RegisterAgent() {
                       Streaming Support
                     </label>
                     <p className="text-xs text-gray-500 mt-1">
-                      Agent can stream responses in real-time (e.g., like ChatGPT)
+                      Agent can stream responses in real-time
                     </p>
                   </div>
                 </div>
@@ -439,7 +546,7 @@ export default function RegisterAgent() {
                       Push Notifications
                     </label>
                     <p className="text-xs text-gray-500 mt-1">
-                      Agent can proactively send updates to clients (e.g., task completion alerts)
+                      Agent can proactively send updates to clients
                     </p>
                   </div>
                 </div>
@@ -458,92 +565,9 @@ export default function RegisterAgent() {
                       State Transition History
                     </label>
                     <p className="text-xs text-gray-500 mt-1">
-                      Agent tracks and exposes task state change history (pending → processing → completed)
+                      Agent tracks and exposes task state change history
                     </p>
                   </div>
-                </div>
-
-                <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
-                  <p className="text-sm text-blue-700">
-                    <strong>A2A Protocol:</strong> These capabilities help clients understand what your agent can do and how to interact with it.
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Health Check */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6">
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h2 className="text-base font-medium text-gray-900">Health Check (Optional)</h2>
-                <p className="text-sm text-gray-500 mt-1">Configure automatic health monitoring for your agent</p>
-              </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={enableHealthCheck}
-                  onChange={(e) => setEnableHealthCheck(e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
-              </label>
-            </div>
-
-            {enableHealthCheck && (
-              <div className="space-y-5">
-                <div>
-                  <label htmlFor="healthCheckUrl" className="block text-theme-sm font-medium text-gray-700 mb-2">
-                    Health Check URL *
-                  </label>
-                  <input
-                    type="url"
-                    id="healthCheckUrl"
-                    value={healthCheckUrl}
-                    onChange={(e) => setHealthCheckUrl(e.target.value)}
-                    placeholder="https://my-agent.example.com/health"
-                    required={enableHealthCheck}
-                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
-                  />
-                  <p className="text-xs text-gray-500 mt-2">The endpoint will be checked every 5 minutes</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="healthCheckTimeout" className="block text-theme-sm font-medium text-gray-700 mb-2">
-                      Timeout (seconds)
-                    </label>
-                    <input
-                      type="number"
-                      id="healthCheckTimeout"
-                      value={healthCheckTimeout}
-                      onChange={(e) => setHealthCheckTimeout(parseInt(e.target.value))}
-                      min="1"
-                      max="60"
-                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="healthCheckExpectedStatus" className="block text-theme-sm font-medium text-gray-700 mb-2">
-                      Expected Status Code
-                    </label>
-                    <input
-                      type="number"
-                      id="healthCheckExpectedStatus"
-                      value={healthCheckExpectedStatus}
-                      onChange={(e) => setHealthCheckExpectedStatus(parseInt(e.target.value))}
-                      min="100"
-                      max="599"
-                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
-                    />
-                  </div>
-                </div>
-
-                <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
-                  <p className="text-sm text-blue-700">
-                    <strong>Note:</strong> If the health check fails 3 times consecutively, the agent will be marked as inactive.
-                  </p>
                 </div>
               </div>
             )}
@@ -553,7 +577,7 @@ export default function RegisterAgent() {
           <div className="flex gap-4">
             <button
               type="submit"
-              disabled={loading || success}
+              disabled={loading || success || verificationStatus !== 'success'}
               className="flex items-center gap-2 px-6 py-3 bg-brand-500 hover:bg-brand-600 disabled:bg-brand-400 disabled:cursor-not-allowed text-white rounded-lg font-medium shadow-theme-xs transition-colors"
             >
               {loading ? (
