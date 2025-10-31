@@ -97,7 +97,7 @@ include = ["backend*"]
 "backend.proto.generated" = ["*.proto"]
 
 [tool.setuptools.dynamic]
-version = {attr = "backend.__version__"}
+version = {attr = "backend.app.__version__"}
 
 [tool.black]
 line-length = 88
