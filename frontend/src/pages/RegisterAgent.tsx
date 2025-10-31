@@ -234,9 +234,9 @@ export default function RegisterAgent() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Basic Information */}
+          {/* 1. Basic Information */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6">
-            <h2 className="text-base font-medium text-gray-900 mb-5">Basic Information</h2>
+            <h2 className="text-base font-medium text-gray-900 mb-5">1. Basic Information</h2>
 
             <div className="space-y-5">
               <div>
@@ -270,67 +270,87 @@ export default function RegisterAgent() {
                   className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
                 />
               </div>
-
-              {/* Health Check URL with Verification */}
-              <div>
-                <label htmlFor="healthCheckUrl" className="block text-theme-sm font-medium text-gray-700 mb-2">
-                  Agent Health Check Endpoint *
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    id="healthCheckUrl"
-                    required
-                    value={healthCheckUrl}
-                    onChange={(e) => {
-                      setHealthCheckUrl(e.target.value);
-                      setVerificationStatus('idle');
-                      setVerificationMessage('');
-                    }}
-                    placeholder="https://my-agent.example.com/health"
-                    className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleHealthCheckVerification}
-                    disabled={!healthCheckUrl || verifying}
-                    className="px-4 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors"
-                  >
-                    {verifying ? (
-                      <Loader2 className="animate-spin" size={20} />
-                    ) : (
-                      'Verify'
-                    )}
-                  </button>
-                </div>
-
-                {/* Verification Status */}
-                {verificationStatus === 'success' && (
-                  <div className="mt-2 flex items-center gap-2 text-sm text-green-600">
-                    <Check size={16} />
-                    <span>{verificationMessage}</span>
-                  </div>
-                )}
-                {verificationStatus === 'error' && (
-                  <div className="mt-2 flex items-center gap-2 text-sm text-red-600">
-                    <XCircle size={16} />
-                    <span>{verificationMessage}</span>
-                  </div>
-                )}
-                {verificationStatus === 'idle' && (
-                  <p className="text-xs text-gray-500 mt-2">
-                    Click "Verify" to check if the agent is accessible
-                  </p>
-                )}
-              </div>
             </div>
           </div>
 
-          {/* A2A Support Section */}
+          {/* 2. Health Check Verification */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <h2 className="text-base font-medium text-gray-900 mb-5">2. Agent Health Check</h2>
+            <p className="text-sm text-gray-500 mb-5">
+              Enter your agent's health check endpoint. We will verify that the agent is accessible before registration.
+            </p>
+
+            <div>
+              <label htmlFor="healthCheckUrl" className="block text-theme-sm font-medium text-gray-700 mb-2">
+                Agent Health Check Endpoint *
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  id="healthCheckUrl"
+                  required
+                  value={healthCheckUrl}
+                  onChange={(e) => {
+                    setHealthCheckUrl(e.target.value);
+                    setVerificationStatus('idle');
+                    setVerificationMessage('');
+                  }}
+                  placeholder="https://my-agent.example.com/health"
+                  className="flex-1 px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={handleHealthCheckVerification}
+                  disabled={!healthCheckUrl || verifying}
+                  className="px-4 py-2.5 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
+                >
+                  {verifying ? (
+                    <>
+                      <Loader2 className="animate-spin" size={20} />
+                      <span>Verifying...</span>
+                    </>
+                  ) : (
+                    'Verify'
+                  )}
+                </button>
+              </div>
+
+              {/* Verification Status */}
+              {verificationStatus === 'success' && (
+                <div className="mt-3 p-3 rounded-lg bg-green-50 border border-green-200">
+                  <div className="flex items-center gap-2 text-sm text-green-700 font-medium">
+                    <Check size={18} />
+                    <span>{verificationMessage}</span>
+                  </div>
+                  <p className="text-xs text-green-600 mt-1 ml-6">
+                    Your agent is accessible and ready for registration
+                  </p>
+                </div>
+              )}
+              {verificationStatus === 'error' && (
+                <div className="mt-3 p-3 rounded-lg bg-red-50 border border-red-200">
+                  <div className="flex items-center gap-2 text-sm text-red-700 font-medium">
+                    <XCircle size={18} />
+                    <span>{verificationMessage}</span>
+                  </div>
+                  <p className="text-xs text-red-600 mt-1 ml-6">
+                    Please check your agent URL and try again
+                  </p>
+                </div>
+              )}
+              {verificationStatus === 'idle' && (
+                <p className="text-xs text-gray-500 mt-2">
+                  Click "Verify" to check if the agent is accessible
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* 3. A2A Support Section (Optional) */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-base font-medium text-gray-900">A2A Protocol Support</h2>
+                <h2 className="text-base font-medium text-gray-900">3. A2A Protocol Support (Optional)</h2>
                 <p className="text-sm text-gray-500 mt-1">Does this agent support A2A protocol?</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -424,9 +444,9 @@ export default function RegisterAgent() {
             )}
           </div>
 
-          {/* Skills */}
+          {/* 4. Skills */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6">
-            <h2 className="text-base font-medium text-gray-900 mb-5">Skills (Optional)</h2>
+            <h2 className="text-base font-medium text-gray-900 mb-5">4. Skills (Optional)</h2>
 
             {/* Existing Skills */}
             {formData.skills && formData.skills.length > 0 && (
@@ -493,11 +513,11 @@ export default function RegisterAgent() {
             </div>
           </div>
 
-          {/* Capabilities */}
+          {/* 5. Capabilities */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-base font-medium text-gray-900">Capabilities (Optional)</h2>
+                <h2 className="text-base font-medium text-gray-900">5. Capabilities (Optional)</h2>
                 <p className="text-sm text-gray-500 mt-1">Define what your agent can do</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
