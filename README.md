@@ -21,46 +21,147 @@ AI 에이전트를 등록, 검색, 관리하는 중앙 레지스트리 시스템
 - **사용자 관리**: 회원가입, 로그인, 사용자 정보 조회
 
 ### 4. 데이터 영속성
-- **파일 기반 저장소**: JSON 파일로 데이터 영구 저장
-- **인메모리 모드**: 개발/테스트용 임시 저장소 지원
-- **자동 로딩**: 서버 재시작 시 저장된 데이터 자동 복원
+- **PostgreSQL + pgvector**: 프로덕션급 관계형 데이터베이스
+- **JSONB 지원**: 유연한 스키마로 agent card 저장
+- **Vector Search**: pgvector를 활용한 semantic search 지원
+- **트랜잭션 관리**: ACID 보장으로 데이터 무결성 유지
 
 ## 디렉터리 구조
 
+### 전체 구조
 ```
 a2a-registry/
 ├── backend/              # FastAPI 백엔드 서버
-│   ├── __init__.py
-│   ├── auth.py          # JWT 인증 및 권한 관리
+│   ├── app/             # 애플리케이션 메인 디렉토리
+│   │   ├── __init__.py
+│   │   ├── main.py      # FastAPI 앱 생성 및 라이프사이클
+│   │   ├── api/         # API 엔드포인트 (버전별)
+│   │   │   └── v1/
+│   │   │       ├── __init__.py
+│   │   │       ├── agents.py      # Agent CRUD 엔드포인트
+│   │   │       ├── extensions.py  # Extension 엔드포인트
+│   │   │       ├── health.py      # Health check 엔드포인트
+│   │   │       └── auth.py        # 인증 엔드포인트
+│   │   ├── core/        # 핵심 모듈
+│   │   │   ├── __init__.py
+│   │   │   ├── config.py          # 설정 관리
+│   │   │   ├── database.py        # DB 연결 및 세션
+│   │   │   ├── security.py        # JWT, 인증 로직
+│   │   │   └── deps.py            # 의존성 주입
+│   │   ├── models/      # Database 모델 (SQLAlchemy)
+│   │   │   ├── __init__.py
+│   │   │   ├── agent.py           # Agent DB 모델
+│   │   │   ├── extension.py       # Extension DB 모델
+│   │   │   ├── health.py          # HealthStatus DB 모델
+│   │   │   └── user.py            # User DB 모델
+│   │   ├── schemas/     # API 스키마 (Pydantic)
+│   │   │   ├── __init__.py
+│   │   │   ├── agent.py           # Agent 요청/응답 스키마
+│   │   │   ├── extension.py       # Extension 스키마
+│   │   │   └── auth.py            # Auth 스키마
+│   │   └── services/    # 비즈니스 로직
+│   │       ├── __init__.py
+│   │       ├── agent_service.py   # Agent 비즈니스 로직
+│   │       ├── extension_service.py # Extension 비즈니스 로직
+│   │       ├── health_service.py  # Health check 로직
+│   │       └── vector_service.py  # Vector search 로직
+│   ├── graphql/         # GraphQL API (선택적)
+│   ├── proto/           # gRPC (선택적)
 │   ├── cli.py           # CLI 진입점
-│   ├── config.py        # 환경 설정
-│   ├── health.py        # 헬스 체크 스케줄러
-│   ├── models.py        # 데이터 모델 (Pydantic)
-│   ├── server.py        # FastAPI 애플리케이션
-│   └── storage.py       # 저장소 추상화 계층
+│   └── exceptions.py    # 예외 정의
 │
 ├── frontend/            # React + TypeScript 프론트엔드
 │   ├── src/
 │   │   ├── components/  # UI 컴포넌트
 │   │   ├── contexts/    # React Context (AuthContext)
-│   │   ├── pages/       # 페이지 컴포넌트 (Home, Login)
+│   │   ├── pages/       # 페이지 컴포넌트
 │   │   ├── types/       # TypeScript 타입 정의
 │   │   └── utils/       # 유틸리티 함수 (API client)
 │   ├── package.json
 │   └── vite.config.ts
 │
+├── deploy/              # 배포 관련
+│   ├── docker-compose.yml  # Docker Compose 설정
+│   ├── Dockerfile.backend  # Backend 이미지
+│   └── Dockerfile.frontend # Frontend 이미지
+│
 ├── config/              # 설정 파일
 │   └── roles.yaml       # 역할 정의 및 기본 사용자
 │
-├── data/                # 데이터 저장소 (FileStorage 모드)
-│   ├── agents.json      # 등록된 에이전트
-│   ├── users.json       # 사용자 계정
-│   └── health_status.json  # 헬스 체크 상태
-│
 ├── tests/               # 테스트 코드
-├── .env                 # 환경 변수
+├── .env.example         # 환경 변수 예시
 ├── pyproject.toml       # Python 프로젝트 설정
 └── README.md
+```
+
+### Backend 아키텍처 (레이어 구조)
+
+```
+┌─────────────────────────────────────────────┐
+│           Frontend (React)                  │
+└─────────────────┬───────────────────────────┘
+                  │ HTTP Request
+                  ↓
+┌─────────────────────────────────────────────┐
+│  API Layer (api/v1/)                        │
+│  - HTTP 요청/응답 처리                       │
+│  - 인증/권한 확인                            │
+│  - 입력 검증 (Pydantic schemas)             │
+└─────────────────┬───────────────────────────┘
+                  │
+                  ↓
+┌─────────────────────────────────────────────┐
+│  Service Layer (services/)                  │
+│  - 비즈니스 로직                             │
+│  - 트랜잭션 관리                             │
+│  - 여러 DB 작업 조합                         │
+│  - 외부 서비스 호출                          │
+└─────────────────┬───────────────────────────┘
+                  │
+                  ↓
+┌─────────────────────────────────────────────┐
+│  Data Layer (models/)                       │
+│  - SQLAlchemy ORM 모델                      │
+│  - DB 테이블 매핑                            │
+│  - CRUD 작업                                 │
+└─────────────────┬───────────────────────────┘
+                  │
+                  ↓
+┌─────────────────────────────────────────────┐
+│  PostgreSQL + pgvector                      │
+│  - agents 테이블                             │
+│  - extensions 테이블                         │
+│  - health_status 테이블                      │
+│  - users 테이블                              │
+└─────────────────────────────────────────────┘
+```
+
+### 데이터 흐름 예시 (Agent 등록)
+
+```
+1. Frontend
+   POST /api/v1/agents
+   { "name": "my-agent", "url": "...", ... }
+
+2. API Layer (api/v1/agents.py)
+   - JWT 토큰 검증
+   - AgentCard 스키마 검증
+   - AgentService 호출
+
+3. Service Layer (services/agent_service.py)
+   - 비즈니스 검증 (중복 체크, URL 유효성)
+   - Agent 생성/업데이트
+   - Health status 초기화
+   - Vector embedding 생성
+   - 트랜잭션 커밋
+
+4. Data Layer (models/agent.py)
+   - AgentModel 인스턴스 생성
+   - SQLAlchemy로 INSERT/UPDATE
+
+5. PostgreSQL
+   - agents 테이블에 저장
+   - health_status 테이블에 초기 상태 저장
 ```
 
 ## API 엔드포인트
@@ -139,11 +240,14 @@ cd frontend && npm run dev
 
 ### Backend
 - **FastAPI**: 고성능 Python 웹 프레임워크
+- **SQLAlchemy 2.0**: 비동기 ORM
+- **PostgreSQL**: 프로덕션 데이터베이스
+- **pgvector**: Vector similarity search
+- **asyncpg**: PostgreSQL 비동기 드라이버
 - **Pydantic**: 데이터 검증 및 직렬화
 - **python-jose**: JWT 토큰 생성/검증
-- **passlib**: 비밀번호 해싱 (pbkdf2_sha256)
+- **passlib**: 비밀번호 해싱
 - **APScheduler**: 백그라운드 작업 스케줄링
-- **httpx**: 비동기 HTTP 클라이언트
 
 ### Frontend
 - **React 18**: UI 라이브러리
