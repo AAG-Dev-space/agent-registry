@@ -106,45 +106,87 @@ docker build -f deploy/Dockerfile.frontend -t a2a-registry-frontend:latest .
 - 타임아웃: 3초
 - 재시도: 3회
 
+## 🔄 코드 업데이트 방법
+
+### Backend 코드만 수정한 경우
+```bash
+./update.sh backend
+```
+- ✅ DB 데이터 유지
+- ⏱️ 약 30초-1분 소요
+- 사용 예: Python 코드 수정, API 로직 변경
+
+### Frontend 코드만 수정한 경우
+```bash
+./update.sh frontend
+```
+- ✅ DB 데이터 유지
+- ⏱️ 약 30초-1분 소요
+- 사용 예: React 코드 수정, UI 변경
+
+### 전체 업데이트 (Git pull 후)
+```bash
+./update.sh all
+```
+- ✅ DB 데이터 유지
+- ⏱️ 약 1-2분 소요
+
+### 완전 초기화 (모든 데이터 삭제)
+```bash
+./update.sh clean
+```
+- ⚠️ **주의**: 모든 DB 데이터가 삭제됩니다!
+
+### 수동 업데이트 (스크립트 없이)
+```bash
+# Backend만 재빌드 & 재시작
+docker compose build backend
+docker compose up -d backend
+
+# Frontend만
+docker compose build frontend
+docker compose up -d frontend
+
+# 전체
+docker compose build
+docker compose up -d
+```
+
 ## 🛠️ 관리 명령어
 
 ### 로그 확인
 ```bash
-# 전체 로그
-docker-compose logs -f
+# 실시간 로그 (update.sh 사용)
+./update.sh logs backend
+./update.sh logs frontend
 
-# Backend만
-docker-compose logs -f backend
-
-# Frontend만
-docker-compose logs -f frontend
+# 또는 직접 사용
+docker compose logs -f backend
+docker compose logs -f frontend
+docker compose logs -f  # 전체 로그
 ```
 
 ### 컨테이너 상태 확인
 ```bash
-docker-compose ps
+docker compose ps
 ```
 
 ### 컨테이너 재시작
 ```bash
-# 전체 재시작
-docker-compose restart
-
-# Backend만
-docker-compose restart backend
-
-# Frontend만
-docker-compose restart frontend
+# 빌드 없이 빠른 재시작
+docker compose restart backend
+docker compose restart frontend
+docker compose restart  # 전체
 ```
 
 ### 컨테이너 중지
 ```bash
-docker-compose down
+docker compose down
 ```
 
 ### 데이터 포함 완전 삭제
 ```bash
-docker-compose down -v
+docker compose down -v  # ⚠️ 모든 DB 데이터 삭제됨!
 ```
 
 ## 🔍 문제 해결
