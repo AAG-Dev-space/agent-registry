@@ -1,6 +1,8 @@
 """Health status API schemas."""
 
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 
 class HealthStatusResponse(BaseModel):
@@ -14,3 +16,19 @@ class HealthStatusResponse(BaseModel):
     last_error: str | None = None
     created_at: str | None = None
     updated_at: str | None = None
+
+
+class HealthCheckVerifyRequest(BaseModel):
+    """Health check URL verification request schema."""
+
+    url: str = Field(..., description="Health check URL to verify")
+
+
+class HealthCheckVerifyResponse(BaseModel):
+    """Health check URL verification response schema."""
+
+    success: bool
+    response_time_ms: int | None = None
+    status_code: int | None = None
+    agent_data: dict[str, Any] | None = None
+    error: str | None = None

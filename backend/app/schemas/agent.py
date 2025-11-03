@@ -48,3 +48,19 @@ class AgentSearchRequest(BaseModel):
     query: str | None = None
     tags: list[str] | None = None
     limit: int = Field(default=20, le=100)
+
+
+class HealthCheckRequest(BaseModel):
+    """Health check verification request schema."""
+
+    url: str = Field(..., description="Health check URL to verify")
+
+
+class HealthCheckResponse(BaseModel):
+    """Health check verification response schema."""
+
+    success: bool
+    response_time_ms: int | None = None
+    status_code: int | None = None
+    agent_data: dict[str, Any] | None = None
+    error: str | None = None

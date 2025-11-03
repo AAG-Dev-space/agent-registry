@@ -8,7 +8,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.core.deps import get_current_active_user, get_db
 from backend.app.models.user import UserModel
-from backend.app.schemas.health import HealthStatusResponse
+from backend.app.schemas.health import (
+    HealthCheckVerifyRequest,
+    HealthCheckVerifyResponse,
+    HealthStatusResponse,
+)
 from backend.app.services.health_service import HealthService
 
 logger = logging.getLogger(__name__)
@@ -67,4 +71,32 @@ async def list_all_health_statuses(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to list health statuses"
+        )
+
+
+@router.post("/verify", response_model=HealthCheckVerifyResponse)
+async def verify_health_check_url(
+    request: HealthCheckVerifyRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """Verify a health check URL.
+
+    Public endpoint - no authentication required.
+    This endpoint makes an HTTP request to the provided URL
+    and bypasses proxy settings for internal/private network access.
+
+    Args:
+        request: Health check verification request with URL
+    """
+    try:
+        service = HealthService(db)
+        result = await service.verify_url(request.url)
+
+        return HealthCheckVerifyResponse(**result)
+
+    except Exception as e:
+        logger.error(f"Failed to verify health check URL: {e}")
+        return HealthCheckVerifyResponse(
+            success=False,
+            error=f"Verification failed: {str(e)}"
         )
