@@ -38,6 +38,13 @@ dependencies = [
     "uvicorn>=0.20.0",
     "click>=8.0.0",
     "jsonrpcserver>=5.0.0",
+    # GraphQL dependencies
+    "strawberry-graphql[fastapi]>=0.234.0",
+    "pyjwt>=2.8.0",
+    "redis>=5.0.0",
+    # Vector search dependencies
+    "sentence-transformers>=2.2.0",
+    "numpy>=1.21.0",
 ]
 
 [project.optional-dependencies]
@@ -46,6 +53,7 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.0.0",
     "mypy-protobuf>=3.4.0",
+    "types-grpcio>=1.0.0",
     "pytest>=7.0.0",
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.0.0",
@@ -77,8 +85,10 @@ where = ["src"]
 [tool.setuptools.package-data]
 "a2a_registry.proto.generated" = ["*.proto"]
 
-[tool.setuptools.dynamic]
-version = {attr = "a2a_registry.__version__"}
+[tool.setuptools_scm]
+write_to = "src/a2a_registry/_version.py"
+version_scheme = "release-branch-semver"
+local_scheme = "no-local-version"
 
 [tool.black]
 line-length = 88
@@ -133,6 +143,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "src/a2a_registry/proto/generated/*" = ["ALL"]
+"src/a2a_registry/_version.py" = ["ALL"]
 
 [tool.mypy]
 python_version = "3.9"
