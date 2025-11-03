@@ -1,1 +1,0 @@
-"""Tests for a2a-registry."""

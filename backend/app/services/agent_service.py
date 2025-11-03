@@ -40,7 +40,8 @@ class AgentService:
         if not agent_id:
             raise ValueError("Agent name is required")
 
-        if not agent_card.get("url"):
+        agent_url = agent_card.get("url")
+        if not agent_url:
             raise ValueError("Agent URL is required")
 
         # Check if agent already exists
@@ -78,11 +79,12 @@ class AgentService:
             )
             self.db.add(agent_model)
 
-            # Initialize health status
+            # Initialize health status as unknown
             health_status = HealthStatusModel(
                 agent_name=agent_id,
-                status="active",
+                status="unknown",
                 last_check_at=utc_now(),
+                response_time_ms=None,
                 failure_count=0,
             )
             self.db.add(health_status)

@@ -25,6 +25,9 @@ async def register_agent(
     """Register a new agent or update existing one.
 
     Requires authentication. Any authenticated user can register agents.
+
+    Args:
+        agent_card: Agent card information
     """
     try:
         service = AgentService(db)
@@ -159,3 +162,5 @@ async def search_agents(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to search agents"
         )
+
+
