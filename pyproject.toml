@@ -24,7 +24,7 @@ dependencies = [
     "fastapi>=0.95.0",
     "httpx>=0.28.1",
     "httpx-sse>=0.4.0",
-    "pydantic>=2.11.3",
+    "pydantic[email]>=2.11.3",
     "sse-starlette",
     "starlette",
     "protobuf>=5.29.5",
@@ -97,7 +97,7 @@ include = ["backend*"]
 "backend.proto.generated" = ["*.proto"]
 
 [tool.setuptools.dynamic]
-version = {attr = "backend.__version__"}
+version = {attr = "backend.app.__version__"}
 
 [tool.black]
 line-length = 88

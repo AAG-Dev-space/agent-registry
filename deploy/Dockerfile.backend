@@ -39,15 +39,14 @@ COPY data /app/data
 # Set environment variables
 ENV PATH="/opt/venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
-    STORAGE_TYPE=file \
-    STORAGE_DATA_DIR=/app/data
+    PYTHONPATH=/app
 
 # Expose port
 EXPOSE 8000
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
 
-# Run the application
-CMD ["a2a-registry", "serve", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application using uvicorn directly with the new app structure
+CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
