@@ -43,6 +43,12 @@ class RegistryConfig:
         self.storage_type = os.getenv("STORAGE_TYPE", "memory").lower()
         self.storage_data_dir = os.getenv("STORAGE_DATA_DIR", "/data")
 
+        # PostgreSQL configuration
+        self.database_url = os.getenv(
+            "DATABASE_URL",
+            "postgresql+asyncpg://a2a_user:a2a_password@localhost:5432/a2a_registry"
+        )
+
     @property
     def is_production_mode(self) -> bool:
         """Check if registry is running in production mode."""

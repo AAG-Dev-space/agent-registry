@@ -37,10 +37,107 @@ export default function AgentDetail() {
     }
   };
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedUrl(true);
-    setTimeout(() => setCopiedUrl(false), 2000);
+  const copyToClipboard = async (text: string) => {
+    try {
+      // Try modern clipboard API first (HTTPS/localhost only)
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback for HTTP environments
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
+      setCopiedUrl(true);
+      setTimeout(() => setCopiedUrl(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+      alert('Failed to copy to clipboard. Please copy manually.');
+    }
+  };
+
+  // Get API URL dynamically
+  const getApiUrl = () => {
+    const currentUrl = window.location.origin;
+    // If running on port 7600 (frontend), backend is on 7601
+    if (currentUrl.includes(':7600')) {
+      return currentUrl.replace(':7600', ':7601');
+    }
+    // Otherwise assume backend is on /api
+    return `${currentUrl}/api`;
+  };
+
+  const apiUrl = getApiUrl();
+
+  // Get endpoint URL based on platform
+  const getEndpointUrl = () => {
+    const platform = agent?.metadata?.platform || 'generic';
+    const baseUrl = agent?.url || '';
+
+    if (platform === 'agno') {
+      // Agno uses /a2a/message/send endpoint
+      return `${baseUrl}/a2a/message/send`;
+    }
+
+    // Generic uses base URL
+    return baseUrl;
+  };
+
+  // Get message example based on platform
+  const getMessageExample = () => {
+    const platform = agent?.metadata?.platform || 'generic';
+    const exampleMessage = agent?.skills && agent.skills[0]?.examples?.[0] || 'Hello, can you help me?';
+    const agentIdFromMeta = agent?.metadata?.agentId || 'your-agent-id';
+
+    if (platform === 'agno') {
+      // Agno uses A2A v0.3.0 standard with /a2a/message/send endpoint
+      return {
+        jsonrpc: '2.0',
+        method: 'message/send',
+        params: {
+          message: {
+            role: 'user',
+            agentId: agentIdFromMeta,
+            messageId: 'msg-123',
+            parts: [
+              {
+                kind: 'text',
+                text: exampleMessage
+              }
+            ]
+          }
+        },
+        id: 'request-123'
+      };
+    }
+
+    // Generic JSON-RPC format
+    return {
+      jsonrpc: '2.0',
+      method: 'message/send',
+      params: {
+        message: {
+          role: 'user',
+          parts: [
+            {
+              type: 'text',
+              content: exampleMessage
+            }
+          ]
+        }
+      },
+      id: '1'
+    };
   };
 
   const handleDelete = async () => {
@@ -440,12 +537,12 @@ export default function AgentDetail() {
               <div className="relative">
                 <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
                   <code className="text-xs text-gray-100 font-mono">
-                    {`curl http://localhost:7601/agents/${agent.name}`}
+                    {`curl ${apiUrl}/agents/${encodeURIComponent(agent.name)}`}
                   </code>
                 </div>
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(`curl http://localhost:7601/agents/${agent.name}`);
+                    navigator.clipboard.writeText(`curl ${apiUrl}/agents/${encodeURIComponent(agent.name)}`);
                     setCopiedUrl(true);
                     setTimeout(() => setCopiedUrl(false), 2000);
                   }}
@@ -520,56 +617,31 @@ export default function AgentDetail() {
 
             {/* Step 2: Send Message */}
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">2. Send Message (JSON-RPC)</h3>
+              <div className="flex items-center gap-2 mb-3">
+                <h3 className="text-sm font-semibold text-gray-900">2. Send Message (JSON-RPC)</h3>
+                {agent.metadata?.platform && agent.metadata.platform !== 'generic' && (
+                  <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded">
+                    {agent.metadata.platform}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-gray-600 mb-3">
                 Call the agent using JSON-RPC 2.0 over HTTP:
               </p>
               <div className="relative">
                 <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
                   <pre className="text-xs text-gray-100 font-mono">
-{`curl -X POST ${agent.url} \\
+{`curl --noproxy "*" -X POST ${getEndpointUrl()} \\
   -H "Content-Type: application/json" \\
-  -d '{
-  "jsonrpc": "2.0",
-  "method": "message/send",
-  "params": {
-    "message": {
-      "role": "user",
-      "parts": [
-        {
-          "type": "text",
-          "content": "${agent.skills && agent.skills[0]?.examples?.[0] || 'Hello, can you help me?'}"
-        }
-      ]
-    }
-  },
-  "id": "1"
-}'`}
+  -d '${JSON.stringify(getMessageExample(), null, 2)}'`}
                   </pre>
                 </div>
                 <button
-                  onClick={() => {
-                    const curlCommand = `curl -X POST ${agent.url} \\
+                  onClick={async () => {
+                    const curlCommand = `curl --noproxy "*" -X POST ${getEndpointUrl()} \\
   -H "Content-Type: application/json" \\
-  -d '{
-  "jsonrpc": "2.0",
-  "method": "message/send",
-  "params": {
-    "message": {
-      "role": "user",
-      "parts": [
-        {
-          "type": "text",
-          "content": "${agent.skills && agent.skills[0]?.examples?.[0] || 'Hello, can you help me?'}"
-        }
-      ]
-    }
-  },
-  "id": "1"
-}'`;
-                    navigator.clipboard.writeText(curlCommand);
-                    setCopiedUrl(true);
-                    setTimeout(() => setCopiedUrl(false), 2000);
+  -d '${JSON.stringify(getMessageExample(), null, 2)}'`;
+                    await copyToClipboard(curlCommand);
                   }}
                   className="absolute top-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors"
                   title="Copy to clipboard"

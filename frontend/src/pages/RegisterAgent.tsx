@@ -40,6 +40,9 @@ export default function RegisterAgent() {
   const [pushNotifications, setPushNotifications] = useState(false);
   const [stateTransitionHistory, setStateTransitionHistory] = useState(false);
 
+  const [platform, setPlatform] = useState<string>('generic');
+  const [agentId, setAgentId] = useState<string>('');
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -97,6 +100,17 @@ export default function RegisterAgent() {
           push_notifications: pushNotifications,
           state_transition_history: stateTransitionHistory,
         };
+      }
+
+      // Add platform to metadata
+      if (!agentData.metadata) {
+        agentData.metadata = {};
+      }
+      agentData.metadata.platform = platform;
+
+      // Add agentId for Agno platform
+      if (platform === 'agno' && agentId) {
+        agentData.metadata.agentId = agentId;
       }
 
       await agentApi.registerAgent(agentData);
@@ -237,23 +251,69 @@ export default function RegisterAgent() {
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="preferred_transport" className="block text-theme-sm font-medium text-gray-700 mb-2">
-                  Preferred Transport
-                </label>
-                <select
-                  id="preferred_transport"
-                  name="preferred_transport"
-                  value={formData.preferred_transport}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
-                >
-                  <option value="JSONRPC">JSON-RPC</option>
-                  <option value="REST">REST</option>
-                  <option value="GRPC">gRPC</option>
-                  <option value="GRAPHQL">GraphQL</option>
-                </select>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="preferred_transport" className="block text-theme-sm font-medium text-gray-700 mb-2">
+                    Preferred Transport
+                  </label>
+                  <select
+                    id="preferred_transport"
+                    name="preferred_transport"
+                    value={formData.preferred_transport}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                  >
+                    <option value="JSONRPC">JSON-RPC</option>
+                    <option value="REST">REST</option>
+                    <option value="GRPC">gRPC</option>
+                    <option value="GRAPHQL">GraphQL</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="platform" className="block text-theme-sm font-medium text-gray-700 mb-2">
+                    Agent Platform
+                  </label>
+                  <select
+                    id="platform"
+                    name="platform"
+                    value={platform}
+                    onChange={(e) => setPlatform(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                  >
+                    <option value="generic">Generic (기본)</option>
+                    <option value="agno">Agno</option>
+                    <option value="langchain">LangChain</option>
+                    <option value="autogen">AutoGen</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    사용하는 Agent 개발 플랫폼을 선택하세요
+                  </p>
+                </div>
               </div>
+
+              {/* Agno Agent ID */}
+              {platform === 'agno' && (
+                <div>
+                  <label htmlFor="agentId" className="block text-theme-sm font-medium text-gray-700 mb-2">
+                    Agent ID <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="agentId"
+                    name="agentId"
+                    required={platform === 'agno'}
+                    value={agentId}
+                    onChange={(e) => setAgentId(e.target.value)}
+                    placeholder="e.g., web-search-agent"
+                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                  />
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    Agno agent의 고유 ID (예: web-search-agent)
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -299,6 +359,15 @@ export default function RegisterAgent() {
               <div>
                 <input
                   type="text"
+                  placeholder="Skill Name (e.g., Get Weather)"
+                  value={newSkill.name}
+                  onChange={(e) => setNewSkill((prev) => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
                   placeholder="Skill Description"
                   value={newSkill.description}
                   onChange={(e) => setNewSkill((prev) => ({ ...prev, description: e.target.value }))}
@@ -308,7 +377,7 @@ export default function RegisterAgent() {
               <button
                 type="button"
                 onClick={handleAddSkill}
-                disabled={!newSkill.id || !newSkill.description}
+                disabled={!newSkill.id || !newSkill.name || !newSkill.description}
                 className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-lg font-medium transition-colors"
               >
                 <PlusCircle size={18} />

@@ -119,6 +119,15 @@ async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events."""
     # Startup
     logger.info("Starting A2A Registry...")
+
+    # Initialize PostgreSQL database if using postgres storage
+    if config.storage_type in ("postgres", "postgresql"):
+        from .postgres_storage import PostgreSQLStorage
+        if isinstance(storage, PostgreSQLStorage):
+            await storage.initialize()
+            await storage.initialize_default_users()
+            logger.info("PostgreSQL database initialized")
+
     health_scheduler.start()
     logger.info("Health scheduler started")
 
@@ -128,6 +137,13 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down A2A Registry...")
     health_scheduler.stop()
     logger.info("Health scheduler stopped")
+
+    # Close database connections if using postgres storage
+    if config.storage_type in ("postgres", "postgresql"):
+        from .postgres_storage import PostgreSQLStorage
+        if isinstance(storage, PostgreSQLStorage):
+            await storage.close()
+            logger.info("PostgreSQL connections closed")
 
 
 def create_app() -> FastAPI:
