@@ -18,6 +18,7 @@ export default function RegisterAgent() {
 
   // A2A Support toggle
   const [supportsA2A, setSupportsA2A] = useState(false);
+  const [a2aEndpoint, setA2aEndpoint] = useState('');
 
   const [formData, setFormData] = useState<Partial<AgentCard>>({
     name: '',
@@ -176,6 +177,11 @@ export default function RegisterAgent() {
 
       // Add A2A support info
       agentData.metadata.supports_a2a = supportsA2A;
+
+      // If A2A is supported, add A2A endpoint
+      if (supportsA2A && a2aEndpoint) {
+        agentData.metadata.a2a_endpoint = a2aEndpoint;
+      }
 
       // If A2A is not supported, remove protocol fields
       if (!supportsA2A) {
@@ -346,12 +352,12 @@ export default function RegisterAgent() {
             </div>
           </div>
 
-          {/* 3. A2A Support Section (Optional) */}
+          {/* 3. A2A Protocol Support (Optional) */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h2 className="text-base font-medium text-gray-900">3. A2A Protocol Support (Optional)</h2>
-                <p className="text-sm text-gray-500 mt-1">Does this agent support A2A protocol?</p>
+                <p className="text-sm text-gray-500 mt-1">Enable if this agent supports the A2A protocol for agent-to-agent communication</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -366,6 +372,26 @@ export default function RegisterAgent() {
 
             {supportsA2A && (
               <div className="space-y-5">
+                {/* A2A Endpoint */}
+                <div>
+                  <label htmlFor="a2aEndpoint" className="block text-theme-sm font-medium text-gray-700 mb-2">
+                    A2A Endpoint URL *
+                  </label>
+                  <input
+                    type="url"
+                    id="a2aEndpoint"
+                    required={supportsA2A}
+                    value={a2aEndpoint}
+                    onChange={(e) => setA2aEndpoint(e.target.value)}
+                    placeholder="https://my-agent.example.com/a2a"
+                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                  />
+                  <p className="text-xs text-gray-500 mt-1.5">
+                    The endpoint where other agents can connect to this agent via A2A protocol
+                  </p>
+                </div>
+
+                {/* Version and Protocol Version */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="version" className="block text-theme-sm font-medium text-gray-700 mb-2">
@@ -400,6 +426,7 @@ export default function RegisterAgent() {
                   </div>
                 </div>
 
+                {/* Preferred Transport */}
                 <div>
                   <label htmlFor="preferred_transport" className="block text-theme-sm font-medium text-gray-700 mb-2">
                     Preferred Transport *
@@ -419,6 +446,7 @@ export default function RegisterAgent() {
                   </select>
                 </div>
 
+                {/* Platform */}
                 <div>
                   <label htmlFor="platform" className="block text-theme-sm font-medium text-gray-700 mb-2">
                     Agent Platform

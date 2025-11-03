@@ -19,6 +19,9 @@ services:
       start_period: 10s
 
   backend:
+    build:
+      context: ..
+      dockerfile: backend/Dockerfile
     image: a2a-registry-backend:latest
     container_name: a2a-registry-backend
     restart: unless-stopped
@@ -46,6 +49,9 @@ services:
       start_period: 20s
 
   frontend:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
     image: a2a-registry-frontend:latest
     container_name: a2a-registry-frontend
     restart: unless-stopped
