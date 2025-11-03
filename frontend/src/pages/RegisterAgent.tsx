@@ -54,7 +54,7 @@ export default function RegisterAgent() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // Health Check 자동 검증
+  // Health Check 자동 검증 - 백엔드 API를 통해 검증 (프록시 우회)
   const handleHealthCheckVerification = async () => {
     if (!healthCheckUrl) return;
 
@@ -62,46 +62,35 @@ export default function RegisterAgent() {
     setVerificationStatus('idle');
     setVerificationMessage('');
 
-    const startTime = performance.now();
-
     try {
-      // Directly call the health check URL
-      const response = await fetch(healthCheckUrl, {
-        method: 'GET',
+      // Call backend API to verify health check URL
+      // Backend bypasses proxy for internal/private network access
+      const response = await fetch('/api/health/verify', {
+        method: 'POST',
         headers: {
-          'Accept': 'application/json',
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({ url: healthCheckUrl }),
       });
 
-      const responseTime = Math.round(performance.now() - startTime);
+      const result = await response.json();
 
-      if (response.ok) {
-        try {
-          const data = await response.json();
+      if (result.success) {
+        setVerificationStatus('success');
+        setVerificationMessage(`✓ Agent verified successfully (${result.response_time_ms}ms)`);
 
-          // Check if response looks like an agent card (has name or url)
-          if (typeof data === 'object' && (data.name || data.url)) {
-            setVerificationStatus('success');
-            setVerificationMessage(`✓ Agent verified successfully (${responseTime}ms)`);
-
-            // Auto-fill agent card data if available
-            setFormData(prev => ({
-              ...prev,
-              name: prev.name || data.name,
-              description: prev.description || data.description,
-              version: prev.version || data.version,
-            }));
-          } else {
-            setVerificationStatus('error');
-            setVerificationMessage(`✗ Response does not look like an agent card`);
-          }
-        } catch (parseErr) {
-          setVerificationStatus('error');
-          setVerificationMessage(`✗ Failed to parse JSON response`);
+        // Auto-fill agent card data if available
+        if (result.agent_data) {
+          setFormData(prev => ({
+            ...prev,
+            name: prev.name || result.agent_data.name,
+            description: prev.description || result.agent_data.description,
+            version: prev.version || result.agent_data.version,
+          }));
         }
       } else {
         setVerificationStatus('error');
-        setVerificationMessage(`✗ HTTP ${response.status}: ${response.statusText}`);
+        setVerificationMessage(`✗ ${result.error || 'Verification failed'}`);
       }
     } catch (err: any) {
       setVerificationStatus('error');

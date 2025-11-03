@@ -1,8 +1,10 @@
 """Health check business logic service."""
 
 import logging
+import time
 from datetime import UTC, datetime
 
+import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -118,3 +120,89 @@ class HealthService:
         statuses = result.scalars().all()
 
         return [status.to_dict() for status in statuses]
+
+    async def verify_url(self, url: str, timeout: float = 10.0) -> dict:
+        """Verify a health check URL by making an HTTP request.
+
+        This method bypasses proxy settings for internal/private network access.
+
+        Args:
+            url: Health check URL to verify
+            timeout: Request timeout in seconds
+
+        Returns:
+            Dictionary with verification results:
+            - success: bool
+            - response_time_ms: int | None
+            - status_code: int | None
+            - agent_data: dict | None
+            - error: str | None
+        """
+        start_time = time.time()
+
+        try:
+            # Create httpx client with no proxy (trust_env=False)
+            # This allows health checks to internal/private IPs without proxy
+            async with httpx.AsyncClient(
+                timeout=timeout,
+                trust_env=False,  # Bypass proxy settings
+            ) as client:
+                response = await client.get(
+                    url,
+                    headers={"Accept": "application/json"},
+                    follow_redirects=True,
+                )
+
+                response_time = int((time.time() - start_time) * 1000)
+
+                if response.status_code == 200:
+                    # Health check endpoint: just verify it's alive (200 OK)
+                    # Try to parse JSON if available, but don't require specific fields
+                    agent_data = None
+                    try:
+                        agent_data = response.json()
+                    except Exception:
+                        # Non-JSON response is OK for health checks
+                        pass
+
+                    return {
+                        "success": True,
+                        "response_time_ms": response_time,
+                        "status_code": response.status_code,
+                        "agent_data": agent_data,
+                        "error": None,
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "response_time_ms": response_time,
+                        "status_code": response.status_code,
+                        "agent_data": None,
+                        "error": f"HTTP {response.status_code}",
+                    }
+
+        except httpx.TimeoutException:
+            return {
+                "success": False,
+                "response_time_ms": None,
+                "status_code": None,
+                "agent_data": None,
+                "error": f"Request timed out ({timeout}s)",
+            }
+        except httpx.ConnectError as e:
+            return {
+                "success": False,
+                "response_time_ms": None,
+                "status_code": None,
+                "agent_data": None,
+                "error": f"Connection error: {str(e)}",
+            }
+        except Exception as e:
+            logger.error(f"Health check verification failed for {url}: {e}")
+            return {
+                "success": False,
+                "response_time_ms": None,
+                "status_code": None,
+                "agent_data": None,
+                "error": f"Verification failed: {str(e)}",
+            }
