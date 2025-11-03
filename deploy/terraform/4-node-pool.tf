@@ -1,19 +1,23 @@
-# Node pool after everything else is ready
 resource "google_container_node_pool" "private_staging_nodes" {
+  depends_on = [
+    time_sleep.wait_for_iam,
+    google_compute_subnetwork.private_staging,
+    google_compute_firewall.tailscale
+  ]
   name       = "private-staging-node-pool"
   location   = var.region
   cluster    = google_container_cluster.a2a_registry.name
   node_count = 1
 
-  depends_on = [
-    data.google_project.project,
-    data.google_service_account.tailscale,
-    google_project_iam_member.tailscale_node
-  ]
-
   management {
     auto_repair  = true
     auto_upgrade = true
+  }
+
+  upgrade_settings {
+    max_surge       = 1
+    max_unavailable = 0
+    strategy        = "SURGE"
   }
 
   node_config {
@@ -34,10 +38,34 @@ resource "google_container_node_pool" "private_staging_nodes" {
     disk_type    = "pd-balanced"
     image_type   = "COS_CONTAINERD"
 
+    metadata = {
+      disable-legacy-endpoints = "true"
+    }
+
+    resource_labels = {
+      "goog-gke-node-pool-provisioning-model" = "on-demand"
+    }
+
+    kubelet_config {
+      cpu_cfs_quota      = false
+      pod_pids_limit     = 0
+      cpu_manager_policy = "static"
+    }
+
+    shielded_instance_config {
+      enable_integrity_monitoring = true
+      enable_secure_boot          = false
+    }
+
     service_account = data.google_service_account.tailscale.email
 
     workload_metadata_config {
       mode = "GKE_METADATA"
     }
+  }
+
+  lifecycle {
+    prevent_destroy       = true
+    create_before_destroy = true
   }
 }

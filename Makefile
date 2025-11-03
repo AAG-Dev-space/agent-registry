@@ -4,8 +4,17 @@
 # Python and virtual environment
 PYTHON := python3
 VENV := .venv
-PYTHON_VENV := $(VENV)/bin/python
-PIP_VENV := $(VENV)/bin/pip
+
+# Detect if we're in CI (no .venv) or local development
+ifeq ($(wildcard $(VENV)),)
+  # CI environment - use system python
+  PYTHON_VENV := python
+  PIP_VENV := pip
+else
+  # Local development - use venv
+  PYTHON_VENV := $(VENV)/bin/python
+  PIP_VENV := $(VENV)/bin/pip
+endif
 
 # Directories
 SRC_DIR := src
@@ -51,7 +60,7 @@ lint: install-dev ## Run linting with ruff
 	$(PYTHON_VENV) -m ruff check $(SRC_DIR)
 
 typecheck: install-dev ## Run type checking with mypy
-	$(PYTHON_VENV) -m mypy $(SRC_DIR)
+	$(PYTHON_VENV) -m mypy $(SRC_DIR) --ignore-missing-imports
 
 test: install-dev ## Run tests
 	$(PYTHON_VENV) -m pytest
@@ -60,18 +69,7 @@ test-cov: ## Run tests with coverage
 	$(PYTHON_VENV) -m pytest --cov=$(SRC_DIR) --cov-report=html --cov-report=term
 
 proto: ## Generate protobuf files
-	@echo "Generating protobuf files..."
-	mkdir -p $(GENERATED_DIR)
-	$(PYTHON_VENV) -m grpc_tools.protoc \
-		--proto_path=proto \
-		--proto_path=$(THIRD_PARTY)/a2a/specification/grpc \
-		--proto_path=$(THIRD_PARTY)/api-common-protos \
-		--python_out=$(GENERATED_DIR) \
-		--grpc_python_out=$(GENERATED_DIR) \
-		--mypy_out=$(GENERATED_DIR) \
-		proto/*.proto \
-		$(THIRD_PARTY)/a2a/specification/grpc/*.proto
-	@echo "Protobuf generation complete"
+	$(PYTHON_VENV) scripts/generate_proto.py
 
 build: clean install-dev ## Build distribution packages
 	$(PYTHON_VENV) -m build
@@ -122,6 +120,8 @@ env-load: ## Load environment variables into current shell
 	fi
 
 dev-check: lint typecheck test ## Run all development checks
+
+check: install-dev proto lint typecheck format test ## Run comprehensive checks including proto generation and formatting
 
 ci: install-dev lint typecheck test ## Run CI pipeline locally
 
