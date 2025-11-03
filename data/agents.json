@@ -1,0 +1,184 @@
+{
+  "Weather Assistant": {
+    "name": "Weather Assistant",
+    "description": "A helpful AI agent that provides weather information and forecasts for any location worldwide",
+    "url": "https://api.weather-agent.example.com",
+    "version": "1.0.0",
+    "protocol_version": "1.0",
+    "preferred_transport": "http",
+    "skills": [
+      {
+        "id": "weather",
+        "description": "Weather information"
+      },
+      {
+        "id": "forecast",
+        "description": "Weather forecasting"
+      },
+      {
+        "id": "data-retrieval",
+        "description": "Data retrieval"
+      }
+    ],
+    "capabilities": {
+      "skills": [
+        {
+          "id": "get_current_weather",
+          "description": "Get current weather conditions for a location"
+        },
+        {
+          "id": "get_forecast",
+          "description": "Get weather forecast for upcoming days"
+        }
+      ]
+    }
+  },
+  "Translation Agent": {
+    "name": "Translation Agent",
+    "description": "Multi-language translation service supporting 100+ languages with high accuracy",
+    "url": "https://api.translate-agent.example.com",
+    "version": "2.1.0",
+    "protocol_version": "1.0",
+    "skills": [
+      {
+        "id": "translation",
+        "description": "Language translation"
+      },
+      {
+        "id": "nlp",
+        "description": "Natural language processing"
+      },
+      {
+        "id": "text-processing",
+        "description": "Text processing"
+      }
+    ],
+    "capabilities": {
+      "skills": [
+        {
+          "id": "translate_text",
+          "description": "Translate text from one language to another"
+        },
+        {
+          "id": "detect_language",
+          "description": "Detect the language of given text"
+        }
+      ]
+    },
+    "preferred_transport": "JSONRPC"
+  },
+  "Code Assistant": {
+    "name": "Code Assistant",
+    "description": "AI-powered coding assistant for code generation, review, and debugging",
+    "url": "https://api.code-agent.example.com",
+    "version": "3.0.1",
+    "protocol_version": "1.0",
+    "skills": [
+      {
+        "id": "code-generation",
+        "description": "Code generation"
+      },
+      {
+        "id": "code-review",
+        "description": "Code review"
+      },
+      {
+        "id": "debugging",
+        "description": "Debugging"
+      },
+      {
+        "id": "development",
+        "description": "Development tools"
+      }
+    ],
+    "capabilities": {
+      "skills": [
+        {
+          "id": "generate_code",
+          "description": "Generate code based on natural language description"
+        },
+        {
+          "id": "review_code",
+          "description": "Review code for bugs and improvements"
+        }
+      ]
+    },
+    "preferred_transport": "JSONRPC"
+  },
+  "Database Query Agent": {
+    "name": "Database Query Agent",
+    "description": "Natural language to SQL query converter with support for multiple database systems",
+    "url": "https://api.db-agent.example.com",
+    "version": "1.5.2",
+    "protocol_version": "1.0",
+    "skills": [
+      {
+        "id": "database",
+        "description": "Database operations"
+      },
+      {
+        "id": "sql",
+        "description": "SQL queries"
+      },
+      {
+        "id": "nlp",
+        "description": "Natural language processing"
+      },
+      {
+        "id": "data-retrieval",
+        "description": "Data retrieval"
+      }
+    ],
+    "capabilities": {
+      "skills": [
+        {
+          "id": "nl_to_sql",
+          "description": "Convert natural language query to SQL"
+        },
+        {
+          "id": "optimize_query",
+          "description": "Optimize SQL query for better performance"
+        }
+      ]
+    },
+    "preferred_transport": "JSONRPC"
+  },
+  "Image Generation Agent": {
+    "name": "Image Generation Agent",
+    "description": "AI image generation service creating images from text descriptions",
+    "url": "https://api.image-gen-agent.example.com",
+    "version": "2.0.0",
+    "protocol_version": "1.0",
+    "skills": [
+      {
+        "id": "image-generation",
+        "description": "Image generation"
+      },
+      {
+        "id": "image-editing",
+        "description": "Image editing"
+      },
+      {
+        "id": "ai-art",
+        "description": "AI art"
+      },
+      {
+        "id": "creative",
+        "description": "Creative tools"
+      }
+    ],
+    "capabilities": {
+      "skills": [
+        {
+          "id": "generate_image",
+          "description": "Generate image from text prompt"
+        },
+        {
+          "id": "edit_image",
+          "description": "Edit existing image based on instructions"
+        }
+      ]
+    },
+    "preferred_transport": "JSONRPC"
+  }
+}

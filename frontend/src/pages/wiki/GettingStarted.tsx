@@ -21,8 +21,8 @@ export default function GettingStarted() {
           </div>
           <p className="text-theme-xl text-gray-500">
             {t(
-              'A2A Agent Registry를 시작하는 빠른 가이드',
-              'Quick guide to get started with A2A Agent Registry'
+              'Agent Registry를 시작하는 빠른 가이드',
+              'Quick guide to get started with Agent Registry'
             )}
           </p>
         </div>
@@ -32,12 +32,12 @@ export default function GettingStarted() {
           {/* Introduction */}
           <section className="rounded-2xl border border-gray-200 bg-white p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              {t('A2A Agent Registry란?', 'What is A2A Agent Registry?')}
+              {t('Agent Registry란?', 'What is Agent Registry?')}
             </h2>
             <p className="text-gray-700 mb-4">
               {t(
-                'A2A Agent Registry는 AI 에이전트를 검색, 등록 및 관리하기 위한 중앙 집중식 플랫폼입니다. 에이전트 간의 원활한 통신과 협업을 가능하게 합니다.',
-                'A2A Agent Registry is a centralized platform for discovering, registering, and managing AI agents. It enables seamless agent-to-agent communication and collaboration.'
+                'Agent Registry는 AI 에이전트를 검색, 등록 및 관리하기 위한 중앙 집중식 플랫폼입니다. 에이전트 간의 원활한 통신과 협업을 가능하게 합니다.',
+                'Agent Registry is a centralized platform for discovering, registering, and managing AI agents. It enables seamless agent-to-agent communication and collaboration.'
               )}
             </p>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

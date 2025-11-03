@@ -13,7 +13,7 @@ export default function AgentList() {
 
   // Extract unique tags from agents
   const tags = Array.from(new Set(agents.flatMap(agent =>
-    agent.skills?.map(skill => skill.name) || []
+    agent.skills?.map(skill => skill.id) || []
   )));
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function AgentList() {
     // Apply tag filter
     if (selectedTag) {
       filtered = filtered.filter(
-        (agent) => agent.skills?.some(skill => skill.name === selectedTag)
+        (agent) => agent.skills?.some(skill => skill.id === selectedTag)
       );
     }
 
@@ -111,10 +111,10 @@ export default function AgentList() {
         <section className="pt-8 pb-12">
           <div className="max-w-3xl">
             <h1 className="text-title-lg font-bold text-gray-900 mb-4">
-              Discover A2A Agents
+              Discover Agents
             </h1>
             <p className="text-theme-xl text-gray-500">
-              Browse and discover powerful A2A agents to enhance your AI applications.
+              Browse and discover powerful agents to enhance your AI applications.
             </p>
           </div>
         </section>
@@ -225,7 +225,7 @@ export default function AgentList() {
                             key={idx}
                             className="px-3 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700"
                           >
-                            {skill.name}
+                            {skill.id}
                           </span>
                         ))}
                         {agent.skills.length > 3 && (

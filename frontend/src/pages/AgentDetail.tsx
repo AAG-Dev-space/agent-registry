@@ -148,7 +148,7 @@ export default function AgentDetail() {
                   key={idx}
                   className="px-3 py-1.5 rounded-lg text-sm font-medium bg-brand-50 text-brand-700 border border-brand-200"
                 >
-                  {skill.name}
+                  {skill.id}
                 </span>
               ))}
             </div>
@@ -296,7 +296,7 @@ export default function AgentDetail() {
                   className="p-4 rounded-lg bg-gray-50 border border-gray-100"
                 >
                   <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-sm font-semibold text-gray-900">{skill.name}</h3>
+                    <h3 className="text-sm font-semibold text-gray-900">{skill.id}</h3>
                     {skill.id && (
                       <code className="text-xs text-gray-500 font-mono bg-white px-2 py-1 rounded border border-gray-200">
                         {skill.id}
@@ -323,6 +323,57 @@ export default function AgentDetail() {
         {agent.capabilities && (
           <div className="rounded-2xl border border-gray-200 bg-white p-6 md:p-8 mb-6">
             <h2 className="text-base font-semibold text-gray-900 mb-4">Capabilities</h2>
+
+            {/* Core Capabilities */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Streaming</span>
+                  {agent.capabilities.streaming ? (
+                    <CheckCircle className="h-5 w-5 text-success-600" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-gray-400" />
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {agent.capabilities.streaming
+                    ? 'Supports real-time streaming responses'
+                    : 'Does not support streaming'}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Push Notifications</span>
+                  {agent.capabilities.push_notifications ? (
+                    <CheckCircle className="h-5 w-5 text-success-600" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-gray-400" />
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {agent.capabilities.push_notifications
+                    ? 'Can send push notifications to clients'
+                    : 'Does not send push notifications'}
+                </p>
+              </div>
+
+              <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">State History</span>
+                  {agent.capabilities.state_transition_history ? (
+                    <CheckCircle className="h-5 w-5 text-success-600" />
+                  ) : (
+                    <XCircle className="h-5 w-5 text-gray-400" />
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">
+                  {agent.capabilities.state_transition_history
+                    ? 'Tracks state transition history'
+                    : 'Does not track state history'}
+                </p>
+              </div>
+            </div>
 
             {agent.capabilities.extensions && agent.capabilities.extensions.length > 0 && (
               <div className="mb-4">
@@ -375,27 +426,158 @@ export default function AgentDetail() {
           </div>
         )}
 
-        {/* Installation Instructions */}
+        {/* How to Use */}
         <div className="rounded-2xl border border-gray-200 bg-white p-6 md:p-8">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">How to Use</h2>
-          <div className="prose prose-sm max-w-none">
-            <p className="text-sm text-gray-600 mb-4">
-              To use this agent, you need to configure it in your A2A client. Add the agent URL to your client configuration:
-            </p>
-            <div className="bg-gray-900 rounded-lg p-4 mb-4 overflow-x-auto">
-              <code className="text-sm text-gray-100 font-mono">
-                {`// Add to your A2A client configuration
-{
-  "name": "${agent.name}",
-  "url": "${agent.url}",
-  "version": "${agent.version}",
-  "protocol_version": "${agent.protocol_version}"
-}`}
-              </code>
+          <h2 className="text-base font-semibold text-gray-900 mb-6">How to Use This Agent</h2>
+
+          <div className="space-y-6">
+            {/* Step 1: Agent Card */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">1. Get Agent Card</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                Retrieve the agent's metadata from the registry API:
+              </p>
+              <div className="relative">
+                <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                  <code className="text-xs text-gray-100 font-mono">
+                    {`curl http://localhost:7601/agents/${agent.name}`}
+                  </code>
+                </div>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`curl http://localhost:7601/agents/${agent.name}`);
+                    setCopiedUrl(true);
+                    setTimeout(() => setCopiedUrl(false), 2000);
+                  }}
+                  className="absolute top-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors"
+                  title="Copy to clipboard"
+                >
+                  {copiedUrl ? <Check size={16} /> : <Copy size={16} />}
+                </button>
+              </div>
+
+              {/* Agent Card JSON */}
+              <div className="mt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-medium text-gray-700">Agent Card JSON:</p>
+                  <button
+                    onClick={() => {
+                      const agentCard = {
+                        name: agent.name,
+                        description: agent.description,
+                        url: agent.url,
+                        version: agent.version,
+                        protocol_version: agent.protocol_version,
+                        preferred_transport: agent.preferred_transport,
+                        capabilities: agent.capabilities,
+                        default_input_modes: agent.default_input_modes,
+                        default_output_modes: agent.default_output_modes,
+                        skills: agent.skills,
+                        health_check: agent.health_check,
+                      };
+                      navigator.clipboard.writeText(JSON.stringify(agentCard, null, 2));
+                      setCopiedUrl(true);
+                      setTimeout(() => setCopiedUrl(false), 2000);
+                    }}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-brand-500 hover:bg-brand-600 text-white text-xs rounded-lg transition-colors"
+                  >
+                    {copiedUrl ? (
+                      <>
+                        <Check size={14} />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy size={14} />
+                        Copy JSON
+                      </>
+                    )}
+                  </button>
+                </div>
+                <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto max-h-96">
+                  <pre className="text-xs text-gray-100 font-mono">
+                    {JSON.stringify(
+                      {
+                        name: agent.name,
+                        description: agent.description,
+                        url: agent.url,
+                        version: agent.version,
+                        protocol_version: agent.protocol_version,
+                        preferred_transport: agent.preferred_transport,
+                        capabilities: agent.capabilities,
+                        default_input_modes: agent.default_input_modes,
+                        default_output_modes: agent.default_output_modes,
+                        skills: agent.skills,
+                        health_check: agent.health_check,
+                      },
+                      null,
+                      2
+                    )}
+                  </pre>
+                </div>
+              </div>
             </div>
-            <p className="text-sm text-gray-600">
-              Make sure your A2A client supports protocol version <strong>{agent.protocol_version}</strong> and the <strong>{agent.preferred_transport}</strong> transport protocol.
-            </p>
+
+            {/* Step 2: Send Message */}
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">2. Send Message (JSON-RPC)</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                Call the agent using JSON-RPC 2.0 over HTTP:
+              </p>
+              <div className="relative">
+                <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                  <pre className="text-xs text-gray-100 font-mono">
+{`curl -X POST ${agent.url} \\
+  -H "Content-Type: application/json" \\
+  -d '{
+  "jsonrpc": "2.0",
+  "method": "message/send",
+  "params": {
+    "message": {
+      "role": "user",
+      "parts": [
+        {
+          "type": "text",
+          "content": "${agent.skills && agent.skills[0]?.examples?.[0] || 'Hello, can you help me?'}"
+        }
+      ]
+    }
+  },
+  "id": "1"
+}'`}
+                  </pre>
+                </div>
+                <button
+                  onClick={() => {
+                    const curlCommand = `curl -X POST ${agent.url} \\
+  -H "Content-Type: application/json" \\
+  -d '{
+  "jsonrpc": "2.0",
+  "method": "message/send",
+  "params": {
+    "message": {
+      "role": "user",
+      "parts": [
+        {
+          "type": "text",
+          "content": "${agent.skills && agent.skills[0]?.examples?.[0] || 'Hello, can you help me?'}"
+        }
+      ]
+    }
+  },
+  "id": "1"
+}'`;
+                    navigator.clipboard.writeText(curlCommand);
+                    setCopiedUrl(true);
+                    setTimeout(() => setCopiedUrl(false), 2000);
+                  }}
+                  className="absolute top-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors"
+                  title="Copy to clipboard"
+                >
+                  {copiedUrl ? <Check size={16} /> : <Copy size={16} />}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

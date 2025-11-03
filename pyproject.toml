@@ -39,14 +39,20 @@ dependencies = [
     # GraphQL dependencies
     "strawberry-graphql[fastapi]>=0.234.0",
     "pyjwt>=2.8.0",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
     "redis>=5.0.0",
-    # Vector search dependencies
+    "pyyaml>=6.0.0",
+    "apscheduler>=3.10.0",
+]
+
+[project.optional-dependencies]
+vector = [
+    # Vector search dependencies (heavy packages, optional)
     "sentence-transformers>=2.2.0",
     "numpy>=1.21.0",
     "faiss-cpu>=1.7.0",
 ]
-
-[project.optional-dependencies]
 dev = [
     "black>=23.0.0",
     "ruff>=0.1.0",

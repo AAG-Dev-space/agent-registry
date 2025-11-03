@@ -21,352 +21,356 @@ export default function Roadmap() {
           </div>
           <p className="text-theme-xl text-gray-500">
             {t(
-              'A2A Agent Registry의 향후 계획 및 개발 로드맵',
-              'Future plans and development roadmap for A2A Agent Registry'
+              'Agent Registry의 향후 계획 및 개발 로드맵',
+              'Future plans and development roadmap for Agent Registry'
             )}
           </p>
         </div>
 
+        {/* A2A Protocol Vision */}
+        <section className="rounded-2xl border-2 border-brand-200 bg-gradient-to-br from-brand-50 to-white p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-3">
+            {t('프로젝트 비전', 'Project Vision')}
+          </h2>
+          <p className="text-sm text-gray-700 mb-4">
+            {t(
+              'SSAI Agent Registry는 A2A (Agent-to-Agent) 프로토콜을 기반으로 하는 에이전트 검색 및 관리 플랫폼입니다. 본 프로젝트는 분산 AI 에이전트 생태계에서 에이전트 간 상호 운용성과 협업을 가능하게 하는 것을 목표로 합니다.',
+              'SSAI Agent Registry is an agent discovery and management platform based on the A2A (Agent-to-Agent) protocol. This project aims to enable interoperability and collaboration between agents in a distributed AI agent ecosystem.'
+            )}
+          </p>
+          <div className="bg-white rounded-lg p-4 border border-brand-100">
+            <h3 className="font-semibold text-gray-900 mb-2 text-sm">
+              {t('A2A Protocol 장기 방향성', 'A2A Protocol Long-term Vision')}
+            </h3>
+            <ul className="space-y-1.5 text-xs text-gray-600">
+              <li>• {t('150개 이상의 조직이 참여하는 Linux Foundation 오픈소스 프로젝트', 'Linux Foundation open-source project with 150+ organizations')}</li>
+              <li>• {t('서로 다른 프레임워크, 플랫폼, 공급업체 간 에이전트 상호운용성', 'Agent interoperability across frameworks, platforms, and vendors')}</li>
+              <li>• {t('엔터프라이즈 보안, 컴플라이언스, 책임성을 유지하면서 확장', 'Enterprise scalability with security, compliance, and accountability')}</li>
+              <li>• {t('A2A Inspector, TCK를 통한 에이전트 검증 및 호환성 보장', 'Agent validation and compatibility via A2A Inspector and TCK')}</li>
+            </ul>
+          </div>
+        </section>
+
         {/* Content */}
         <div className="space-y-6">
-          {/* Completed Features */}
+          {/* Version 1.0 - Current */}
           <section className="rounded-2xl border border-gray-200 bg-white p-6">
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex items-center gap-2 mb-4">
               <CheckCircle2 className="h-6 w-6 text-success-500" />
               <h2 className="text-xl font-semibold text-gray-900">
-                ✓ {t('완료', 'Completed')}
+                Version 1.0 - {t('기본 Registry 기능', 'Basic Registry Features')} ✓
               </h2>
             </div>
-
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
-                <CheckCircle2 className="h-5 w-5 text-success-500 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    {t('에이전트 등록 및 검색', 'Agent Registration & Discovery')}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {t(
-                      '상세한 메타데이터로 에이전트를 등록하고 탐색할 수 있는 핵심 기능',
-                      'Core functionality for registering and browsing agents with detailed metadata'
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
-                <CheckCircle2 className="h-5 w-5 text-success-500 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    {t('헬스 모니터링 시스템', 'Health Monitoring System')}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {t(
-                      '5분마다 자동 헬스 체크 및 장애 추적, 상태 배지 제공',
-                      'Automatic health checking every 5 minutes with failure tracking and status badges'
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
-                <CheckCircle2 className="h-5 w-5 text-success-500 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    {t('스킬 기반 필터링', 'Skill-Based Filtering')}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {t(
-                      '쉬운 에이전트 검색을 위한 태그 기반 분류 및 필터링',
-                      'Tag-based categorization and filtering for easy agent discovery'
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
-                <CheckCircle2 className="h-5 w-5 text-success-500 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    {t('JWT 인증', 'JWT Authentication')}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {t(
-                      '역할 기반 접근 제어(관리자/사용자)를 갖춘 보안 인증 시스템',
-                      'Secure authentication system with role-based access control (Admin/User)'
-                    )}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="h-5 w-5 text-success-500 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    {t('파일 기반 저장소', 'File-Based Storage')}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {t(
-                      '에이전트, 사용자 및 헬스 상태를 위한 JSON 파일 기반 영구 저장소',
-                      'Persistent storage with JSON files for agents, users, and health status'
-                    )}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* In Progress */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6">
-            <div className="flex items-center gap-2 mb-6">
-              <Circle className="h-6 w-6 text-brand-500" />
-              <h2 className="text-xl font-semibold text-gray-900">
-                {t('진행 중', 'In Progress')}
-              </h2>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
-                <div className="flex-shrink-0 w-5 h-5 mt-0.5 rounded-full border-2 border-brand-500 bg-white"></div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    {t('고급 검색 및 필터링', 'Advanced Search & Filtering')}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '에이전트 이름, 설명, 스킬에 대한 전체 텍스트 검색',
-                      'Full-text search across agent names, descriptions, and skills'
-                    )}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-700">
-                      {t('2025년 1분기', 'Q1 2025')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="flex-shrink-0 w-5 h-5 mt-0.5 rounded-full border-2 border-brand-500 bg-white"></div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    {t('에이전트 버전 관리', 'Agent Versioning')}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '버전 히스토리와 함께 동일한 에이전트의 여러 버전 지원',
-                      'Support for multiple versions of the same agent with version history'
-                    )}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-700">
-                      {t('2025년 1분기', 'Q1 2025')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Planned Features */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6">
-            <div className="flex items-center gap-2 mb-6">
-              <Clock className="h-6 w-6 text-gray-400" />
-              <h2 className="text-xl font-semibold text-gray-900">
-                {t('계획됨', 'Planned')}
-              </h2>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
-                <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    {t('데이터베이스 통합', 'Database Integration')}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '프로덕션 배포를 위한 PostgreSQL 및 MySQL 지원',
-                      'Support for PostgreSQL and MySQL for production deployments'
-                    )}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                      {t('2025년 2분기', 'Q2 2025')}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      • {t('높은 우선순위', 'High Priority')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
-                <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    {t('분석 대시보드', 'Analytics Dashboard')}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '사용 통계, 헬스 체크 기록 및 에이전트 인기 지표',
-                      'Usage statistics, health check history, and agent popularity metrics'
-                    )}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                      {t('2025년 2분기', 'Q2 2025')}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      • {t('중간 우선순위', 'Medium Priority')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
-                <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    {t('웹훅 알림', 'Webhook Notifications')}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '에이전트 상태 변경 또는 새 에이전트 등록 시 실시간 알림',
-                      'Real-time notifications when agent status changes or new agents are registered'
-                    )}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                      {t('2025년 2분기', 'Q2 2025')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
-                <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    {t('API 키 관리', 'API Key Management')}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '프로그래밍 방식 접근을 위한 JWT 외 API 키 지원',
-                      'Support for API keys in addition to JWT for programmatic access'
-                    )}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                      {t('2025년 3분기', 'Q3 2025')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
-                <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    {t('에이전트 평가 및 리뷰', 'Agent Rating & Reviews')}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '에이전트에 대한 커뮤니티 기반 평가 및 리뷰',
-                      'Community-driven ratings and reviews for agents'
-                    )}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                      {t('2025년 3분기', 'Q3 2025')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
-                <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    {t('페이지네이션 및 무한 스크롤', 'Pagination & Infinite Scroll')}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '많은 수의 에이전트를 효율적으로 처리',
-                      'Efficient handling of large numbers of agents'
-                    )}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                      {t('2025년 3분기', 'Q3 2025')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
-                <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    {t('에이전트 카테고리', 'Agent Categories')}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '더 나은 구성을 위한 계층적 분류 (AI, 도구, 서비스 등)',
-                      'Hierarchical categorization for better organization (AI, Tools, Services, etc.)'
-                    )}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                      {t('2025년 3분기', 'Q3 2025')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-1">
-                    {t('감사 로그', 'Audit Logging')}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '모든 레지스트리 작업의 완전한 감사 추적',
-                      'Complete audit trail of all registry operations'
-                    )}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
-                      {t('2025년 4분기', 'Q4 2025')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Future Considerations */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              {t('향후 고려 사항', 'Future Considerations')}
-            </h2>
             <p className="text-sm text-gray-600 mb-4">
               {t(
-                '향후 릴리스에서 고려 중인 기능 (일정 미정):',
-                'Features being considered for future releases (timeline TBD):'
+                '목적: 에이전트 인벤토리 관리 및 기본 검색 기능',
+                'Purpose: Agent inventory management and basic discovery'
               )}
             </p>
-            <ul className="space-y-2 text-sm text-gray-600 ml-6 list-disc">
-              <li>{t('다국어 지원 (i18n)', 'Multi-language support (i18n)')}</li>
-              <li>{t('에이전트 의존성 그래프 시각화', 'Agent dependency graph visualization')}</li>
-              <li>{t('에이전트 호환성을 위한 자동화된 테스트 프레임워크', 'Automated testing framework for agent compatibility')}</li>
-              <li>{t('Docker 및 Kubernetes 배포 템플릿', 'Docker & Kubernetes deployment templates')}</li>
-              <li>{t('GraphQL API 엔드포인트', 'GraphQL API endpoint')}</li>
-              <li>{t('실시간 협업 기능', 'Real-time collaboration features')}</li>
-              <li>{t('에이전트 마켓플레이스 통합', 'Agent marketplace integration')}</li>
-              <li>{t('커스텀 헬스 체크 프로토콜 (gRPC, WebSocket)', 'Custom health check protocols (gRPC, WebSocket)')}</li>
-            </ul>
+
+            <div className="bg-brand-50 rounded-lg p-4 mb-4 border border-brand-100">
+              <h3 className="font-semibold text-gray-900 mb-2 text-sm">
+                {t('현재 상태', 'Current Status')}
+              </h3>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span className="text-gray-600">{t('등록된 에이전트', 'Registered Agents')}:</span>
+                  <span className="ml-2 font-semibold text-brand-700">5개</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">{t('프로토콜 버전', 'Protocol Version')}:</span>
+                  <span className="ml-2 font-semibold text-brand-700">A2A v0.3.0</span>
+                </div>
+              </div>
+              <div className="mt-3">
+                <p className="text-xs text-gray-600 mb-1">{t('샘플 에이전트', 'Sample Agents')}:</p>
+                <ul className="text-xs text-gray-600 space-y-0.5 ml-4">
+                  <li>• Weather Assistant (v1.0.0)</li>
+                  <li>• Translation Agent (v2.1.0)</li>
+                  <li>• Code Assistant (v3.0.1)</li>
+                  <li>• Database Query Agent (v1.5.2)</li>
+                  <li>• Image Generation Agent (v2.0.0)</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="font-semibold text-gray-900 text-sm mb-2">
+                {t('구현 완료 기능', 'Implemented Features')}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-success-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">{t('에이전트 등록', 'Agent Registration')}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-success-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">{t('에이전트 검색', 'Agent Search')}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-success-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">{t('헬스 체크', 'Health Monitoring')}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-success-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">{t('스킬 필터링', 'Skill Filtering')}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-success-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">{t('다중 프로토콜 지원', 'Multi-Protocol Support')}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-success-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">{t('REST API', 'REST API')}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-success-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">{t('Docker 배포', 'Docker Deployment')}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-success-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">{t('웹 UI', 'Web UI')}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-success-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">{t('JWT 인증', 'JWT Authentication')}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-success-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm text-gray-700">{t('파일 기반 저장소', 'File-Based Storage')}</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Version 2.0 - Analytics */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Circle className="h-6 w-6 text-brand-500" />
+              <h2 className="text-xl font-semibold text-gray-900">
+                Version 2.0 - {t('에이전트 효율성 분석', 'Agent Effectiveness Analysis')}
+              </h2>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              {t(
+                '목적: 에이전트 사용성 및 효과성 모니터링',
+                'Purpose: Monitoring agent usability and effectiveness'
+              )}
+            </p>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
+                <div className="flex-shrink-0 w-5 h-5 mt-0.5 rounded-full border-2 border-brand-500 bg-white"></div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-1">
+                    {t('에이전트 사용 통계', 'Agent Usage Statistics')}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {t(
+                      '에이전트별 호출 횟수, 응답 시간, 성공률, 인기 스킬 분석',
+                      'Call counts, response times, success rates, and popular skills analysis per agent'
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
+                <div className="flex-shrink-0 w-5 h-5 mt-0.5 rounded-full border-2 border-brand-500 bg-white"></div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-1">
+                    {t('성능 메트릭', 'Performance Metrics')}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {t(
+                      '평균 응답 시간, 에러율, 가용성 지표(Uptime), SLA 준수율 추적',
+                      'Average response time, error rate, uptime metrics, and SLA compliance tracking'
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
+                <div className="flex-shrink-0 w-5 h-5 mt-0.5 rounded-full border-2 border-brand-500 bg-white"></div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-1">
+                    {t('사용자 피드백 시스템', 'User Feedback System')}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {t(
+                      '에이전트 평가(별점), 사용 후기, 댓글, 추천 알고리즘',
+                      'Agent ratings (stars), reviews, comments, and recommendation algorithms'
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-5 h-5 mt-0.5 rounded-full border-2 border-brand-500 bg-white"></div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-1">
+                    {t('실시간 모니터링 대시보드', 'Real-time Monitoring Dashboard')}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    {t(
+                      '통계 시각화, 이상 탐지 알림, WebSocket 기반 실시간 업데이트',
+                      'Statistics visualization, anomaly detection alerts, WebSocket-based real-time updates'
+                    )}
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    {t('기술 스택', 'Tech Stack')}: Prometheus/Grafana, PostgreSQL/MongoDB, WebSocket
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Version 3.0 - Autonomous Collaboration */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="h-6 w-6 text-gray-400" />
+              <h2 className="text-xl font-semibold text-gray-900">
+                Version 3.0 - {t('에이전트 간 자율 협업', 'Autonomous Agent Collaboration')}
+              </h2>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              {t(
+                '목적: 에이전트가 능동적으로 다른 에이전트를 발견하고 활용',
+                'Purpose: Agents proactively discover and utilize other agents'
+              )}
+            </p>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
+                <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-1">
+                    {t('자율 에이전트 발견', 'Autonomous Agent Discovery')}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {t(
+                      '에이전트가 Registry API를 통해 필요한 다른 에이전트 검색, 스킬 기반 자동 매칭, 런타임 발견 및 바인딩',
+                      'Agents search for needed agents via Registry API, skill-based auto-matching, runtime discovery and binding'
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
+                <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-1">
+                    {t('에이전트 간 직접 통신', 'Direct Agent-to-Agent Communication')}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {t(
+                      'A2A Protocol 기반 직접 통신, 메시지 라우팅, 비동기 태스크 위임',
+                      'A2A Protocol-based direct communication, message routing, async task delegation'
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
+                <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-1">
+                    {t('워크플로우 오케스트레이션', 'Workflow Orchestration')}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {t(
+                      '다중 에이전트 체인 구성, 조건부 라우팅, 에러 핸들링 및 재시도',
+                      'Multi-agent chain composition, conditional routing, error handling and retry logic'
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
+                <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-1">
+                    {t('신뢰 및 평판 시스템', 'Trust & Reputation System')}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {t(
+                      '에이전트 신뢰 점수, 검증된 에이전트 인증, 보안 정책 관리',
+                      'Agent trust scores, verified agent certification, security policy management'
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900 mb-1">
+                    {t('지능형 부하 분산', 'Intelligent Load Balancing')}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    {t(
+                      '동일 기능 에이전트 간 로드 밸런싱, 지역 기반 라우팅, 비용 최적화',
+                      'Load balancing across same-capability agents, geo-based routing, cost optimization'
+                    )}
+                  </p>
+                  <div className="text-xs text-gray-500">
+                    {t('기술 스택', 'Tech Stack')}: RabbitMQ/Kafka, Service Mesh (Istio), Temporal/Airflow, mTLS
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Todo List */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              {t('단기 Todo 목록', 'Short-term Todo List')}
+            </h2>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <input type="checkbox" className="mt-1" disabled />
+                <div>
+                  <h3 className="font-medium text-gray-900">
+                    {t('실제 에이전트 연결 테스트', 'Test with Real Agent Integration')}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {t('실제 동작하는 A2A 에이전트 구축 및 End-to-end 시나리오 검증', 'Build working A2A agent and verify end-to-end scenarios')}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <input type="checkbox" className="mt-1" disabled />
+                <div>
+                  <h3 className="font-medium text-gray-900">
+                    {t('HTTPS 적용', 'Apply HTTPS')}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {t('SSL/TLS 인증서 구성, 프로덕션 도메인 설정, 보안 헤더 적용', 'SSL/TLS certificate setup, production domain, security headers')}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <input type="checkbox" className="mt-1" disabled />
+                <div>
+                  <h3 className="font-medium text-gray-900">
+                    {t('데이터베이스 전환', 'Database Migration')}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {t('File-based storage에서 PostgreSQL로 마이그레이션 및 성능 최적화', 'Migrate from file-based storage to PostgreSQL with performance optimization')}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <input type="checkbox" className="mt-1" disabled />
+                <div>
+                  <h3 className="font-medium text-gray-900">
+                    {t('사용자 인증 개선', 'Improve User Authentication')}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {t('Email 토큰 기반 인증 시스템 구현 및 보안 강화', 'Implement email token-based authentication and enhance security')}
+                  </p>
+                </div>
+              </div>
+            </div>
           </section>
 
           {/* Feedback */}
@@ -376,12 +380,12 @@ export default function Roadmap() {
             </h2>
             <p className="text-sm text-gray-700 mb-4">
               {t(
-                'A2A Agent Registry를 개선하기 위한 여러분의 아이디어를 듣고 싶습니다! 여러분의 피드백은 기능 우선순위를 정하고 더 나은 플랫폼을 구축하는 데 도움이 됩니다.',
-                "We'd love to hear your ideas for improving the A2A Agent Registry! Your feedback helps us prioritize features and build a better platform."
+                'Agent Registry를 개선하기 위한 여러분의 아이디어를 듣고 싶습니다! 여러분의 피드백은 기능 우선순위를 정하고 더 나은 플랫폼을 구축하는 데 도움이 됩니다.',
+                "We'd love to hear your ideas for improving the Agent Registry! Your feedback helps us prioritize features and build a better platform."
               )}
             </p>
             <a
-              href="https://github.com/palendy/ssai_agent_registry/issues"
+              href="https://github.samsungds.net/aiagent/agent-registry/issues"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-sm font-medium transition-colors"

@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Use /api for Docker deployment (proxied by nginx)
+// Set VITE_API_URL environment variable for different backends
+const API_BASE_URL = import.meta.env.VITE_API_URL ?? '/api';
 
 interface User {
   username: string;

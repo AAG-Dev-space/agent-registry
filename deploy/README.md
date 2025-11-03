@@ -35,17 +35,19 @@ docker compose up -d
 
 ### 4. 애플리케이션 접속
 
-브라우저에서 `http://localhost` (또는 설정한 포트)로 접속합니다.
+- **Frontend**: http://localhost:7600
+- **Backend API**: http://localhost:7601
+- **API 문서**: http://localhost:7601/docs
 
 ## 📦 이미지 구성
 
 ### Backend 이미지
 - **Base Image**: `python:3.11-slim`
 - **Multi-stage build**로 최적화
-- 최종 이미지 크기: ~150MB (예상)
+- 최종 이미지 크기: ~239MB
 - 포함 내용:
   - Python 애플리케이션
-  - 필수 의존성만 포함
+  - 필수 의존성만 포함 (Vector search는 optional)
   - 파일 기반 저장소 지원
 
 ### Frontend 이미지

@@ -1,11 +1,18 @@
 export interface AgentSkill {
   id: string;
+  name: string;
   description: string;
+  tags: string[];
+  examples?: string[];
+  input_modes: string[];
+  output_modes: string[];
   parameters?: Record<string, any>;
 }
 
 export interface AgentCapabilities {
-  skills?: AgentSkill[];
+  streaming?: boolean;
+  push_notifications?: boolean;
+  state_transition_history?: boolean;
   extensions?: Array<{
     uri: string;
     description?: string;
@@ -33,6 +40,8 @@ export interface AgentCard {
   version: string;
   protocol_version: string;
   preferred_transport?: string;
+  default_input_modes?: string[];
+  default_output_modes?: string[];
   capabilities?: AgentCapabilities;
   skills?: AgentSkill[];
   metadata?: Record<string, any>;

@@ -9,8 +9,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy only requirements first for better caching
+# Copy project files for installation
 COPY pyproject.toml ./
+COPY backend ./backend
 
 # Install dependencies in a virtual environment
 RUN python -m venv /opt/venv
@@ -32,8 +33,8 @@ COPY --from=builder /opt/venv /opt/venv
 COPY backend ./backend
 COPY config ./config
 
-# Create data directory for file storage
-RUN mkdir -p /app/data
+# Copy sample data (will be used if volume is not mounted)
+COPY data /app/data
 
 # Set environment variables
 ENV PATH="/opt/venv/bin:$PATH" \
