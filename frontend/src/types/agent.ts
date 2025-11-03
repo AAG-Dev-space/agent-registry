@@ -14,6 +14,12 @@ export interface AgentCapabilities {
   protocols?: string[];
 }
 
+export interface HealthStatus {
+  status: 'active' | 'inactive' | 'deprecated' | 'unknown';
+  last_check_at: string | null;
+  failure_count: number;
+}
+
 export interface AgentCard {
   name: string;
   description: string;
@@ -24,6 +30,7 @@ export interface AgentCard {
   capabilities?: AgentCapabilities;
   skills?: AgentSkill[];
   metadata?: Record<string, any>;
+  health_status?: HealthStatus;
 }
 
 export interface RegisterAgentRequest {

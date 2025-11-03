@@ -7,8 +7,8 @@ import logging
 import pytest
 from pathlib import Path
 
-from a2a_registry.vector_enhanced_storage import VectorEnhancedStorage
-from a2a_registry.storage import InMemoryStorage
+from backend.vector_enhanced_storage import VectorEnhancedStorage
+from backend.storage import InMemoryStorage
 
 logger = logging.getLogger(__name__)
 

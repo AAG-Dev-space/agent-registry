@@ -6,8 +6,8 @@ import numpy as np
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from a2a_registry.vector_generator import VectorGenerator
-from a2a_registry.proto.generated import registry_pb2
+from backend.vector_generator import VectorGenerator
+from backend.proto.generated import registry_pb2
 
 
 class TestVectorGenerator:

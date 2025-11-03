@@ -70,24 +70,24 @@ export default function RegisterAgent() {
   };
 
   return (
-    <div className="p-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto px-4 md:px-6 max-w-3xl">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Register Agent</h1>
-          <p className="text-slate-400">
+          <h1 className="text-title-md font-bold text-gray-900 mb-2">Register Agent</h1>
+          <p className="text-gray-500">
             Add a new agent to the A2A Registry
           </p>
         </div>
 
         {/* Success Message */}
         {success && (
-          <div className="bg-green-900/20 border border-green-800 rounded-lg p-4 mb-6">
+          <div className="rounded-2xl border border-success-200 bg-success-50 p-6 mb-6">
             <div className="flex items-center gap-3">
-              <CheckCircle className="text-green-500" size={20} />
+              <CheckCircle className="text-success-500" size={20} />
               <div>
-                <p className="text-green-400 font-medium">Agent registered successfully!</p>
-                <p className="text-green-300 text-sm mt-1">Redirecting to agents list...</p>
+                <p className="text-success-700 font-medium">Agent registered successfully!</p>
+                <p className="text-success-600 text-sm mt-1">Redirecting to agents list...</p>
               </div>
             </div>
           </div>
@@ -95,11 +95,11 @@ export default function RegisterAgent() {
 
         {/* Error Message */}
         {error && (
-          <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 mb-6">
+          <div className="rounded-2xl border border-error-200 bg-error-50 p-6 mb-6">
             <div className="flex items-center gap-3">
-              <AlertCircle className="text-red-500" size={20} />
+              <AlertCircle className="text-error-500" size={20} />
               <div>
-                <p className="text-red-400 font-medium">{error}</p>
+                <p className="text-error-700 font-medium">{error}</p>
               </div>
             </div>
           </div>
@@ -108,12 +108,12 @@ export default function RegisterAgent() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Basic Information</h2>
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <h2 className="text-base font-medium text-gray-900 mb-5">Basic Information</h2>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-2">
+                <label htmlFor="name" className="block text-theme-sm font-medium text-gray-700 mb-2">
                   Agent Name *
                 </label>
                 <input
@@ -124,12 +124,12 @@ export default function RegisterAgent() {
                   value={formData.name}
                   onChange={handleInputChange}
                   placeholder="my-awesome-agent"
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-slate-300 mb-2">
+                <label htmlFor="description" className="block text-theme-sm font-medium text-gray-700 mb-2">
                   Description *
                 </label>
                 <textarea
@@ -140,12 +140,12 @@ export default function RegisterAgent() {
                   onChange={handleInputChange}
                   placeholder="Describe what your agent does..."
                   rows={3}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
                 />
               </div>
 
               <div>
-                <label htmlFor="url" className="block text-sm font-medium text-slate-300 mb-2">
+                <label htmlFor="url" className="block text-theme-sm font-medium text-gray-700 mb-2">
                   Agent URL *
                 </label>
                 <input
@@ -156,13 +156,13 @@ export default function RegisterAgent() {
                   value={formData.url}
                   onChange={handleInputChange}
                   placeholder="https://my-agent.example.com"
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="version" className="block text-sm font-medium text-slate-300 mb-2">
+                  <label htmlFor="version" className="block text-theme-sm font-medium text-gray-700 mb-2">
                     Version *
                   </label>
                   <input
@@ -173,12 +173,12 @@ export default function RegisterAgent() {
                     value={formData.version}
                     onChange={handleInputChange}
                     placeholder="0.1.0"
-                    className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="protocol_version" className="block text-sm font-medium text-slate-300 mb-2">
+                  <label htmlFor="protocol_version" className="block text-theme-sm font-medium text-gray-700 mb-2">
                     Protocol Version *
                   </label>
                   <input
@@ -189,13 +189,13 @@ export default function RegisterAgent() {
                     value={formData.protocol_version}
                     onChange={handleInputChange}
                     placeholder="0.3.0"
-                    className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
                   />
                 </div>
               </div>
 
               <div>
-                <label htmlFor="preferred_transport" className="block text-sm font-medium text-slate-300 mb-2">
+                <label htmlFor="preferred_transport" className="block text-theme-sm font-medium text-gray-700 mb-2">
                   Preferred Transport
                 </label>
                 <select
@@ -203,7 +203,7 @@ export default function RegisterAgent() {
                   name="preferred_transport"
                   value={formData.preferred_transport}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
                 >
                   <option value="JSONRPC">JSON-RPC</option>
                   <option value="REST">REST</option>
@@ -215,25 +215,25 @@ export default function RegisterAgent() {
           </div>
 
           {/* Skills */}
-          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6">
-            <h2 className="text-xl font-semibold text-white mb-4">Skills</h2>
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <h2 className="text-base font-medium text-gray-900 mb-5">Skills</h2>
 
             {/* Existing Skills */}
             {formData.skills && formData.skills.length > 0 && (
-              <div className="space-y-2 mb-4">
+              <div className="space-y-2 mb-5">
                 {formData.skills.map((skill, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-3 bg-slate-900 rounded-lg"
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100"
                   >
                     <div className="flex-1">
-                      <p className="text-white font-medium">{skill.id}</p>
-                      <p className="text-slate-400 text-sm">{skill.description}</p>
+                      <p className="text-gray-900 font-medium text-sm">{skill.id}</p>
+                      <p className="text-gray-500 text-sm">{skill.description}</p>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleRemoveSkill(index)}
-                      className="text-red-400 hover:text-red-300 p-1"
+                      className="text-error-500 hover:text-error-600 p-1 transition-colors"
                     >
                       <X size={18} />
                     </button>
@@ -250,7 +250,7 @@ export default function RegisterAgent() {
                   placeholder="Skill ID (e.g., get_weather)"
                   value={newSkill.id}
                   onChange={(e) => setNewSkill((prev) => ({ ...prev, id: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
                 />
               </div>
               <div>
@@ -259,14 +259,14 @@ export default function RegisterAgent() {
                   placeholder="Skill Description"
                   value={newSkill.description}
                   onChange={(e) => setNewSkill((prev) => ({ ...prev, description: e.target.value }))}
-                  className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
                 />
               </div>
               <button
                 type="button"
                 onClick={handleAddSkill}
                 disabled={!newSkill.id || !newSkill.description}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-500 text-white rounded-lg transition-colors"
+                className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-lg font-medium transition-colors"
               >
                 <PlusCircle size={18} />
                 Add Skill
@@ -279,7 +279,7 @@ export default function RegisterAgent() {
             <button
               type="submit"
               disabled={loading || success}
-              className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
+              className="flex items-center gap-2 px-6 py-3 bg-brand-500 hover:bg-brand-600 disabled:bg-brand-400 disabled:cursor-not-allowed text-white rounded-lg font-medium shadow-theme-xs transition-colors"
             >
               {loading ? (
                 <>
@@ -297,7 +297,7 @@ export default function RegisterAgent() {
             <button
               type="button"
               onClick={() => navigate('/agents')}
-              className="px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors"
+              className="px-6 py-3 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 rounded-lg font-medium transition-colors"
             >
               Cancel
             </button>

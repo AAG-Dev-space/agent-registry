@@ -10,6 +10,15 @@ const apiClient = axios.create({
   },
 });
 
+// Add auth token to requests if available
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const agentApi = {
   // Register a new agent
   registerAgent: async (agentCard: AgentCard): Promise<{ success: boolean; agent_id: string }> => {

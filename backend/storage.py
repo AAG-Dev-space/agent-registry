@@ -1,0 +1,862 @@
+"""Storage module for A2A Registry."""
+
+import json
+import logging
+from abc import ABC, abstractmethod
+from datetime import UTC, datetime
+from pathlib import Path
+
+from fasta2a.schema import AgentCard  # type: ignore
+
+from .config import config
+
+logger = logging.getLogger(__name__)
+
+
+class ExtensionInfo:
+    """Information about an agent extension with provenance tracking."""
+
+    def __init__(
+        self,
+        uri: str,
+        description: str = "",
+        required: bool = False,
+        params: dict | None = None,
+        first_declared_by_agent: str = "",
+        first_declared_at: datetime | None = None,
+        trust_level: str = "TRUST_LEVEL_UNVERIFIED",
+    ):
+        self.uri = uri
+        self.description = description
+        self.required = required
+        self.params = params or {}
+        self.first_declared_by_agent = first_declared_by_agent
+        self.first_declared_at = first_declared_at or datetime.now(UTC)
+        self.trust_level = trust_level
+        self.declaring_agents: set[str] = set()
+        if first_declared_by_agent:
+            self.declaring_agents.add(first_declared_by_agent)
+
+    @property
+    def usage_count(self) -> int:
+        """Number of agents using this extension."""
+        return len(self.declaring_agents)
+
+    def add_declaring_agent(self, agent_id: str) -> None:
+        """Add an agent to the list of agents using this extension."""
+        self.declaring_agents.add(agent_id)
+
+    def remove_declaring_agent(self, agent_id: str) -> None:
+        """Remove an agent from the list of agents using this extension."""
+        self.declaring_agents.discard(agent_id)
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary representation."""
+        return {
+            "uri": self.uri,
+            "description": self.description,
+            "required": self.required,
+            "params": self.params,
+            "first_declared_by_agent": self.first_declared_by_agent,
+            "first_declared_at": self.first_declared_at.isoformat(),
+            "trust_level": self.trust_level,
+            "declaring_agents": list(self.declaring_agents),
+            "usage_count": self.usage_count,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ExtensionInfo":
+        """Create from dictionary representation."""
+        ext_info = cls(
+            uri=data["uri"],
+            description=data.get("description", ""),
+            required=data.get("required", False),
+            params=data.get("params", {}),
+            first_declared_by_agent=data.get("first_declared_by_agent", ""),
+            first_declared_at=datetime.fromisoformat(data["first_declared_at"]),
+            trust_level=data.get("trust_level", "TRUST_LEVEL_UNVERIFIED"),
+        )
+        ext_info.declaring_agents = set(data.get("declaring_agents", []))
+        return ext_info
+
+
+class StorageBackend(ABC):
+    """Abstract base class for storage backends."""
+
+    @abstractmethod
+    async def register_agent(self, agent_card: AgentCard) -> bool:
+        """Register an agent in the registry."""
+        pass
+
+    @abstractmethod
+    async def get_agent(self, agent_id: str) -> AgentCard | None:
+        """Get an agent by ID."""
+        pass
+
+    @abstractmethod
+    async def list_agents(self) -> list[AgentCard]:
+        """List all registered agents."""
+        pass
+
+    @abstractmethod
+    async def unregister_agent(self, agent_id: str) -> bool:
+        """Unregister an agent."""
+        pass
+
+    @abstractmethod
+    async def search_agents(self, query: str) -> list[AgentCard]:
+        """Search agents by name, description, or capabilities."""
+        pass
+
+    # Health monitoring methods
+    @abstractmethod
+    async def update_agent_health_status(
+        self, agent_id: str, status: str, last_check_at: datetime | None = None
+    ) -> bool:
+        """Update agent health status (active/inactive/deprecated)."""
+        pass
+
+    @abstractmethod
+    async def get_agent_health_status(self, agent_id: str) -> dict | None:
+        """Get agent health status information."""
+        pass
+
+    @abstractmethod
+    async def get_agents_for_health_check(self) -> list[tuple[str, dict]]:
+        """Get list of agents that need health checking with their health_check config."""
+        pass
+
+    # Extension-related abstract methods
+    @abstractmethod
+    async def store_extension(self, extension_info: ExtensionInfo) -> bool:
+        """Store extension information."""
+        pass
+
+    @abstractmethod
+    async def get_extension(self, uri: str) -> ExtensionInfo | None:
+        """Get extension information by URI."""
+        pass
+
+    @abstractmethod
+    async def list_extensions(
+        self,
+        uri_pattern: str | None = None,
+        declaring_agents: list[str] | None = None,
+        trust_levels: list[str] | None = None,
+        page_size: int = 100,
+        page_token: str | None = None,
+    ) -> tuple[list[ExtensionInfo], str | None, int]:
+        """List extensions with optional filtering and pagination."""
+        pass
+
+    @abstractmethod
+    async def get_agent_extensions(self, agent_id: str) -> list[ExtensionInfo]:
+        """Get all extensions used by a specific agent."""
+        pass
+
+    @abstractmethod
+    async def update_agent_extensions(
+        self, agent_id: str, extensions: list[dict]
+    ) -> bool:
+        """Update extensions for an agent."""
+        pass
+
+    @abstractmethod
+    async def remove_agent_from_extensions(self, agent_id: str) -> bool:
+        """Remove agent from all extension declarations."""
+        pass
+
+
+class InMemoryStorage(StorageBackend):
+    """In-memory storage for agent registry."""
+
+    def __init__(self) -> None:
+        self._agents: dict[str, AgentCard] = {}
+        self._extensions: dict[str, ExtensionInfo] = {}
+        # Health status tracking: agent_id -> {status, last_check_at, failure_count}
+        self._health_status: dict[str, dict] = {}
+        # User storage: username -> {username, email, hashed_password, role, disabled}
+        self._users: dict[str, dict] = {}
+        self._initialize_default_users()
+
+    async def register_agent(self, agent_card: AgentCard) -> bool:
+        """Register an agent in the registry."""
+        agent_id = agent_card.get("name")
+        if not agent_id:
+            return False
+        self._agents[agent_id] = agent_card
+        # Initialize health status as active
+        self._health_status[agent_id] = {
+            "status": "active",
+            "last_check_at": datetime.now(UTC),
+            "failure_count": 0,
+        }
+        logger.info(f"Registered agent: {agent_id}")
+        return True
+
+    async def get_agent(self, agent_id: str) -> AgentCard | None:
+        """Get an agent by ID."""
+        return self._agents.get(agent_id)
+
+    async def list_agents(self) -> list[AgentCard]:
+        """List all registered agents."""
+        return list(self._agents.values())
+
+    async def unregister_agent(self, agent_id: str) -> bool:
+        """Unregister an agent."""
+        if agent_id in self._agents:
+            del self._agents[agent_id]
+            logger.info(f"Unregistered agent: {agent_id}")
+            return True
+        return False
+
+    async def search_agents(self, query: str) -> list[AgentCard]:
+        """Search agents by name, description, or capabilities."""
+        results = []
+        query_lower = query.lower()
+
+        for agent in self._agents.values():
+            # Search in name, description, and skills
+            if (
+                query_lower in agent.get("name", "").lower()
+                or query_lower in agent.get("description", "").lower()
+                or any(
+                    query_lower in skill.get("id", "").lower()
+                    for skill in agent.get("skills", [])
+                )
+            ):
+                results.append(agent)
+
+        return results
+
+    # Extension-related methods
+    async def store_extension(self, extension_info: ExtensionInfo) -> bool:
+        """Store extension information."""
+        self._extensions[extension_info.uri] = extension_info
+        logger.info(f"Stored extension: {extension_info.uri}")
+        return True
+
+    async def get_extension(self, uri: str) -> ExtensionInfo | None:
+        """Get extension information by URI."""
+        return self._extensions.get(uri)
+
+    async def list_extensions(
+        self,
+        uri_pattern: str | None = None,
+        declaring_agents: list[str] | None = None,
+        trust_levels: list[str] | None = None,
+        page_size: int = 100,
+        page_token: str | None = None,
+    ) -> tuple[list[ExtensionInfo], str | None, int]:
+        """List extensions with optional filtering and pagination."""
+        extensions = list(self._extensions.values())
+
+        # Apply filters
+        if uri_pattern:
+            extensions = [
+                ext for ext in extensions if uri_pattern.lower() in ext.uri.lower()
+            ]
+
+        if declaring_agents:
+            extensions = [
+                ext
+                for ext in extensions
+                if any(agent in ext.declaring_agents for agent in declaring_agents)
+            ]
+
+        if trust_levels:
+            extensions = [ext for ext in extensions if ext.trust_level in trust_levels]
+
+        # Simple pagination (in production, use more sophisticated approach)
+        total_count = len(extensions)
+        start_idx = 0
+        if page_token:
+            try:
+                start_idx = int(page_token)
+            except ValueError:
+                start_idx = 0
+
+        end_idx = start_idx + page_size
+        page_extensions = extensions[start_idx:end_idx]
+
+        next_page_token = None
+        if end_idx < total_count:
+            next_page_token = str(end_idx)
+
+        return page_extensions, next_page_token, total_count
+
+    async def get_agent_extensions(self, agent_id: str) -> list[ExtensionInfo]:
+        """Get all extensions used by a specific agent."""
+        return [
+            ext for ext in self._extensions.values() if agent_id in ext.declaring_agents
+        ]
+
+    async def update_agent_extensions(
+        self, agent_id: str, extensions: list[dict]
+    ) -> bool:
+        """Update extensions for an agent."""
+        # Remove agent from all current extensions
+        await self.remove_agent_from_extensions(agent_id)
+
+        # Add agent to new extensions
+        for ext_data in extensions:
+            uri = ext_data.get("uri", "")
+            if not uri:
+                continue
+
+            # Check if extension is allowed in current mode
+            if not config.is_extension_allowed(uri):
+                logger.warning(f"Extension {uri} not allowed in current mode")
+                continue
+
+            existing_ext = await self.get_extension(uri)
+            if existing_ext:
+                existing_ext.add_declaring_agent(agent_id)
+            else:
+                # Create new extension info
+                ext_info = ExtensionInfo(
+                    uri=uri,
+                    description=ext_data.get("description", ""),
+                    required=ext_data.get("required", False),
+                    params=ext_data.get("params", {}),
+                    first_declared_by_agent=agent_id,
+                    trust_level=config.get_default_trust_level(),
+                )
+                await self.store_extension(ext_info)
+
+        return True
+
+    async def remove_agent_from_extensions(self, agent_id: str) -> bool:
+        """Remove agent from all extension declarations."""
+        extensions_to_remove = []
+
+        for uri, ext_info in self._extensions.items():
+            ext_info.remove_declaring_agent(agent_id)
+            # If no agents are using this extension anymore, remove it
+            if ext_info.usage_count == 0:
+                extensions_to_remove.append(uri)
+
+        # Remove unused extensions
+        for uri in extensions_to_remove:
+            del self._extensions[uri]
+            logger.info(f"Removed unused extension: {uri}")
+
+        return True
+
+    # Health monitoring methods
+    async def update_agent_health_status(
+        self, agent_id: str, status: str, last_check_at: datetime | None = None
+    ) -> bool:
+        """Update agent health status (active/inactive/deprecated)."""
+        if agent_id not in self._agents:
+            return False
+
+        if agent_id not in self._health_status:
+            self._health_status[agent_id] = {
+                "status": status,
+                "last_check_at": last_check_at or datetime.now(UTC),
+                "failure_count": 0,
+            }
+        else:
+            self._health_status[agent_id]["status"] = status
+            self._health_status[agent_id]["last_check_at"] = (
+                last_check_at or datetime.now(UTC)
+            )
+
+        logger.info(f"Updated health status for {agent_id}: {status}")
+        return True
+
+    async def get_agent_health_status(self, agent_id: str) -> dict | None:
+        """Get agent health status information."""
+        return self._health_status.get(agent_id)
+
+    async def get_agents_for_health_check(self) -> list[tuple[str, dict]]:
+        """Get list of agents that need health checking with their health_check config."""
+        result = []
+        for agent_id, agent_card in self._agents.items():
+            # Get health_check configuration from agent_card
+            health_check_config = agent_card.get("health_check", {})
+            if isinstance(health_check_config, dict) and health_check_config.get("url"):
+                result.append((agent_id, health_check_config))
+        return result
+
+    # User management methods
+    def _initialize_default_users(self) -> None:
+        """Initialize default users from config."""
+        try:
+            from .auth import get_password_hash, role_config
+
+            for user_data in role_config.default_users:
+                username = user_data["username"]
+                # Truncate password to 72 bytes for bcrypt compatibility
+                password = user_data["password"]
+                password_bytes = password.encode('utf-8')[:72]
+                truncated_password = password_bytes.decode('utf-8', errors='ignore')
+
+                self._users[username] = {
+                    "username": username,
+                    "email": user_data.get("email", ""),
+                    "hashed_password": get_password_hash(truncated_password),
+                    "role": user_data.get("role", "user"),
+                    "disabled": False,
+                }
+            logger.info(f"Initialized {len(self._users)} default users")
+        except Exception as e:
+            logger.warning(f"Failed to initialize default users: {e}")
+
+    def get_user(self, username: str) -> dict | None:
+        """Get user by username."""
+        return self._users.get(username)
+
+    def create_user(
+        self, username: str, email: str, hashed_password: str, role: str = "user"
+    ) -> bool:
+        """Create a new user."""
+        if username in self._users:
+            return False
+
+        self._users[username] = {
+            "username": username,
+            "email": email,
+            "hashed_password": hashed_password,
+            "role": role,
+            "disabled": False,
+        }
+        logger.info(f"Created user: {username} with role: {role}")
+        return True
+
+
+class FileStorage(StorageBackend):
+    """File-based persistent storage for agent registry."""
+
+    def __init__(self, data_dir: str = "/data") -> None:
+        self.data_dir = Path(data_dir)
+        self.data_dir.mkdir(parents=True, exist_ok=True)
+        self.agents_file = self.data_dir / "agents.json"
+        self.extensions_file = self.data_dir / "extensions.json"
+        self.health_status_file = self.data_dir / "health_status.json"
+        self.users_file = self.data_dir / "users.json"
+        self._agents: dict[str, AgentCard] = {}
+        self._extensions: dict[str, ExtensionInfo] = {}
+        self._health_status: dict[str, dict] = {}
+        self._users: dict[str, dict] = {}
+        self._load_agents()
+        self._load_extensions()
+        self._load_health_status()
+        self._load_users()
+        self._initialize_default_users()
+
+    def _load_agents(self) -> None:
+        """Load agents from file."""
+        try:
+            if self.agents_file.exists():
+                with open(self.agents_file, encoding="utf-8") as f:
+                    data = json.load(f)
+                    self._agents = dict(data.items())
+                logger.info(
+                    f"Loaded {len(self._agents)} agents from {self.agents_file}"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to load agents from file: {e}")
+            self._agents = {}
+
+    def _save_agents(self) -> None:
+        """Save agents to file."""
+        try:
+            with open(self.agents_file, "w", encoding="utf-8") as f:
+                json.dump(self._agents, f, indent=2, ensure_ascii=False)
+            logger.debug(f"Saved {len(self._agents)} agents to {self.agents_file}")
+        except Exception as e:
+            logger.error(f"Failed to save agents to file: {e}")
+
+    def _load_extensions(self) -> None:
+        """Load extensions from file."""
+        try:
+            if self.extensions_file.exists():
+                with open(self.extensions_file, encoding="utf-8") as f:
+                    data = json.load(f)
+                    self._extensions = {
+                        uri: ExtensionInfo.from_dict(ext_data)
+                        for uri, ext_data in data.items()
+                    }
+                logger.info(
+                    f"Loaded {len(self._extensions)} extensions from {self.extensions_file}"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to load extensions from file: {e}")
+            self._extensions = {}
+
+    def _save_extensions(self) -> None:
+        """Save extensions to file."""
+        try:
+            data = {uri: ext.to_dict() for uri, ext in self._extensions.items()}
+            with open(self.extensions_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            logger.debug(
+                f"Saved {len(self._extensions)} extensions to {self.extensions_file}"
+            )
+        except Exception as e:
+            logger.error(f"Failed to save extensions to file: {e}")
+
+    def _load_health_status(self) -> None:
+        """Load health status from file."""
+        try:
+            if self.health_status_file.exists():
+                with open(self.health_status_file, encoding="utf-8") as f:
+                    data = json.load(f)
+                    # Convert ISO datetime strings back to datetime objects
+                    for agent_id, status_info in data.items():
+                        if "last_check_at" in status_info and isinstance(
+                            status_info["last_check_at"], str
+                        ):
+                            status_info["last_check_at"] = datetime.fromisoformat(
+                                status_info["last_check_at"]
+                            )
+                    self._health_status = data
+                logger.info(
+                    f"Loaded {len(self._health_status)} health statuses from {self.health_status_file}"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to load health status from file: {e}")
+            self._health_status = {}
+
+    def _save_health_status(self) -> None:
+        """Save health status to file."""
+        try:
+            # Convert datetime objects to ISO strings for JSON serialization
+            data = {}
+            for agent_id, status_info in self._health_status.items():
+                serialized_info = dict(status_info)
+                if "last_check_at" in serialized_info and isinstance(
+                    serialized_info["last_check_at"], datetime
+                ):
+                    serialized_info["last_check_at"] = serialized_info[
+                        "last_check_at"
+                    ].isoformat()
+                data[agent_id] = serialized_info
+
+            with open(self.health_status_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2, ensure_ascii=False)
+            logger.debug(
+                f"Saved {len(self._health_status)} health statuses to {self.health_status_file}"
+            )
+        except Exception as e:
+            logger.error(f"Failed to save health status to file: {e}")
+
+    async def register_agent(self, agent_card: AgentCard) -> bool:
+        """Register an agent in the registry."""
+        agent_id = agent_card.get("name")
+        if not agent_id:
+            return False
+        self._agents[agent_id] = agent_card
+        # Initialize health status as active
+        self._health_status[agent_id] = {
+            "status": "active",
+            "last_check_at": datetime.now(UTC),
+            "failure_count": 0,
+        }
+        self._save_agents()
+        self._save_health_status()
+        logger.info(f"Registered agent: {agent_id}")
+        return True
+
+    async def get_agent(self, agent_id: str) -> AgentCard | None:
+        """Get an agent by ID."""
+        return self._agents.get(agent_id)
+
+    async def list_agents(self) -> list[AgentCard]:
+        """List all registered agents."""
+        return list(self._agents.values())
+
+    async def unregister_agent(self, agent_id: str) -> bool:
+        """Unregister an agent."""
+        if agent_id in self._agents:
+            del self._agents[agent_id]
+            self._save_agents()
+            logger.info(f"Unregistered agent: {agent_id}")
+            return True
+        return False
+
+    async def search_agents(self, query: str) -> list[AgentCard]:
+        """Search agents by name, description, or capabilities."""
+        results = []
+        query_lower = query.lower()
+
+        for agent in self._agents.values():
+            # Search in name, description, and skills
+            if (
+                query_lower in agent.get("name", "").lower()
+                or query_lower in agent.get("description", "").lower()
+                or any(
+                    query_lower in skill.get("id", "").lower()
+                    for skill in agent.get("skills", [])
+                )
+            ):
+                results.append(agent)
+
+        return results
+
+    # Extension-related methods (similar to InMemoryStorage but with file persistence)
+    async def store_extension(self, extension_info: ExtensionInfo) -> bool:
+        """Store extension information."""
+        self._extensions[extension_info.uri] = extension_info
+        self._save_extensions()
+        logger.info(f"Stored extension: {extension_info.uri}")
+        return True
+
+    async def get_extension(self, uri: str) -> ExtensionInfo | None:
+        """Get extension information by URI."""
+        return self._extensions.get(uri)
+
+    async def list_extensions(
+        self,
+        uri_pattern: str | None = None,
+        declaring_agents: list[str] | None = None,
+        trust_levels: list[str] | None = None,
+        page_size: int = 100,
+        page_token: str | None = None,
+    ) -> tuple[list[ExtensionInfo], str | None, int]:
+        """List extensions with optional filtering and pagination."""
+        extensions = list(self._extensions.values())
+
+        # Apply filters
+        if uri_pattern:
+            extensions = [
+                ext for ext in extensions if uri_pattern.lower() in ext.uri.lower()
+            ]
+
+        if declaring_agents:
+            extensions = [
+                ext
+                for ext in extensions
+                if any(agent in ext.declaring_agents for agent in declaring_agents)
+            ]
+
+        if trust_levels:
+            extensions = [ext for ext in extensions if ext.trust_level in trust_levels]
+
+        # Simple pagination
+        total_count = len(extensions)
+        start_idx = 0
+        if page_token:
+            try:
+                start_idx = int(page_token)
+            except ValueError:
+                start_idx = 0
+
+        end_idx = start_idx + page_size
+        page_extensions = extensions[start_idx:end_idx]
+
+        next_page_token = None
+        if end_idx < total_count:
+            next_page_token = str(end_idx)
+
+        return page_extensions, next_page_token, total_count
+
+    async def get_agent_extensions(self, agent_id: str) -> list[ExtensionInfo]:
+        """Get all extensions used by a specific agent."""
+        return [
+            ext for ext in self._extensions.values() if agent_id in ext.declaring_agents
+        ]
+
+    async def update_agent_extensions(
+        self, agent_id: str, extensions: list[dict]
+    ) -> bool:
+        """Update extensions for an agent."""
+        # Remove agent from all current extensions
+        await self.remove_agent_from_extensions(agent_id)
+
+        # Add agent to new extensions
+        for ext_data in extensions:
+            uri = ext_data.get("uri", "")
+            if not uri:
+                continue
+
+            # Check if extension is allowed in current mode
+            if not config.is_extension_allowed(uri):
+                logger.warning(f"Extension {uri} not allowed in current mode")
+                continue
+
+            existing_ext = await self.get_extension(uri)
+            if existing_ext:
+                existing_ext.add_declaring_agent(agent_id)
+                self._save_extensions()  # Save after modification
+            else:
+                # Create new extension info
+                ext_info = ExtensionInfo(
+                    uri=uri,
+                    description=ext_data.get("description", ""),
+                    required=ext_data.get("required", False),
+                    params=ext_data.get("params", {}),
+                    first_declared_by_agent=agent_id,
+                    trust_level=config.get_default_trust_level(),
+                )
+                await self.store_extension(ext_info)
+
+        return True
+
+    async def remove_agent_from_extensions(self, agent_id: str) -> bool:
+        """Remove agent from all extension declarations."""
+        extensions_to_remove = []
+        modified = False
+
+        for uri, ext_info in self._extensions.items():
+            if agent_id in ext_info.declaring_agents:
+                ext_info.remove_declaring_agent(agent_id)
+                modified = True
+                # If no agents are using this extension anymore, remove it
+                if ext_info.usage_count == 0:
+                    extensions_to_remove.append(uri)
+
+        # Remove unused extensions
+        for uri in extensions_to_remove:
+            del self._extensions[uri]
+            logger.info(f"Removed unused extension: {uri}")
+            modified = True
+
+        if modified:
+            self._save_extensions()
+
+        return True
+
+    # Health monitoring methods
+    async def update_agent_health_status(
+        self, agent_id: str, status: str, last_check_at: datetime | None = None
+    ) -> bool:
+        """Update agent health status (active/inactive/deprecated)."""
+        if agent_id not in self._agents:
+            return False
+
+        if agent_id not in self._health_status:
+            self._health_status[agent_id] = {
+                "status": status,
+                "last_check_at": last_check_at or datetime.now(UTC),
+                "failure_count": 0,
+            }
+        else:
+            self._health_status[agent_id]["status"] = status
+            self._health_status[agent_id]["last_check_at"] = (
+                last_check_at or datetime.now(UTC)
+            )
+
+        self._save_health_status()
+        logger.info(f"Updated health status for {agent_id}: {status}")
+        return True
+
+    async def get_agent_health_status(self, agent_id: str) -> dict | None:
+        """Get agent health status information."""
+        return self._health_status.get(agent_id)
+
+    async def get_agents_for_health_check(self) -> list[tuple[str, dict]]:
+        """Get list of agents that need health checking with their health_check config."""
+        result = []
+        for agent_id, agent_card in self._agents.items():
+            # Get health_check configuration from agent_card
+            health_check_config = agent_card.get("health_check", {})
+            if isinstance(health_check_config, dict) and health_check_config.get("url"):
+                result.append((agent_id, health_check_config))
+        return result
+
+    def _load_users(self) -> None:
+        """Load users from file."""
+        try:
+            if self.users_file.exists():
+                with open(self.users_file, encoding="utf-8") as f:
+                    data = json.load(f)
+                    self._users = dict(data.items())
+                logger.info(f"Loaded {len(self._users)} users from {self.users_file}")
+        except Exception as e:
+            logger.warning(f"Failed to load users from file: {e}")
+            self._users = {}
+
+    def _save_users(self) -> None:
+        """Save users to file."""
+        try:
+            with open(self.users_file, "w", encoding="utf-8") as f:
+                json.dump(self._users, f, ensure_ascii=False, indent=2)
+            logger.info(f"Saved {len(self._users)} users to {self.users_file}")
+        except Exception as e:
+            logger.error(f"Failed to save users to file: {e}")
+
+    def _initialize_default_users(self) -> None:
+        """Initialize default users from config if they don't exist."""
+        from backend.auth import RoleConfig, get_password_hash
+
+        try:
+            role_config = RoleConfig()
+            for user_data in role_config.default_users:
+                username = user_data["username"]
+                # Only create if user doesn't already exist
+                if username not in self._users:
+                    password = user_data["password"]
+                    self._users[username] = {
+                        "username": username,
+                        "email": user_data.get("email", ""),
+                        "hashed_password": get_password_hash(password),
+                        "role": user_data.get("role", "user"),
+                        "disabled": False,
+                    }
+                    logger.info(f"Initialized default user: {username}")
+            # Save users after initialization
+            self._save_users()
+        except Exception as e:
+            logger.warning(f"Failed to initialize default users: {e}")
+
+    async def get_user(self, username: str) -> dict | None:
+        """Get user by username."""
+        return self._users.get(username)
+
+    async def create_user(
+        self, username: str, email: str, hashed_password: str, role: str = "user"
+    ) -> dict:
+        """Create a new user."""
+        if username in self._users:
+            raise ValueError(f"User {username} already exists")
+
+        user = {
+            "username": username,
+            "email": email,
+            "hashed_password": hashed_password,
+            "role": role,
+            "disabled": False,
+        }
+        self._users[username] = user
+        self._save_users()
+        logger.info(f"Created new user: {username}")
+        return user
+
+
+def get_storage_backend() -> StorageBackend:
+    """Get the appropriate storage backend based on environment configuration."""
+    storage_type = config.storage_type
+    data_dir = config.storage_data_dir
+
+    if storage_type == "file":
+        logger.info(f"Using file storage backend with data directory: {data_dir}")
+        return FileStorage(data_dir)
+    else:
+        logger.info("Using in-memory storage backend")
+        return InMemoryStorage()
+
+
+def get_vector_enhanced_storage() -> StorageBackend:
+    """Get vector-enhanced storage wrapper."""
+    try:
+        from .vector_enhanced_storage import VectorEnhancedStorage
+
+        backend = get_storage_backend()
+        vector_storage = VectorEnhancedStorage(backend)
+        logger.info("Using vector-enhanced storage with FAISS")
+        return vector_storage
+    except ImportError as e:
+        logger.warning(f"Vector search dependencies not available: {e}")
+        logger.info("Falling back to basic storage backend")
+        return get_storage_backend()
+    except Exception as e:
+        logger.error(f"Failed to initialize vector-enhanced storage: {e}")
+        logger.info("Falling back to basic storage backend")
+        return get_storage_backend()
+
+
+# Global storage instance (with vector enhancement if available)
+storage = get_vector_enhanced_storage()

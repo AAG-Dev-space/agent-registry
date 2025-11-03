@@ -1,36 +1,37 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Loader2, AlertCircle, ExternalLink, Code } from 'lucide-react';
+import { Loader2, AlertCircle, Bot, Wrench, Database, ArrowRight, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { agentApi } from '../api/client';
-import type { AgentCard } from '../types/agent';
+import type { AgentCard as AgentCardType, HealthStatus } from '../types/agent';
 
 export default function AgentList() {
-  const [agents, setAgents] = useState<AgentCard[]>([]);
-  const [filteredAgents, setFilteredAgents] = useState<AgentCard[]>([]);
+  const [agents, setAgents] = useState<AgentCardType[]>([]);
+  const [filteredAgents, setFilteredAgents] = useState<AgentCardType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTag, setSelectedTag] = useState<string>('');
+
+  // Extract unique tags from agents
+  const tags = Array.from(new Set(agents.flatMap(agent =>
+    agent.skills?.map(skill => skill.name) || []
+  )));
 
   useEffect(() => {
     loadAgents();
   }, []);
 
   useEffect(() => {
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      const filtered = agents.filter(
-        (agent) =>
-          agent.name.toLowerCase().includes(query) ||
-          agent.description.toLowerCase().includes(query) ||
-          agent.skills?.some((skill) =>
-            skill.description.toLowerCase().includes(query)
-          )
+    let filtered = [...agents];
+
+    // Apply tag filter
+    if (selectedTag) {
+      filtered = filtered.filter(
+        (agent) => agent.skills?.some(skill => skill.name === selectedTag)
       );
-      setFilteredAgents(filtered);
-    } else {
-      setFilteredAgents(agents);
     }
-  }, [searchQuery, agents]);
+
+    setFilteredAgents(filtered);
+  }, [selectedTag, agents]);
 
   const loadAgents = async () => {
     try {
@@ -47,52 +48,126 @@ export default function AgentList() {
     }
   };
 
-  return (
-    <div className="p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Browse Agents</h1>
-          <p className="text-slate-400">
-            Discover registered agents and their capabilities
-          </p>
-        </div>
+  const getIconForAgent = (name: string) => {
+    const iconProps = { className: "h-6 w-6 text-gray-800" };
 
-        {/* Search Bar */}
-        <div className="mb-6">
-          <div className="relative">
-            <Search
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400"
-              size={20}
-            />
-            <input
-              type="text"
-              placeholder="Search agents by name, description, or skills..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600"
-            />
+    const lowerName = name.toLowerCase();
+    if (lowerName.includes('database') || lowerName.includes('db') || lowerName.includes('supabase') || lowerName.includes('prometheus')) {
+      return <Database {...iconProps} />;
+    } else if (lowerName.includes('tool') || lowerName.includes('helper') || lowerName.includes('harper')) {
+      return <Wrench {...iconProps} />;
+    } else if (lowerName.includes('data') || lowerName.includes('open')) {
+      return <Database {...iconProps} />;
+    }
+    return <Bot {...iconProps} />;
+  };
+
+  const getHealthBadge = (healthStatus?: HealthStatus) => {
+    if (!healthStatus) {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 text-gray-600">
+          <AlertTriangle className="h-3 w-3" />
+          Unknown
+        </span>
+      );
+    }
+
+    switch (healthStatus.status) {
+      case 'active':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-success-50 text-success-700">
+            <CheckCircle className="h-3 w-3" />
+            Active
+          </span>
+        );
+      case 'inactive':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-error-50 text-error-700">
+            <XCircle className="h-3 w-3" />
+            Inactive
+          </span>
+        );
+      case 'deprecated':
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 text-gray-700">
+            <XCircle className="h-3 w-3" />
+            Deprecated
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 text-gray-600">
+            <AlertTriangle className="h-3 w-3" />
+            Unknown
+          </span>
+        );
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8 md:px-6 max-w-screen-2xl">
+        {/* Hero Section */}
+        <section className="pt-8 pb-12">
+          <div className="max-w-3xl">
+            <h1 className="text-title-lg font-bold text-gray-900 mb-4">
+              Discover A2A Agents
+            </h1>
+            <p className="text-theme-xl text-gray-500">
+              Browse and discover powerful A2A agents to enhance your AI applications.
+            </p>
           </div>
-        </div>
+        </section>
+
+        {/* Tag Filter Section */}
+        {tags.length > 0 && (
+          <section className="pb-8">
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => setSelectedTag('')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  selectedTag === ''
+                    ? 'bg-brand-500 text-white shadow-theme-xs'
+                    : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                All
+              </button>
+              {tags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => setSelectedTag(selectedTag === tag ? '' : tag)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedTag === tag
+                      ? 'bg-brand-500 text-white shadow-theme-xs'
+                      : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Loading State */}
         {loading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="animate-spin text-blue-600" size={32} />
-            <span className="ml-3 text-slate-400">Loading agents...</span>
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="animate-spin text-brand-500" size={40} />
+            <span className="ml-3 text-lg text-gray-500">Loading agents...</span>
           </div>
         )}
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 mb-6">
+          <div className="rounded-2xl border border-error-200 bg-error-50 p-6 mb-6">
             <div className="flex items-center gap-3">
-              <AlertCircle className="text-red-500" size={20} />
+              <AlertCircle className="text-error-500" size={24} />
               <div>
-                <p className="text-red-400 font-medium">{error}</p>
+                <p className="text-error-700 font-medium">{error}</p>
                 <button
                   onClick={loadAgents}
-                  className="text-sm text-red-300 hover:text-red-200 underline mt-1"
+                  className="text-sm text-error-600 hover:text-error-700 underline mt-2"
                 >
                   Try again
                 </button>
@@ -101,105 +176,77 @@ export default function AgentList() {
           </div>
         )}
 
-        {/* Agent Count */}
-        {!loading && !error && (
-          <div className="mb-4 text-slate-400">
-            Found {filteredAgents.length} agent{filteredAgents.length !== 1 ? 's' : ''}
-          </div>
-        )}
-
         {/* Agents Grid */}
-        {!loading && !error && filteredAgents.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-slate-400 text-lg mb-4">
-              {searchQuery ? 'No agents found matching your search' : 'No agents registered yet'}
-            </p>
-            <Link
-              to="/register"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-            >
-              Register the first agent
-            </Link>
-          </div>
-        )}
-
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAgents.map((agent) => (
-            <div
-              key={agent.name}
-              className="bg-slate-800 border border-slate-700 rounded-lg p-6 hover:border-slate-600 transition-colors"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-xl font-semibold text-white mb-1">
-                    {agent.name}
-                  </h3>
-                  <div className="flex items-center gap-2 text-sm text-slate-400">
-                    <span>v{agent.version}</span>
-                    <span>•</span>
-                    <span>A2A {agent.protocol_version}</span>
-                  </div>
-                </div>
+        {!loading && !error && (
+          <section className="pb-12">
+            {filteredAgents.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-lg mb-4 text-gray-500">
+                  No agents found
+                </p>
                 <Link
-                  to={`/agents/${encodeURIComponent(agent.name)}`}
-                  className="text-blue-400 hover:text-blue-300"
+                  to="/register"
+                  className="inline-flex items-center justify-center rounded-lg bg-brand-500 px-6 py-3 text-sm font-medium text-white shadow-theme-sm hover:bg-brand-600 transition-colors"
                 >
-                  <ExternalLink size={18} />
+                  Register First Agent
                 </Link>
               </div>
-
-              <p className="text-slate-300 text-sm mb-4 line-clamp-3">
-                {agent.description}
-              </p>
-
-              {/* Transport */}
-              {agent.preferred_transport && (
-                <div className="mb-4">
-                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-slate-700 text-slate-300 text-xs rounded">
-                    <Code size={12} />
-                    {agent.preferred_transport}
-                  </span>
-                </div>
-              )}
-
-              {/* Skills */}
-              {agent.skills && agent.skills.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-slate-400 mb-2">
-                    Skills ({agent.skills.length})
-                  </h4>
-                  <div className="space-y-1">
-                    {agent.skills.slice(0, 3).map((skill) => (
-                      <div
-                        key={skill.id}
-                        className="text-sm text-slate-300 truncate"
-                      >
-                        • {skill.description || skill.id}
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                {filteredAgents.map((agent) => (
+                  <Link
+                    key={agent.name}
+                    to={`/agents/${encodeURIComponent(agent.name)}`}
+                    className="block rounded-2xl border border-gray-200 bg-white p-5 md:p-6 transition-all hover:shadow-theme-md group"
+                  >
+                    {/* Icon and Status */}
+                    <div className="flex items-center justify-between mb-5">
+                      <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
+                        {getIconForAgent(agent.name)}
                       </div>
-                    ))}
-                    {agent.skills.length > 3 && (
-                      <div className="text-sm text-slate-400">
-                        +{agent.skills.length - 3} more
+                      {getHealthBadge(agent.health_status)}
+                    </div>
+
+                    {/* Agent Name */}
+                    <h3 className="text-base font-medium text-gray-900 mb-2">
+                      {agent.name}
+                    </h3>
+
+                    {/* Description */}
+                    <p className="text-sm text-gray-500 mb-4 line-clamp-3">
+                      {agent.description}
+                    </p>
+
+                    {/* Tags */}
+                    {agent.skills && agent.skills.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {agent.skills.slice(0, 3).map((skill, idx) => (
+                          <span
+                            key={idx}
+                            className="px-3 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700"
+                          >
+                            {skill.name}
+                          </span>
+                        ))}
+                        {agent.skills.length > 3 && (
+                          <span className="px-3 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
+                            +{agent.skills.length - 3}
+                          </span>
+                        )}
                       </div>
                     )}
-                  </div>
-                </div>
-              )}
 
-              {/* URL */}
-              <div className="mt-4 pt-4 border-t border-slate-700">
-                <a
-                  href={agent.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-400 hover:text-blue-300 truncate block"
-                >
-                  {agent.url}
-                </a>
+                    {/* View Details Link */}
+                    <div className="flex items-center gap-2 text-sm font-medium text-brand-500 group-hover:gap-3 transition-all">
+                      <span>View details</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </div>
+                  </Link>
+                ))}
               </div>
-            </div>
-          ))}
-        </div>
+            )}
+          </section>
+        )}
       </div>
     </div>
   );

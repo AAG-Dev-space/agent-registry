@@ -2,7 +2,7 @@
 
 import pytest
 
-from a2a_registry import __version__, A2A_PROTOCOL_VERSION
+from backend import __version__, A2A_PROTOCOL_VERSION
 from src.a2a_registry.proto.generated import a2a_pb2, registry_pb2
 
 
