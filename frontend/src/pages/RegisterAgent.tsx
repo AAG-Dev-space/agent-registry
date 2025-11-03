@@ -352,11 +352,80 @@ export default function RegisterAgent() {
             </div>
           </div>
 
-          {/* 3. A2A Protocol Support (Optional) */}
+          {/* 3. Skills */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <h2 className="text-base font-medium text-gray-900 mb-5">3. Skills</h2>
+
+            {/* Existing Skills */}
+            {formData.skills && formData.skills.length > 0 && (
+              <div className="space-y-2 mb-5">
+                {formData.skills.map((skill, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100"
+                  >
+                    <div className="flex-1">
+                      <p className="text-gray-900 font-medium text-sm">{skill.id}</p>
+                      <p className="text-gray-500 text-sm">{skill.description}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSkill(index)}
+                      className="text-error-500 hover:text-error-600 p-1 transition-colors"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add New Skill */}
+            <div className="space-y-3">
+              <div>
+                <input
+                  type="text"
+                  placeholder="Skill ID (e.g., get_weather)"
+                  value={newSkill.id}
+                  onChange={(e) => setNewSkill((prev) => ({ ...prev, id: e.target.value }))}
+                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Skill Name (e.g., Get Weather)"
+                  value={newSkill.name}
+                  onChange={(e) => setNewSkill((prev) => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  placeholder="Skill Description"
+                  value={newSkill.description}
+                  onChange={(e) => setNewSkill((prev) => ({ ...prev, description: e.target.value }))}
+                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleAddSkill}
+                disabled={!newSkill.id || !newSkill.name || !newSkill.description}
+                className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-lg font-medium transition-colors"
+              >
+                <PlusCircle size={18} />
+                Add Skill
+              </button>
+            </div>
+          </div>
+
+          {/* 4. A2A Protocol Support (Optional) */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6">
             <div className="flex items-center justify-between mb-5">
               <div>
-                <h2 className="text-base font-medium text-gray-900">3. A2A Protocol Support (Optional)</h2>
+                <h2 className="text-base font-medium text-gray-900">4. A2A Protocol Support (Optional)</h2>
                 <p className="text-sm text-gray-500 mt-1">Enable if this agent supports the A2A protocol for agent-to-agent communication</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -470,75 +539,6 @@ export default function RegisterAgent() {
                 </div>
               </div>
             )}
-          </div>
-
-          {/* 4. Skills */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6">
-            <h2 className="text-base font-medium text-gray-900 mb-5">4. Skills (Optional)</h2>
-
-            {/* Existing Skills */}
-            {formData.skills && formData.skills.length > 0 && (
-              <div className="space-y-2 mb-5">
-                {formData.skills.map((skill, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-100"
-                  >
-                    <div className="flex-1">
-                      <p className="text-gray-900 font-medium text-sm">{skill.id}</p>
-                      <p className="text-gray-500 text-sm">{skill.description}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSkill(index)}
-                      className="text-error-500 hover:text-error-600 p-1 transition-colors"
-                    >
-                      <X size={18} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Add New Skill */}
-            <div className="space-y-3">
-              <div>
-                <input
-                  type="text"
-                  placeholder="Skill ID (e.g., get_weather)"
-                  value={newSkill.id}
-                  onChange={(e) => setNewSkill((prev) => ({ ...prev, id: e.target.value }))}
-                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
-                />
-              </div>
-              <div>
-                <input
-                  type="text"
-                  placeholder="Skill Name (e.g., Get Weather)"
-                  value={newSkill.name}
-                  onChange={(e) => setNewSkill((prev) => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
-                />
-              </div>
-              <div>
-                <input
-                  type="text"
-                  placeholder="Skill Description"
-                  value={newSkill.description}
-                  onChange={(e) => setNewSkill((prev) => ({ ...prev, description: e.target.value }))}
-                  className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
-                />
-              </div>
-              <button
-                type="button"
-                onClick={handleAddSkill}
-                disabled={!newSkill.id || !newSkill.name || !newSkill.description}
-                className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 rounded-lg font-medium transition-colors"
-              >
-                <PlusCircle size={18} />
-                Add Skill
-              </button>
-            </div>
           </div>
 
           {/* 5. Capabilities */}
