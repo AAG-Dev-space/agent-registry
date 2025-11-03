@@ -169,3 +169,11 @@ logs/
 
 # Claude Code
 .claude/
+
+*.un~
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
