@@ -1,0 +1,62 @@
+# Git
+.git
+.gitignore
+.gitmodules
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info
+dist
+build
+.venv
+venv
+env
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Frontend build (will be built in container)
+frontend/dist
+frontend/node_modules
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+!README.md
+docs
+
+# Data and logs
+data
+*.log
+logs
+
+# Testing
+.coverage
+htmlcov
+.pytest_cache
+.tox
+
+# Deploy files (not needed in image)
+deploy/*.md
+
+# Misc
+.env
+.env.local
+*.bak
+*.tmp

@@ -1,0 +1,48 @@
+services:
+  backend:
+    image: a2a-registry-backend:latest
+    container_name: a2a-registry-backend
+    restart: unless-stopped
+    ports:
+      - "7601:8000"
+    environment:
+      - STORAGE_TYPE=file
+      - STORAGE_DATA_DIR=/app/data
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+    volumes:
+      - backend-data:/app/data
+      - ../config:/app/config:ro
+    networks:
+      - a2a-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  frontend:
+    image: a2a-registry-frontend:latest
+    container_name: a2a-registry-frontend
+    restart: unless-stopped
+    ports:
+      - "7600:80"
+    depends_on:
+      - backend
+    networks:
+      - a2a-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+networks:
+  a2a-network:
+    driver: bridge
+
+volumes:
+  backend-data:
+    driver: local

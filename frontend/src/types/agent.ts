@@ -20,6 +20,12 @@ export interface HealthStatus {
   failure_count: number;
 }
 
+export interface HealthCheckConfig {
+  url: string;
+  timeout?: number;
+  expected_status?: number;
+}
+
 export interface AgentCard {
   name: string;
   description: string;
@@ -31,6 +37,7 @@ export interface AgentCard {
   skills?: AgentSkill[];
   metadata?: Record<string, any>;
   health_status?: HealthStatus;
+  health_check?: HealthCheckConfig;
 }
 
 export interface RegisterAgentRequest {

@@ -25,6 +25,11 @@ export default function RegisterAgent() {
     description: '',
   });
 
+  const [enableHealthCheck, setEnableHealthCheck] = useState(false);
+  const [healthCheckUrl, setHealthCheckUrl] = useState('');
+  const [healthCheckTimeout, setHealthCheckTimeout] = useState(10);
+  const [healthCheckExpectedStatus, setHealthCheckExpectedStatus] = useState(200);
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -56,7 +61,18 @@ export default function RegisterAgent() {
     setSuccess(false);
 
     try {
-      await agentApi.registerAgent(formData);
+      // Prepare agent data with health check if enabled
+      const agentData = { ...formData };
+
+      if (enableHealthCheck && healthCheckUrl) {
+        agentData.health_check = {
+          url: healthCheckUrl,
+          timeout: healthCheckTimeout,
+          expected_status: healthCheckExpectedStatus,
+        };
+      }
+
+      await agentApi.registerAgent(agentData);
       setSuccess(true);
       setTimeout(() => {
         navigate('/agents');
@@ -272,6 +288,83 @@ export default function RegisterAgent() {
                 Add Skill
               </button>
             </div>
+          </div>
+
+          {/* Health Check */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <h2 className="text-base font-medium text-gray-900">Health Check (Optional)</h2>
+                <p className="text-sm text-gray-500 mt-1">Configure automatic health monitoring for your agent</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={enableHealthCheck}
+                  onChange={(e) => setEnableHealthCheck(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-brand-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-500"></div>
+              </label>
+            </div>
+
+            {enableHealthCheck && (
+              <div className="space-y-5">
+                <div>
+                  <label htmlFor="healthCheckUrl" className="block text-theme-sm font-medium text-gray-700 mb-2">
+                    Health Check URL *
+                  </label>
+                  <input
+                    type="url"
+                    id="healthCheckUrl"
+                    value={healthCheckUrl}
+                    onChange={(e) => setHealthCheckUrl(e.target.value)}
+                    placeholder="https://my-agent.example.com/health"
+                    required={enableHealthCheck}
+                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">The endpoint will be checked every 5 minutes</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="healthCheckTimeout" className="block text-theme-sm font-medium text-gray-700 mb-2">
+                      Timeout (seconds)
+                    </label>
+                    <input
+                      type="number"
+                      id="healthCheckTimeout"
+                      value={healthCheckTimeout}
+                      onChange={(e) => setHealthCheckTimeout(parseInt(e.target.value))}
+                      min="1"
+                      max="60"
+                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="healthCheckExpectedStatus" className="block text-theme-sm font-medium text-gray-700 mb-2">
+                      Expected Status Code
+                    </label>
+                    <input
+                      type="number"
+                      id="healthCheckExpectedStatus"
+                      value={healthCheckExpectedStatus}
+                      onChange={(e) => setHealthCheckExpectedStatus(parseInt(e.target.value))}
+                      min="100"
+                      max="599"
+                      className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-lg bg-blue-50 border border-blue-200 p-4">
+                  <p className="text-sm text-blue-700">
+                    <strong>Note:</strong> If the health check fails 3 times consecutively, the agent will be marked as inactive.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Submit Button */}
