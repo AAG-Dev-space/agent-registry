@@ -4,21 +4,22 @@ AI 에이전트를 등록, 검색, 관리하는 중앙 레지스트리 시스템
 
 ## 주요 기능
 
-### 1. 에이전트 관리
-- **에이전트 등록**: 새로운 AI 에이전트를 레지스트리에 등록
+### 1. URL 기반 에이전트 관리
+- **에이전트 등록**: AgentCard URL만 입력하면 자동으로 fetch 및 등록
 - **에이전트 조회**: 등록된 에이전트 목록 조회 및 상세 정보 확인
-- **에이전트 삭제**: 관리자 권한으로 에이전트 제거 (역할 기반 접근 제어)
+- **에이전트 삭제**: URL 소유권 검증 후 삭제 가능
 - **스킬 관리**: 에이전트의 스킬(기능) 등록 및 조회
 
-### 2. 헬스 체크 시스템
-- **자동 모니터링**: 5분 간격으로 등록된 에이전트의 상태 자동 확인
-- **상태 관리**: 에이전트의 활성/비활성 상태 실시간 추적
-- **장애 감지**: 연속 실패 횟수 기록 및 모니터링
+### 2. 자동 동기화 시스템
+- **주기적 폴링**: 하루 1회 모든 에이전트의 AgentCard URL 확인
+- **변경 감지**: 해시 비교를 통한 자동 변경사항 감지
+- **상태 관리**: active/inactive/deprecated 자동 상태 전이
+- **실패 관리**: 연속 실패 횟수 기록 및 모니터링
 
-### 3. 인증 및 권한 관리
-- **JWT 기반 인증**: JSON Web Token을 사용한 안전한 인증
-- **역할 기반 접근 제어 (RBAC)**: Admin, User 역할에 따른 차등 권한
-- **사용자 관리**: 회원가입, 로그인, 사용자 정보 조회
+### 3. URL 소유권 기반 인증
+- **인증 불필요**: 별도의 회원가입, 로그인 절차 없음
+- **URL 소유권**: AgentCard를 호스팅하는 것 자체가 소유권 증명
+- **권장 경로**: `/.well-known/agent-card.json`
 
 ### 4. 데이터 영속성
 - **PostgreSQL + pgvector**: 프로덕션급 관계형 데이터베이스
@@ -168,29 +169,26 @@ a2a-registry/
 
 ### Backend API (http://localhost:8000)
 
-#### 에이전트 관리
-- `GET /agents` - 등록된 에이전트 목록 조회
-- `POST /agents` - 새 에이전트 등록
-- `GET /agents/{agent_id}` - 특정 에이전트 상세 정보
-- `DELETE /agents/{agent_id}` - 에이전트 삭제 (Admin 전용)
-- `GET /agents/{agent_id}/health` - 에이전트 헬스 상태 조회
+#### 에이전트 관리 (모두 Public API)
+- `GET /api/v1/agents` - 등록된 에이전트 목록 조회
+- `POST /api/v1/agents` - 새 에이전트 등록 (Body: `{ "agent_card_url": "https://..." }`)
+- `GET /api/v1/agents/{agent_id}` - 특정 에이전트 상세 정보
+- `DELETE /api/v1/agents/{agent_id}` - 에이전트 삭제 (URL 소유권 검증)
+- `POST /api/v1/agents/{agent_id}/verify` - AgentCard URL 수동 검증
+- `GET /api/v1/agents/{agent_id}/sync-status` - 동기화 상태 조회
+- `POST /api/v1/agents/search` - 에이전트 검색
 
 #### 스킬 관리
-- `POST /agents/{agent_id}/skills` - 에이전트에 스킬 등록
-- `GET /agents/{agent_id}/skills` - 에이전트의 스킬 목록 조회
-
-#### 인증
-- `POST /auth/login` - 로그인 (JWT 토큰 발급)
-- `POST /auth/register` - 회원가입
-- `GET /auth/me` - 현재 로그인한 사용자 정보
-
-#### 확장 기능
-- `POST /agents/{agent_id}/extensions` - 확장 기능 등록
-- `GET /agents/{agent_id}/extensions` - 확장 기능 목록 조회
+- `POST /api/v1/agents/{agent_id}/skills` - 에이전트에 스킬 등록
+- `GET /api/v1/agents/{agent_id}/skills` - 에이전트의 스킬 목록 조회
 
 ### Frontend Routes (http://localhost:5173)
 - `/` - 홈페이지 (에이전트 목록)
-- `/login` - 로그인 페이지
+- `/register` - 에이전트 등록 페이지
+- `/agents` - 에이전트 목록
+- `/agents/:id` - 에이전트 상세
+- `/health` - 헬스 체크
+- `/wiki/*` - 문서 페이지
 
 ## 빠른 시작
 
@@ -229,12 +227,30 @@ STORAGE_TYPE=file STORAGE_DATA_DIR=./data .venv/bin/a2a-registry serve --host 0.
 cd frontend && npm run dev
 ```
 
-### 4. 기본 계정
+### 4. AgentCard 준비
 
-`config/roles.yaml`에 정의된 기본 계정:
+Agent 서버에 AgentCard JSON 파일을 호스팅하세요:
 
-- **Admin**: `admin` / `admin`
-- **User**: `user` / `user`
+```json
+// https://myagent.com/.well-known/agent-card.json
+{
+  "name": "my-agent",
+  "description": "My AI Agent",
+  "url": "https://myagent.com",
+  "version": "1.0.0",
+  "capabilities": [...]
+}
+```
+
+### 5. 에이전트 등록
+
+Registry에 AgentCard URL만 입력하면 자동으로 등록됩니다:
+
+```bash
+curl -X POST http://localhost:8000/api/v1/agents \
+  -H "Content-Type: application/json" \
+  -d '{"agent_card_url": "https://myagent.com/.well-known/agent-card.json"}'
+```
 
 ## 기술 스택
 
@@ -245,12 +261,11 @@ cd frontend && npm run dev
 - **pgvector**: Vector similarity search
 - **asyncpg**: PostgreSQL 비동기 드라이버
 - **Pydantic**: 데이터 검증 및 직렬화
-- **python-jose**: JWT 토큰 생성/검증
-- **passlib**: 비밀번호 해싱
+- **httpx**: HTTP 클라이언트 (AgentCard fetch용)
 - **APScheduler**: 백그라운드 작업 스케줄링
 
 ### Frontend
-- **React 18**: UI 라이브러리
+- **React 19**: UI 라이브러리
 - **TypeScript**: 타입 안정성
 - **Vite**: 빌드 도구
 - **Tailwind CSS**: 유틸리티 기반 CSS 프레임워크
@@ -259,4 +274,7 @@ cd frontend && npm run dev
 
 ## 상세 문서
 
-더 자세한 구현 내용은 [DETAIL_ko.md](DETAIL_ko.md)를 참고하세요.
+- [CLAUDE.md](CLAUDE.md): 프로젝트 개요
+- [FLOW.md](FLOW.md): 등록 플로우 상세
+- [backend/CLAUDE.md](backend/CLAUDE.md): 백엔드 아키텍처
+- [frontend/CLAUDE.md](frontend/CLAUDE.md): 프론트엔드 구조
