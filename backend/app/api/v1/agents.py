@@ -1,22 +1,17 @@
 """Agent API endpoints."""
 
 import logging
-import time
 from typing import Annotated
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.deps import get_current_active_user, get_db, require_admin
-from backend.app.models.user import UserModel
+from backend.app.core.deps import get_db
 from backend.app.schemas.agent import (
     AgentCard,
     AgentListResponse,
     AgentResponse,
     AgentSearchRequest,
-    HealthCheckRequest,
-    HealthCheckResponse,
 )
 from backend.app.services.agent_service import AgentService
 
@@ -29,11 +24,10 @@ router = APIRouter(prefix="/agents", tags=["agents"])
 async def register_agent(
     agent_card: AgentCard,
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[UserModel, Depends(get_current_active_user)],
 ):
     """Register a new agent or update existing one.
 
-    Requires authentication. Any authenticated user can register agents.
+    Public endpoint - Agent URL ownership is the authentication.
 
     Args:
         agent_card: Agent card information
@@ -116,11 +110,11 @@ async def get_agent(
 async def delete_agent(
     agent_id: str,
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[UserModel, Depends(require_admin)],
 ):
     """Delete an agent.
 
-    Requires admin role.
+    Public endpoint - anyone can request deletion.
+    Actual deletion should verify agent_card_url ownership.
     """
     try:
         service = AgentService(db)

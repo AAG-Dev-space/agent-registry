@@ -9,8 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from backend.app.api.v1 import api_router
 from backend.app.core.config import get_settings
 from backend.app.core.database import close_db, init_db
-from backend.app.core.security import get_password_hash, role_config
-from backend.app.models.user import UserModel
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -26,44 +24,12 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("Database initialized")
 
-    # Initialize default users
-    await initialize_default_users()
-
     yield
 
     # Shutdown
     logger.info("Shutting down A2A Registry...")
     await close_db()
     logger.info("Database connections closed")
-
-
-async def initialize_default_users():
-    """Initialize default users from role config."""
-    from backend.app.core.database import async_session_maker
-    from sqlalchemy import select
-
-    async with async_session_maker() as session:
-        for user_data in role_config.default_users:
-            # Check if user already exists
-            result = await session.execute(
-                select(UserModel).where(UserModel.username == user_data["username"])
-            )
-            existing = result.scalar_one_or_none()
-
-            if not existing:
-                # Create default user
-                hashed_password = get_password_hash(user_data["password"])
-                new_user = UserModel(
-                    username=user_data["username"],
-                    email=user_data.get("email"),
-                    hashed_password=hashed_password,
-                    role=user_data.get("role", "user"),
-                    disabled=False,
-                )
-                session.add(new_user)
-                logger.info(f"Created default user: {user_data['username']}")
-
-        await session.commit()
 
 
 def create_app() -> FastAPI:
