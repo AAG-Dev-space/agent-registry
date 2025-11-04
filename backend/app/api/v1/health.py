@@ -6,8 +6,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.core.deps import get_current_active_user, get_db
-from backend.app.models.user import UserModel
+from backend.app.core.deps import get_db
 from backend.app.schemas.health import (
     HealthCheckVerifyRequest,
     HealthCheckVerifyResponse,
@@ -54,11 +53,10 @@ async def get_agent_health_status(
 @router.get("/statuses", response_model=list[HealthStatusResponse])
 async def list_all_health_statuses(
     db: Annotated[AsyncSession, Depends(get_db)],
-    current_user: Annotated[UserModel, Depends(get_current_active_user)],
 ):
     """List all health statuses.
 
-    Requires authentication.
+    Public endpoint - no authentication required.
     """
     try:
         service = HealthService(db)

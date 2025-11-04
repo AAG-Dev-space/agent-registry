@@ -1,11 +1,9 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Sparkles, LogOut, User, ChevronDown } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { Sparkles, ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Layout() {
   const location = useLocation();
-  const { user, logout, isAuthenticated } = useAuth();
   const [wikiDropdownOpen, setWikiDropdownOpen] = useState(false);
 
   const isActive = (path: string) => {
@@ -106,38 +104,6 @@ export default function Layout() {
               >
                 Submit Agent
               </Link>
-
-              {/* Auth Section */}
-              {isAuthenticated && user ? (
-                <div className="flex items-center gap-4 ml-4 pl-4 border-l border-gray-200">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-gray-600" />
-                    <span className="text-sm text-gray-700">
-                      {user.username}
-                      {user.role === 'admin' && (
-                        <span className="ml-2 px-2 py-0.5 rounded text-xs font-medium bg-brand-100 text-brand-700">
-                          Admin
-                        </span>
-                      )}
-                    </span>
-                  </div>
-                  <button
-                    onClick={logout}
-                    className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-gray-900 transition-colors"
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Logout
-                  </button>
-                </div>
-              ) : (
-                <Link
-                  to="/login"
-                  className="ml-4 pl-4 border-l border-gray-200 inline-flex items-center gap-1.5 text-sm text-gray-700 hover:text-brand-500 transition-colors"
-                >
-                  <User className="h-4 w-4" />
-                  Login
-                </Link>
-              )}
             </nav>
           </div>
         </div>

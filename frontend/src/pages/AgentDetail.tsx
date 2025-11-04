@@ -1,19 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Loader2, AlertCircle, Copy, Check, Code, Trash2, CheckCircle, XCircle, AlertTriangle, Activity } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Loader2, AlertCircle, Copy, Check, Code, CheckCircle, XCircle, AlertTriangle, Activity } from 'lucide-react';
 import { agentApi } from '../api/client';
-import { useAuth } from '../contexts/AuthContext';
 import type { AgentCard, HealthStatus } from '../types/agent';
 
 export default function AgentDetail() {
   const { agentId } = useParams<{ agentId: string }>();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
   const [agent, setAgent] = useState<AgentCard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedUrl, setCopiedUrl] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (agentId) {
@@ -140,20 +137,6 @@ export default function AgentDetail() {
     };
   };
 
-  const handleDelete = async () => {
-    if (!agentId || !confirm('Are you sure you want to delete this agent?')) return;
-
-    try {
-      setDeleting(true);
-      await agentApi.deleteAgent(decodeURIComponent(agentId));
-      navigate('/agents');
-    } catch (err) {
-      alert('Failed to delete agent');
-      console.error('Error deleting agent:', err);
-    } finally {
-      setDeleting(false);
-    }
-  };
 
   if (loading) {
     return (
@@ -225,16 +208,6 @@ export default function AgentDetail() {
                 )}
               </div>
             </div>
-            {isAdmin && (
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="flex items-center gap-2 px-4 py-2 bg-error-500 hover:bg-error-600 disabled:bg-error-400 text-white rounded-lg font-medium shadow-theme-xs transition-colors"
-              >
-                <Trash2 size={18} />
-                {deleting ? 'Deleting...' : 'Delete'}
-              </button>
-            )}
           </div>
 
           {/* Tags */}
