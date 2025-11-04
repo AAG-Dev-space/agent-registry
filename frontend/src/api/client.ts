@@ -24,27 +24,48 @@ apiClient.interceptors.request.use((config) => {
 export const agentApi = {
   // Register a new agent
   registerAgent: async (agentCard: AgentCard): Promise<{ success: boolean; agent_id: string }> => {
-    const response = await apiClient.post<{ success: boolean; agent_id: string }>('/agents', {
+    const response = await apiClient.post<{ success: boolean; agent_id: string }>('/v1/agents', {
       agent_card: agentCard,
     } as RegisterAgentRequest);
     return response.data;
   },
 
+  // Register agent by URL
+  registerAgentByUrl: async (agentCardUrl: string): Promise<{ success: boolean; agent_id: string }> => {
+    const response = await apiClient.post<{ success: boolean; agent_id: string }>('/v1/agents/register-by-url', {
+      agent_card_url: agentCardUrl,
+    });
+    return response.data;
+  },
+
+  // Verify AgentCard URL
+  verifyAgentCardUrl: async (url: string): Promise<{
+    success: boolean;
+    agent_card?: AgentCard;
+    error?: string;
+    response_time_ms?: number;
+  }> => {
+    const response = await apiClient.post('/v1/agents/verify', {
+      url,
+    });
+    return response.data;
+  },
+
   // Get all agents
   listAgents: async (): Promise<AgentCard[]> => {
-    const response = await apiClient.get<{ agents: AgentCard[]; count: number }>('/agents');
+    const response = await apiClient.get<{ agents: AgentCard[]; count: number }>('/v1/agents');
     return response.data.agents;
   },
 
   // Get agent by ID
   getAgent: async (agentId: string): Promise<AgentCard> => {
-    const response = await apiClient.get<{ agent_card: AgentCard }>(`/agents/${agentId}`);
+    const response = await apiClient.get<{ agent_card: AgentCard }>(`/v1/agents/${agentId}`);
     return response.data.agent_card;
   },
 
   // Search agents
   searchAgents: async (query: string): Promise<AgentCard[]> => {
-    const response = await apiClient.post<AgentSearchResponse>('/agents/search', {
+    const response = await apiClient.post<AgentSearchResponse>('/v1/agents/search', {
       query,
     } as AgentSearchRequest);
     return response.data.agents;
@@ -52,7 +73,7 @@ export const agentApi = {
 
   // Delete agent
   deleteAgent: async (agentId: string): Promise<{ success: boolean }> => {
-    const response = await apiClient.delete<{ success: boolean }>(`/agents/${agentId}`);
+    const response = await apiClient.delete<{ success: boolean }>(`/v1/agents/${agentId}`);
     return response.data;
   },
 };

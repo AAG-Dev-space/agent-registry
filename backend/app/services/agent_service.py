@@ -1,8 +1,11 @@
 """Agent business logic service."""
 
+import asyncio
 import logging
+import time
 from datetime import UTC, datetime
 
+import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -84,7 +87,7 @@ class AgentService:
                 agent_name=agent_id,
                 status="unknown",
                 last_check_at=utc_now(),
-                response_time_ms=None,
+                last_response_time_ms=None,
                 failure_count=0,
             )
             self.db.add(health_status)
@@ -200,3 +203,73 @@ class AgentService:
             agents = filtered
 
         return [agent.to_dict() for agent in agents]
+
+    async def verify_agent_card_url(self, url: str) -> dict:
+        """Verify and fetch AgentCard from a URL.
+
+        Args:
+            url: URL where the AgentCard JSON is hosted
+
+        Returns:
+            Dictionary with verification result:
+            {
+                "success": bool,
+                "agent_card": dict | None,
+                "error": str | None,
+                "response_time_ms": int | None
+            }
+        """
+        start_time = time.time()
+
+        try:
+            async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+                response = await client.get(url)
+                response_time_ms = int((time.time() - start_time) * 1000)
+
+                if response.status_code != 200:
+                    return {
+                        "success": False,
+                        "error": f"HTTP {response.status_code}: {response.reason_phrase}",
+                        "response_time_ms": response_time_ms,
+                    }
+
+                try:
+                    agent_card = response.json()
+                except Exception as e:
+                    return {
+                        "success": False,
+                        "error": f"Invalid JSON response: {str(e)}",
+                        "response_time_ms": response_time_ms,
+                    }
+
+                # Validate required fields
+                required_fields = ["name", "description"]
+                missing_fields = [field for field in required_fields if not agent_card.get(field)]
+
+                if missing_fields:
+                    return {
+                        "success": False,
+                        "error": f"Missing required fields: {', '.join(missing_fields)}",
+                        "response_time_ms": response_time_ms,
+                    }
+
+                return {
+                    "success": True,
+                    "agent_card": agent_card,
+                    "response_time_ms": response_time_ms,
+                }
+
+        except httpx.TimeoutException:
+            response_time_ms = int((time.time() - start_time) * 1000)
+            return {
+                "success": False,
+                "error": "Request timeout (>10s)",
+                "response_time_ms": response_time_ms,
+            }
+        except Exception as e:
+            response_time_ms = int((time.time() - start_time) * 1000)
+            return {
+                "success": False,
+                "error": str(e),
+                "response_time_ms": response_time_ms,
+            }
