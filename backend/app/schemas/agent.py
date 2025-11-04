@@ -10,13 +10,14 @@ class AgentCard(BaseModel):
 
     name: str
     description: str | None = None
-    url: str
+    url: str | None = None
     version: str | None = None
     protocol_version: str | None = None
     preferred_transport: str | None = None
-    capabilities: list[str] | None = None
+    capabilities: dict[str, Any] | None = None  # Changed from list[str] to dict
     extensions: list[dict[str, Any]] | None = None
     skills: list[dict[str, Any]] | None = None
+    metadata: dict[str, Any] | None = None
 
     model_config = {"extra": "allow"}  # Allow additional fields
 

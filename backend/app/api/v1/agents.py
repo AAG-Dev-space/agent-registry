@@ -4,6 +4,7 @@ import logging
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, HttpUrl
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.app.core.deps import get_db
@@ -18,6 +19,25 @@ from backend.app.services.agent_service import AgentService
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/agents", tags=["agents"])
+
+
+# Request/Response models for URL-based registration
+class AgentCardUrlRequest(BaseModel):
+    """Request to register agent by URL."""
+    agent_card_url: HttpUrl
+
+
+class AgentCardUrlVerifyRequest(BaseModel):
+    """Request to verify AgentCard URL."""
+    url: HttpUrl
+
+
+class AgentCardUrlVerifyResponse(BaseModel):
+    """Response from AgentCard URL verification."""
+    success: bool
+    agent_card: dict | None = None  # Changed from AgentCard to dict to avoid validation issues
+    error: str | None = None
+    response_time_ms: int | None = None
 
 
 @router.post("", response_model=AgentResponse, status_code=status.HTTP_201_CREATED)
@@ -164,6 +184,83 @@ async def search_agents(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to search agents"
+        )
+
+
+@router.post("/verify", response_model=AgentCardUrlVerifyResponse)
+async def verify_agent_card_url(
+    request: AgentCardUrlVerifyRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """Verify an AgentCard URL by fetching and validating it.
+
+    Public endpoint - no authentication required.
+
+    Args:
+        request: Contains the AgentCard URL to verify
+
+    Returns:
+        Verification result with AgentCard data if successful
+    """
+    try:
+        service = AgentService(db)
+        result = await service.verify_agent_card_url(str(request.url))
+
+        return AgentCardUrlVerifyResponse(**result)
+
+    except Exception as e:
+        logger.error(f"Failed to verify AgentCard URL: {e}")
+        return AgentCardUrlVerifyResponse(
+            success=False,
+            error=f"Verification failed: {str(e)}"
+        )
+
+
+@router.post("/register-by-url", response_model=AgentResponse, status_code=status.HTTP_201_CREATED)
+async def register_agent_by_url(
+    request: AgentCardUrlRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """Register an agent by providing the AgentCard URL.
+
+    Public endpoint - Agent URL ownership is the authentication.
+    The registry will fetch the AgentCard from the provided URL and register it.
+
+    Args:
+        request: Contains the AgentCard URL
+
+    Returns:
+        Registered agent information
+    """
+    try:
+        service = AgentService(db)
+
+        # First verify the URL
+        verification = await service.verify_agent_card_url(str(request.agent_card_url))
+
+        if not verification.get("success") or not verification.get("agent_card"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=verification.get("error", "Failed to fetch AgentCard from URL")
+            )
+
+        # Register the agent with the AgentCard URL
+        agent_card_data = verification["agent_card"]
+        agent_card_data["agent_card_url"] = str(request.agent_card_url)
+
+        agent = await service.register_agent(agent_card_data)
+
+        return AgentResponse(**agent)
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except Exception as e:
+        logger.error(f"Failed to register agent by URL: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to register agent"
         )
 
 
