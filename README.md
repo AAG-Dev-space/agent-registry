@@ -187,67 +187,66 @@ a2a-registry/
 - `/register` - 에이전트 등록 페이지
 - `/agents` - 에이전트 목록
 - `/agents/:id` - 에이전트 상세
-- `/health` - 헬스 체크
 - `/wiki/*` - 문서 페이지
 
 ## 빠른 시작
 
-### 1. 환경 설정
+### Docker Compose로 실행 (권장)
 
 ```bash
-# Python 가상환경 생성
-python3 -m venv .venv
-source .venv/bin/activate
+# 1. 이미지 빌드
+cd deploy
+./build.sh
 
-# 의존성 설치
-pip install -e .
+# 2. 서비스 시작
+docker compose up -d
 
-# 프론트엔드 의존성 설치
+# 3. 서비스 접근
+# - Frontend: http://localhost:7600
+# - Backend API: http://localhost:7601
+# - PostgreSQL: localhost:5432
+```
+
+### 개발 모드 (로컬)
+
+```bash
+# Backend 서버 (포트 8000)
+cd backend
+python -m app.main
+
+# Frontend 서버 (포트 5173)
 cd frontend
 npm install
-cd ..
+npm run dev
 ```
 
-### 2. 환경 변수 설정
-
-`.env` 파일 생성:
-```env
-STORAGE_TYPE=file           # file 또는 memory
-STORAGE_DATA_DIR=./data     # 데이터 저장 경로
-SECRET_KEY=your-secret-key-here
-```
-
-### 3. 서버 실행
-
-```bash
-# 백엔드 서버 (포트 8000)
-STORAGE_TYPE=file STORAGE_DATA_DIR=./data .venv/bin/a2a-registry serve --host 0.0.0.0 --port 8000
-
-# 프론트엔드 서버 (포트 5173)
-cd frontend && npm run dev
-```
-
-### 4. AgentCard 준비
+### AgentCard 준비 및 등록
 
 Agent 서버에 AgentCard JSON 파일을 호스팅하세요:
 
 ```json
 // https://myagent.com/.well-known/agent-card.json
 {
+  "protocolVersion": "0.3.0",
   "name": "my-agent",
   "description": "My AI Agent",
   "url": "https://myagent.com",
   "version": "1.0.0",
-  "capabilities": [...]
+  "preferredTransport": "JSONRPC",
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false
+  },
+  "defaultInputModes": ["text/plain"],
+  "defaultOutputModes": ["text/plain"],
+  "skills": [...]
 }
 ```
-
-### 5. 에이전트 등록
 
 Registry에 AgentCard URL만 입력하면 자동으로 등록됩니다:
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/agents \
+curl -X POST http://localhost:7601/api/v1/agents \
   -H "Content-Type: application/json" \
   -d '{"agent_card_url": "https://myagent.com/.well-known/agent-card.json"}'
 ```
@@ -272,9 +271,22 @@ curl -X POST http://localhost:8000/api/v1/agents \
 - **React Router**: 라우팅
 - **Axios**: HTTP 클라이언트
 
-## 상세 문서
+## 개발 계획
 
-- [CLAUDE.md](CLAUDE.md): 프로젝트 개요
-- [FLOW.md](FLOW.md): 등록 플로우 상세
-- [backend/CLAUDE.md](backend/CLAUDE.md): 백엔드 아키텍처
-- [frontend/CLAUDE.md](frontend/CLAUDE.md): 프론트엔드 구조
+### 완료
+- ✅ URL 기반 AgentCard 등록 시스템
+- ✅ 자동 동기화 (하루 1회 폴링)
+- ✅ A2A v0.3.0 스펙 준수
+- ✅ Wiki 문서 (한/영)
+
+### 진행 중
+- 🚧 AgentCard 기반 삭제/수정 권한 검증 ([todo_auth.md](todo_auth.md))
+
+### 예정
+- 📊 Agent 통계 대시보드
+- 🔍 고급 검색 (Vector search)
+
+---
+## 라이선스
+
+MIT License
