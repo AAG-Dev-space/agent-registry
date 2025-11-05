@@ -1,4 +1,4 @@
-import { BookOpen, Network, Shield, Zap, FileJson, Code2, Link2 } from 'lucide-react';
+import { BookOpen, Network, Code2, Link2, Shield, CheckCircle2 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import LanguageToggle from '../../components/LanguageToggle';
 
@@ -14,15 +14,15 @@ export default function TermsAndSpecs() {
             <div className="flex items-center gap-3">
               <BookOpen className="h-8 w-8 text-brand-500" />
               <h1 className="text-title-lg font-bold text-gray-900">
-                {t('A2A 프로토콜 용어 및 스펙', 'A2A Protocol Terms & Specifications')}
+                {t('A2A 프로토콜 스펙 v0.3.0', 'A2A Protocol Specification v0.3.0')}
               </h1>
             </div>
             <LanguageToggle />
           </div>
           <p className="text-theme-xl text-gray-500">
             {t(
-              'Agent-to-Agent 프로토콜의 핵심 개념과 기술 사양',
-              'Core concepts and technical specifications of the Agent-to-Agent protocol'
+              'Agent-to-Agent 프로토콜 v0.3.0의 핵심 구현 사항',
+              'Core implementation requirements for A2A Protocol v0.3.0'
             )}
           </p>
         </div>
@@ -34,16 +34,18 @@ export default function TermsAndSpecs() {
             <div className="flex items-center gap-3 mb-4">
               <Network className="h-6 w-6 text-brand-500" />
               <h2 className="text-xl font-semibold text-gray-900">
-                {t('A2A 프로토콜이란?', 'What is the A2A Protocol?')}
+                {t('A2A 프로토콜이란?', 'What is A2A Protocol?')}
               </h2>
             </div>
+
             <p className="text-gray-700 mb-4">
               {t(
-                'A2A (Agent-to-Agent) 프로토콜은 서로 다른 프레임워크로 구축된 AI 에이전트 간의 통신과 상호 운용성을 가능하게 하는 오픈 프로토콜입니다. Apache 2.0 라이선스로 제공되며, Google LLC에서 개발했습니다.',
-                'The A2A (Agent-to-Agent) Protocol is an open protocol enabling communication and interoperability between AI agents built on different frameworks. Licensed under Apache 2.0, it is developed by Google LLC.'
+                'A2A (Agent-to-Agent) 프로토콜은 서로 다른 프레임워크로 구축된 AI 에이전트 간의 통신과 상호 운용성을 가능하게 하는 오픈 프로토콜입니다.',
+                'The A2A (Agent-to-Agent) Protocol is an open protocol enabling communication and interoperability between AI agents built on different frameworks.'
               )}
             </p>
-            <div className="bg-brand-50 border border-brand-200 rounded-lg p-4">
+
+            <div className="bg-brand-50 border border-brand-200 rounded-lg p-4 mb-4">
               <p className="text-sm text-brand-700">
                 <strong>{t('핵심 목표:', 'Core Mission:')}</strong>{' '}
                 {t(
@@ -52,366 +54,348 @@ export default function TermsAndSpecs() {
                 )}
               </p>
             </div>
+
+            <div className="flex items-center justify-between bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div>
+                <p className="text-sm text-gray-500 mb-1">{t('현재 버전', 'Current Version')}</p>
+                <p className="text-2xl font-bold text-gray-900">0.3.0</p>
+              </div>
+              <a
+                href="https://a2a-protocol.org/v0.3.0/specification/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <span>{t('공식 스펙 보기', 'View Specification')}</span>
+                <Link2 className="h-4 w-4" />
+              </a>
+            </div>
           </section>
 
-          {/* Protocol Version */}
+          {/* Agent Implementation Requirements */}
           <section className="rounded-2xl border border-gray-200 bg-white p-6">
             <div className="flex items-center gap-3 mb-4">
               <Code2 className="h-6 w-6 text-brand-500" />
               <h2 className="text-xl font-semibold text-gray-900">
-                {t('프로토콜 버전', 'Protocol Version')}
+                {t('에이전트 구현 요구사항', 'Agent Implementation Requirements')}
               </h2>
             </div>
-            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500 mb-1">{t('현재 버전', 'Current Version')}</p>
-                  <p className="text-2xl font-bold text-gray-900">0.3.0</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-gray-500 mb-1">{t('통신 표준', 'Communication Standard')}</p>
-                  <p className="text-lg font-semibold text-gray-900">JSON-RPC 2.0</p>
-                </div>
-              </div>
-            </div>
-          </section>
 
-          {/* Core Concepts */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">
-              {t('핵심 개념', 'Core Concepts')}
-            </h2>
-
-            <div className="space-y-6">
-              {/* AgentCard */}
-              <div className="border-l-4 border-brand-500 pl-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {t('에이전트 카드 (AgentCard)', 'AgentCard')}
-                </h3>
-                <p className="text-gray-700 mb-3">
-                  {t(
-                    '에이전트의 기능과 연결 정보를 상세히 기술하는 JSON 메타데이터 문서입니다. 에이전트 검색과 능력 협상을 가능하게 합니다.',
-                    'A JSON metadata document detailing an agent\'s capabilities and connection information. Enables agent discovery and capability negotiation.'
-                  )}
-                </p>
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <p className="text-sm font-medium text-gray-700 mb-2">{t('주요 필드:', 'Key Fields:')}</p>
-                  <ul className="space-y-1 text-sm text-gray-600">
-                    <li>• <code className="text-xs bg-gray-200 px-1 rounded">name</code> - {t('에이전트 고유 식별자', 'Unique agent identifier')}</li>
-                    <li>• <code className="text-xs bg-gray-200 px-1 rounded">description</code> - {t('에이전트 설명', 'Agent description')}</li>
-                    <li>• <code className="text-xs bg-gray-200 px-1 rounded">url</code> - {t('기본 엔드포인트', 'Primary endpoint')}</li>
-                    <li>• <code className="text-xs bg-gray-200 px-1 rounded">version</code> - {t('에이전트 버전', 'Agent version')}</li>
-                    <li>• <code className="text-xs bg-gray-200 px-1 rounded">protocol_version</code> - {t('A2A 프로토콜 버전 (0.3.0)', 'A2A protocol version (0.3.0)')}</li>
-                    <li>• <code className="text-xs bg-gray-200 px-1 rounded">capabilities</code> - {t('에이전트 능력', 'Agent capabilities')}</li>
-                    <li>• <code className="text-xs bg-gray-200 px-1 rounded">skills</code> - {t('스킬 배열', 'Skills array')}</li>
-                    <li>• <code className="text-xs bg-gray-200 px-1 rounded">preferred_transport</code> - {t('선호 전송 프로토콜', 'Preferred transport protocol')}</li>
-                  </ul>
-                </div>
-                <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-xs text-blue-700">
-                    <strong>{t('권장 위치:', 'Recommended Location:')}</strong>{' '}
-                    <code className="text-xs bg-blue-100 px-1 rounded">https://&#123;domain&#125;/.well-known/agent-card.json</code>
-                    {' '}(RFC 8615)
-                  </p>
-                </div>
-              </div>
-
-              {/* Skills */}
-              <div className="border-l-4 border-purple-500 pl-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {t('스킬 (Skills)', 'Skills')}
-                </h3>
-                <p className="text-gray-700 mb-3">
-                  {t(
-                    '에이전트가 수행할 수 있는 구체적인 능력의 단위입니다. 각 스킬은 고유 ID, 이름, 설명, 태그, 예시를 포함합니다.',
-                    'Distinct units of capability that an agent can perform. Each skill includes a unique ID, name, description, tags, and examples.'
-                  )}
-                </p>
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <p className="text-sm font-medium text-gray-700 mb-2">{t('스킬 구조:', 'Skill Structure:')}</p>
-                  <ul className="space-y-1 text-sm text-gray-600">
-                    <li>• <code className="text-xs bg-gray-200 px-1 rounded">id</code> - {t('고유 식별자 (예: "get_weather")', 'Unique identifier (e.g., "get_weather")')}</li>
-                    <li>• <code className="text-xs bg-gray-200 px-1 rounded">name</code> - {t('사람이 읽을 수 있는 이름', 'Human-readable name')}</li>
-                    <li>• <code className="text-xs bg-gray-200 px-1 rounded">description</code> - {t('상세 설명', 'Detailed description')}</li>
-                    <li>• <code className="text-xs bg-gray-200 px-1 rounded">tags</code> - {t('분류 태그 배열', 'Categorical tags array')}</li>
-                    <li>• <code className="text-xs bg-gray-200 px-1 rounded">examples</code> - {t('사용 예시', 'Usage examples')}</li>
-                    <li>• <code className="text-xs bg-gray-200 px-1 rounded">input_modes</code> - {t('입력 MIME 타입', 'Input MIME types')}</li>
-                    <li>• <code className="text-xs bg-gray-200 px-1 rounded">output_modes</code> - {t('출력 MIME 타입', 'Output MIME types')}</li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Capabilities */}
-              <div className="border-l-4 border-green-500 pl-4">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  {t('능력 (Capabilities)', 'Capabilities')}
-                </h3>
-                <p className="text-gray-700 mb-3">
-                  {t(
-                    '에이전트가 지원하는 기술적 기능을 정의합니다. 클라이언트가 에이전트와 상호작용하는 방법을 이해하는 데 도움을 줍니다.',
-                    'Define the technical features an agent supports. Help clients understand how to interact with the agent.'
-                  )}
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <p className="text-sm font-semibold text-gray-900 mb-1">
-                      {t('스트리밍', 'Streaming')}
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      {t('실시간 응답 스트리밍 지원', 'Real-time response streaming')}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <p className="text-sm font-semibold text-gray-900 mb-1">
-                      {t('푸시 알림', 'Push Notifications')}
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      {t('클라이언트로 업데이트 전송', 'Send updates to clients')}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <p className="text-sm font-semibold text-gray-900 mb-1">
-                      {t('상태 이력', 'State History')}
-                    </p>
-                    <p className="text-xs text-gray-600">
-                      {t('작업 상태 변경 추적', 'Track task state changes')}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Transport Protocols */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Zap className="h-6 w-6 text-brand-500" />
-              <h2 className="text-xl font-semibold text-gray-900">
-                {t('전송 프로토콜', 'Transport Protocols')}
-              </h2>
-            </div>
-            <p className="text-gray-700 mb-4">
+            <p className="text-sm text-gray-600 mb-4">
               {t(
-                'A2A는 세 가지 핵심 전송 프로토콜을 동등하게 지원합니다. 에이전트는 최소 하나의 프로토콜을 구현해야 합니다.',
-                'A2A supports three core transport protocols with equal status. Agents must implement at least one.'
+                'A2A 프로토콜을 준수하는 에이전트가 반드시 구현해야 하는 사항들입니다.',
+                'Requirements that agents must implement to comply with the A2A protocol.'
               )}
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                <h3 className="text-lg font-semibold text-blue-900 mb-2">JSON-RPC 2.0</h3>
-                <p className="text-sm text-blue-700 mb-2">
-                  {t('HTTP(S) 위의 JSON-RPC 2.0', 'JSON-RPC 2.0 over HTTP(S)')}
-                </p>
-                <p className="text-xs text-blue-600">
-                  {t('메소드 패턴:', 'Method pattern:')} <code className="bg-blue-100 px-1 rounded">&#123;category&#125;/&#123;action&#125;</code>
-                </p>
-              </div>
 
-              <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-                <h3 className="text-lg font-semibold text-purple-900 mb-2">gRPC</h3>
-                <p className="text-sm text-purple-700 mb-2">
-                  {t('Protocol Buffers v3 직렬화', 'Protocol Buffers v3 serialization')}
-                </p>
-                <p className="text-xs text-purple-600">
-                  {t('정의:', 'Definition:')} <code className="bg-purple-100 px-1 rounded">a2a.proto</code>
-                </p>
-              </div>
-
-              <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-                <h3 className="text-lg font-semibold text-green-900 mb-2">HTTP+JSON</h3>
-                <p className="text-sm text-green-700 mb-2">
-                  {t('REST 스타일 리소스 기반', 'REST-style resource-based')}
-                </p>
-                <p className="text-xs text-green-600">
-                  {t('표준 HTTP 동사 사용', 'Standard HTTP verbs')}
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Interaction Modes */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <FileJson className="h-6 w-6 text-brand-500" />
-              <h2 className="text-xl font-semibold text-gray-900">
-                {t('상호작용 모드', 'Interaction Modes')}
-              </h2>
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="bg-blue-100 rounded p-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {t('동기식 요청/응답', 'Synchronous Request/Response')}
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    {t('즉각적인 응답이 필요한 짧은 작업에 적합', 'Suitable for short tasks requiring immediate responses')}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="bg-purple-100 rounded p-2">
-                  <div className="flex gap-1">
-                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                    <div className="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {t('스트리밍 (SSE)', 'Streaming (SSE)')}
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    {t('Server-Sent Events를 통한 실시간 데이터 스트림', 'Real-time data stream via Server-Sent Events')}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="bg-green-100 rounded p-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {t('비동기 푸시 알림', 'Asynchronous Push Notifications')}
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    {t('장기 실행 작업의 업데이트를 능동적으로 전송', 'Proactively send updates for long-running tasks')}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Security & Authentication */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Shield className="h-6 w-6 text-brand-500" />
-              <h2 className="text-xl font-semibold text-gray-900">
-                {t('보안 및 인증', 'Security & Authentication')}
-              </h2>
-            </div>
             <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">
-                  {t('전송 보안', 'Transport Security')}
-                </h3>
-                <p className="text-sm text-gray-700">
-                  {t('프로덕션 환경에서는 HTTPS/TLS 필수', 'HTTPS/TLS required for production')}
-                </p>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">
-                  {t('인증 방식', 'Authentication Methods')}
+              {/* Transport */}
+              <div className="border-l-4 border-blue-500 pl-4 py-2">
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  1. {t('전송 프로토콜 (Transport)', 'Transport Protocol')}
                 </h3>
                 <ul className="space-y-2 text-sm text-gray-700">
-                  <li>• {t('Bearer 토큰', 'Bearer tokens')}</li>
-                  <li>• {t('API 키', 'API keys')}</li>
-                  <li>• {t('OAuth 2.0', 'OAuth 2.0')}</li>
-                  <li>• {t('커스텀 HTTP 헤더', 'Custom HTTP headers')}</li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <span>
+                      <strong>{t('HTTPS 필수:', 'HTTPS Required:')}</strong>{' '}
+                      {t('모든 통신은 HTTP(S) 위에서 이루어지며, 프로덕션 환경에서는 HTTPS가 필수입니다.', 'All communication occurs over HTTP(S), with HTTPS mandatory in production.')}
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <span>
+                      <strong>{t('3가지 전송 방식 중 최소 1개 구현:', 'Implement at least 1 of 3 transports:')}</strong>{' '}
+                      JSON-RPC 2.0, gRPC, HTTP+JSON (REST)
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                    <span>
+                      <strong>{t('기능적 등가성:', 'Functional Equivalence:')}</strong>{' '}
+                      {t('복수 전송을 지원하는 경우, 모든 전송에서 기능/동작/에러/인증이 동등해야 합니다.', 'If supporting multiple transports, all must provide equivalent functionality, behavior, errors, and authentication.')}
+                    </span>
+                  </li>
                 </ul>
               </div>
 
-              <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">
-                  {t('보안 스킴', 'Security Schemes')}
+              {/* Core Methods */}
+              <div className="border-l-4 border-purple-500 pl-4 py-2">
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  2. {t('핵심 메서드 (Core Methods)', 'Core Methods')}
                 </h3>
-                <p className="text-sm text-gray-700">
-                  {t(
-                    'AgentCard의 securitySchemes 필드에 OpenAPI 3.0 패턴을 따라 정의',
-                    'Defined in AgentCard securitySchemes field following OpenAPI 3.0 patterns'
-                  )}
+                <p className="text-sm text-gray-600 mb-2">
+                  {t('다음 3가지 메서드는 필수로 구현해야 합니다:', 'The following 3 methods are mandatory:')}
+                </p>
+                <div className="bg-purple-50 rounded-lg p-3 mb-2">
+                  <ul className="space-y-1 text-sm text-purple-900">
+                    <li>• <code className="bg-purple-100 px-1 rounded">message/send</code> - {t('작업 시작 및 대화', 'Start task and conversation')}</li>
+                    <li>• <code className="bg-purple-100 px-1 rounded">tasks/get</code> - {t('상태 및 결과 조회', 'Query status and results')}</li>
+                    <li>• <code className="bg-purple-100 px-1 rounded">tasks/cancel</code> - {t('작업 취소', 'Cancel task')}</li>
+                  </ul>
+                </div>
+                <p className="text-xs text-gray-500">
+                  {t('선택 사항: 스트리밍/푸시 관련 메서드 (message/stream, tasks/resubscribe 등)', 'Optional: Streaming/push-related methods (message/stream, tasks/resubscribe, etc.)')}
                 </p>
               </div>
 
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <p className="text-sm text-yellow-800">
-                  <strong>{t('중요:', 'Important:')}</strong>{' '}
-                  {t(
-                    '모든 요청은 인증되어야 하며, 실패 시 401/403 상태 코드를 반환해야 합니다.',
-                    'Every request must be authenticated and return 401/403 status codes on failure.'
-                  )}
-                </p>
+              {/* Streaming */}
+              <div className="border-l-4 border-green-500 pl-4 py-2">
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  3. {t('스트리밍/푸시 (Streaming/Push)', 'Streaming/Push')}
+                </h3>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 mt-0.5">•</span>
+                    <span>
+                      <strong>JSON-RPC/REST:</strong> SSE (Server-Sent Events, <code className="bg-gray-100 px-1 rounded">text/event-stream</code>) 사용
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 mt-0.5">•</span>
+                    <span>
+                      <strong>gRPC:</strong> {t('서버 스트리밍 사용', 'Use server streaming')}
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 mt-0.5">•</span>
+                    <span>
+                      {t('스트리밍 제공 시 AgentCard에 ', 'When providing streaming, declare in AgentCard: ')}
+                      <code className="bg-gray-100 px-1 rounded">capabilities.streaming: true</code>
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Security */}
+              <div className="border-l-4 border-red-500 pl-4 py-2">
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  4. {t('보안 (Security)', 'Security')}
+                </h3>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <Shield className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                    <span>
+                      <strong>TLS(HTTPS) 필수:</strong> {t('최신 TLS(권장 1.3+) 구성, 서버 신원(TLS 인증서) 검증 권장', 'Latest TLS (1.3+ recommended), server identity (TLS certificate) verification recommended')}
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Shield className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                    <span>
+                      <strong>{t('인증/인가:', 'Authentication/Authorization:')}</strong>{' '}
+                      {t('전송 계층에서 처리 (A2A 페이로드에 ID를 싣지 않음)', 'Handled at transport layer (do not embed ID in A2A payload)')}
+                    </span>
+                  </li>
+                </ul>
               </div>
             </div>
           </section>
 
-          {/* Key Data Objects */}
+          {/* AgentCard Requirements */}
           <section className="rounded-2xl border border-gray-200 bg-white p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              {t('주요 데이터 객체', 'Key Data Objects')}
-            </h2>
+            <div className="flex items-center gap-3 mb-4">
+              <BookOpen className="h-6 w-6 text-brand-500" />
+              <h2 className="text-xl font-semibold text-gray-900">
+                {t('AgentCard 요구사항', 'AgentCard Requirements')}
+              </h2>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4">
+              {t(
+                'AgentCard는 에이전트의 메타데이터를 기술하는 JSON 문서로, 모든 A2A 에이전트는 반드시 제공해야 합니다.',
+                'AgentCard is a JSON document describing agent metadata. All A2A agents must provide it.'
+              )}
+            </p>
+
             <div className="space-y-4">
-              <div className="border-l-4 border-blue-500 pl-4">
-                <h3 className="text-base font-semibold text-gray-900 mb-1">Task</h3>
+              {/* Discovery Path */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h3 className="font-semibold text-blue-900 mb-2">
+                  {t('발견 경로 (Discovery Path)', 'Discovery Path')}
+                </h3>
+                <p className="text-sm text-blue-800 mb-2">
+                  <strong>{t('권장 경로:', 'Recommended path:')}</strong>{' '}
+                  <code className="bg-blue-100 px-2 py-1 rounded">https://&#123;domain&#125;/.well-known/agent-card.json</code>
+                </p>
+                <p className="text-xs text-blue-700">
+                  {t('RFC 8615 원칙을 따르며, 레지스트리/카탈로그/직접 설정도 허용됩니다.', 'Follows RFC 8615 principles. Registry/catalog/direct configuration also allowed.')}
+                </p>
+              </div>
+
+              {/* Core Schema Elements */}
+              <div className="border-l-4 border-brand-500 pl-4 py-2">
+                <h3 className="font-semibold text-gray-900 mb-3">
+                  {t('핵심 스키마 요소', 'Core Schema Elements')}
+                </h3>
+                <div className="space-y-3">
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-sm font-medium text-gray-900 mb-2">{t('필수 필드:', 'Required Fields:')}</p>
+                    <ul className="space-y-1 text-sm text-gray-700">
+                      <li>• <code className="bg-gray-200 px-1 rounded">protocolVersion</code> - {t('기본값 "0.3.0"', 'Default "0.3.0"')}</li>
+                      <li>• <code className="bg-gray-200 px-1 rounded">name</code> / <code className="bg-gray-200 px-1 rounded">description</code> - {t('에이전트 식별 정보', 'Agent identification')}</li>
+                      <li>• <code className="bg-gray-200 px-1 rounded">url</code> - {t('메인 엔드포인트', 'Main endpoint')}</li>
+                      <li>• <code className="bg-gray-200 px-1 rounded">preferredTransport</code> - {t('선호 전송 프로토콜 (url과 일치 필수)', 'Preferred transport (must match url)')}</li>
+                    </ul>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-sm font-medium text-gray-900 mb-2">{t('권장 필드:', 'Recommended Fields:')}</p>
+                    <ul className="space-y-1 text-sm text-gray-700">
+                      <li>• <code className="bg-gray-200 px-1 rounded">additionalInterfaces</code> - {t('추가 전송 인터페이스', 'Additional transport interfaces')}</li>
+                      <li>• <code className="bg-gray-200 px-1 rounded">capabilities</code> - streaming, pushNotifications, stateTransitionHistory</li>
+                      <li>• <code className="bg-gray-200 px-1 rounded">skills</code> - {t('에이전트가 수행 가능한 스킬 목록', 'List of skills the agent can perform')}</li>
+                      <li>• <code className="bg-gray-200 px-1 rounded">securitySchemes</code> - {t('인증 방식 정의', 'Authentication method definition')}</li>
+                      <li>• <code className="bg-gray-200 px-1 rounded">signatures</code> - {t('JWS 서명 (선택)', 'JWS signature (optional)')}</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Validation Rules */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h3 className="font-semibold text-yellow-900 mb-2">
+                  ⚠️ {t('검증 규칙', 'Validation Rules')}
+                </h3>
+                <ul className="space-y-1 text-sm text-yellow-800">
+                  <li>• {t('메인 url과 preferredTransport는 반드시 일치해야 함', 'Main url and preferredTransport must match')}</li>
+                  <li>• {t('additionalInterfaces는 메인 URL/전송을 포괄해야 함 (완전성)', 'additionalInterfaces must encompass main URL/transport (completeness)')}</li>
+                  <li>• {t('같은 URL에 서로 다른 전송 방식을 선언하면 안됨 (상충 금지)', 'Cannot declare different transports for the same URL (no conflicts)')}</li>
+                  <li>• {t('민감정보(평문 키 등)를 포함하면 안됨', 'Must not contain sensitive information (plaintext keys, etc.)')}</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          {/* Registry Implementation */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Network className="h-6 w-6 text-brand-500" />
+              <h2 className="text-xl font-semibold text-gray-900">
+                {t('Agent Registry 구현 권장사항', 'Agent Registry Implementation Recommendations')}
+              </h2>
+            </div>
+
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-gray-700">
+                {t(
+                  'A2A 스펙은 레지스트리를 의무 사양으로 정의하지 않지만, "발견 메커니즘" 중 하나로 카탈로그/레지스트리를 명시합니다. 엔터프라이즈 환경에서 다음 기능들을 구현하는 것을 권장합니다.',
+                  'The A2A spec does not mandate registries but lists catalogs/registries as discovery mechanisms. The following features are recommended for enterprise environments.'
+                )}
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              {/* Indexing & Discovery */}
+              <div className="border-l-4 border-blue-500 pl-4 py-2">
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  1. {t('인덱싱 & 디스커버리', 'Indexing & Discovery')}
+                </h3>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span>
+                      {t('AgentCard를 수집하고 검증하여 검색 기능 제공 (이름/설명/태그/스킬/전송/기능 기반)', 'Collect and validate AgentCards to provide search (by name/description/tags/skills/transport/capabilities)')}
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span>
+                      {t('AgentCard 검증 규칙 자동 체크 (메인 URL-전송 일치, 상충 금지 등)', 'Automatically check AgentCard validation rules (main URL-transport match, no conflicts, etc.)')}
+                    </span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Routing Hints */}
+              <div className="border-l-4 border-purple-500 pl-4 py-2">
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  2. {t('전송·기능 기반 라우팅 힌트', 'Transport & Capability-based Routing Hints')}
+                </h3>
                 <p className="text-sm text-gray-700">
                   {t(
-                    '고유 ID, 컨텍스트 ID, 상태, 메시지 이력, 아티팩트를 포함하는 작업의 상태 단위',
-                    'Stateful unit of work with unique ID, context ID, status, message history, and artifacts'
+                    'preferredTransport, additionalInterfaces, capabilities, skills 기준으로 호출 전략(예: 스트리밍 지원 여부, 푸시 지원 여부)을 클라이언트에 노출합니다.',
+                    'Expose calling strategies (e.g., streaming support, push support) to clients based on preferredTransport, additionalInterfaces, capabilities, and skills.'
                   )}
                 </p>
               </div>
 
-              <div className="border-l-4 border-purple-500 pl-4">
-                <h3 className="text-base font-semibold text-gray-900 mb-1">Message</h3>
-                <p className="text-sm text-gray-700">
-                  {t(
-                    'role("user" 또는 "agent")과 하나 이상의 Parts를 포함하는 통신 턴',
-                    'Communication turn with role ("user" or "agent") containing one or more Parts'
-                  )}
-                </p>
+              {/* Security & Governance */}
+              <div className="border-l-4 border-red-500 pl-4 py-2">
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  3. {t('보안/거버넌스', 'Security/Governance')}
+                </h3>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <Shield className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                    <span>
+                      {t('AgentCard 내 securitySchemes를 해석하여 호출 전 인증 요건 안내', 'Parse securitySchemes in AgentCard to guide authentication requirements before calling')}
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Shield className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
+                    <span>
+                      {t('(선택) 서명된 AgentCard(JWS)를 검증하여 신뢰도 향상', '(Optional) Verify signed AgentCards (JWS) to improve trust')}
+                    </span>
+                  </li>
+                </ul>
               </div>
 
-              <div className="border-l-4 border-green-500 pl-4">
-                <h3 className="text-base font-semibold text-gray-900 mb-1">Parts</h3>
-                <p className="text-sm text-gray-700">
-                  {t(
-                    'TextPart, FilePart, DataPart로 구성된 메시지/아티팩트 내의 컴포넌트',
-                    'Components within messages/artifacts: TextPart, FilePart, or DataPart'
-                  )}
-                </p>
-              </div>
-
-              <div className="border-l-4 border-yellow-500 pl-4">
-                <h3 className="text-base font-semibold text-gray-900 mb-1">Artifact</h3>
-                <p className="text-sm text-gray-700">
-                  {t(
-                    'Parts로 구성된 에이전트가 생성한 출력',
-                    'Output generated by agent, composed of Parts'
-                  )}
-                </p>
-              </div>
-
-              <div className="border-l-4 border-red-500 pl-4">
-                <h3 className="text-base font-semibold text-gray-900 mb-1">TaskStatus</h3>
-                <p className="text-sm text-gray-700">
-                  {t(
-                    '현재 상태 열거형 (pending, running, completed, failed 등) 및 설명 메시지',
-                    'Current state enum (pending, running, completed, failed, etc.) with descriptive message'
-                  )}
-                </p>
+              {/* Operations */}
+              <div className="border-l-4 border-green-500 pl-4 py-2">
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  4. {t('운영/가용성', 'Operations/Availability')}
+                </h3>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 mt-0.5">•</span>
+                    <span>
+                      {t('(선택) 상태 점검 URL을 메타데이터로 받아 가용성 필터링 지원', '(Optional) Accept health check URLs as metadata to support availability filtering')}
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-green-500 mt-0.5">•</span>
+                    <span>
+                      {t('(선택) 사내 정책에 맞는 승인/버전 정책 및 폐기(디리스트) 관리', '(Optional) Manage approval/versioning policies and deprecation (delist) per internal policies')}
+                    </span>
+                  </li>
+                </ul>
               </div>
             </div>
           </section>
 
           {/* External Resources */}
-          <section className="rounded-2xl border border-gray-200 bg-white p-6">
+          <section className="rounded-2xl border-2 border-brand-200 bg-gradient-to-br from-brand-50 to-white p-6">
             <div className="flex items-center gap-3 mb-4">
               <Link2 className="h-6 w-6 text-brand-500" />
               <h2 className="text-xl font-semibold text-gray-900">
-                {t('외부 리소스', 'External Resources')}
+                {t('참고 자료', 'References')}
               </h2>
             </div>
             <div className="space-y-3">
               <a
+                href="https://a2a-protocol.org/v0.3.0/specification/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-200 hover:border-brand-500 transition-colors"
+              >
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 bg-brand-500 rounded-lg flex items-center justify-center">
+                    <BookOpen className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-900">
+                    {t('A2A Protocol v0.3.0 공식 스펙', 'A2A Protocol v0.3.0 Official Specification')}
+                  </p>
+                  <p className="text-xs text-gray-600">a2a-protocol.org/v0.3.0/specification/</p>
+                </div>
+              </a>
+
+              <a
                 href="https://github.com/a2aproject/A2A"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-brand-500 transition-colors"
+                className="flex items-center gap-3 p-4 bg-white rounded-lg border border-gray-200 hover:border-brand-500 transition-colors"
               >
                 <div className="flex-shrink-0">
                   <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
@@ -425,25 +409,6 @@ export default function TermsAndSpecs() {
                     {t('A2A 프로젝트 GitHub', 'A2A Project GitHub')}
                   </p>
                   <p className="text-xs text-gray-600">github.com/a2aproject/A2A</p>
-                </div>
-              </a>
-
-              <a
-                href="https://a2a-protocol.org/latest/specification/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-brand-500 transition-colors"
-              >
-                <div className="flex-shrink-0">
-                  <div className="w-10 h-10 bg-brand-500 rounded-lg flex items-center justify-center">
-                    <FileJson className="w-5 h-5 text-white" />
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-gray-900">
-                    {t('공식 스펙 문서', 'Official Specification')}
-                  </p>
-                  <p className="text-xs text-gray-600">a2a-protocol.org/latest/specification/</p>
                 </div>
               </a>
             </div>
