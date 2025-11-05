@@ -15,6 +15,7 @@ from backend.app.schemas.agent import (
     AgentSearchRequest,
 )
 from backend.app.services.agent_service import AgentService
+from backend.app.services.verification import fetch_agent_card, verify_delete_permission
 
 logger = logging.getLogger(__name__)
 
@@ -126,26 +127,135 @@ async def get_agent(
         )
 
 
+@router.post("/{agent_id}/refresh", response_model=AgentResponse)
+async def refresh_agent_card(
+    agent_id: str,
+    db: Annotated[AsyncSession, Depends(get_db)],
+):
+    """Manually refresh agent's AgentCard from its URL.
+
+    Fetches the latest AgentCard and updates the database.
+
+    Returns:
+        Updated agent information
+
+    Raises:
+        404: Agent not found
+        500: Failed to fetch or update
+    """
+    try:
+        from sqlalchemy import update
+        from backend.app.models.agent import AgentModel
+
+        service = AgentService(db)
+
+        # 1. Get existing agent
+        agent = await service.get_agent(agent_id)
+        if not agent:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Agent not found: {agent_id}"
+            )
+
+        # 2. Fetch latest AgentCard from stored URL
+        agent_card_url = agent.get("agent_card_url")
+        if not agent_card_url:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Agent does not have agent_card_url configured"
+            )
+
+        try:
+            fresh_card = await fetch_agent_card(agent_card_url)
+        except Exception as e:
+            logger.error(f"Failed to fetch AgentCard from {agent_card_url}: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to fetch AgentCard: {str(e)}"
+            )
+
+        # 3. Update agent_card in database
+        stmt = (
+            update(AgentModel)
+            .where(AgentModel.name == agent_id)
+            .values(agent_card=fresh_card)
+        )
+        await db.execute(stmt)
+        await db.commit()
+
+        # 4. Return updated agent
+        updated_agent = await service.get_agent(agent_id)
+        logger.info(f"AgentCard refreshed for: {agent_id}")
+        return AgentResponse(**updated_agent)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to refresh agent card: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to refresh agent card"
+        )
+
+
 @router.delete("/{agent_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_agent(
     agent_id: str,
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    """Delete an agent.
+    """Delete an agent with ownership verification.
 
-    Public endpoint - anyone can request deletion.
-    Actual deletion should verify agent_card_url ownership.
+    Verification process:
+    1. Fetch the agent's current AgentCard from its registered URL
+    2. Check if x-registry.allowDelete is true
+    3. Only delete if verification passes
+
+    Returns:
+        204 No Content if successful
+
+    Raises:
+        404: Agent not found
+        403: Delete not allowed (verification failed)
+        500: Internal error
     """
     try:
         service = AgentService(db)
-        deleted = await service.delete_agent(agent_id)
 
+        # 1. Get agent to retrieve agent_card_url
+        agent = await service.get_agent(agent_id)
+        if not agent:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Agent not found: {agent_id}"
+            )
+
+        # 2. Verify ownership via AgentCard
+        agent_card_url = agent.get("agent_card_url")
+        if not agent_card_url:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Agent does not have agent_card_url configured"
+            )
+
+        is_allowed, reason = await verify_delete_permission(
+            agent_card_url=agent_card_url
+        )
+
+        if not is_allowed:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Delete not allowed: {reason}"
+            )
+
+        # 3. Perform deletion
+        deleted = await service.delete_agent(agent_id)
         if not deleted:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Agent not found: {agent_id}"
             )
 
+        logger.info(f"Agent deleted after verification: {agent_id}")
         return None
 
     except HTTPException:

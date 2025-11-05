@@ -1,4 +1,4 @@
-import { X, ExternalLink, Code, Zap, Shield, Package, Trash2 } from 'lucide-react';
+import { X, ExternalLink, Code, Zap, Shield, Package, Trash2, RefreshCw } from 'lucide-react';
 import type { AgentCard } from '../types/agent';
 
 interface AgentModalProps {
@@ -6,10 +6,15 @@ interface AgentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onDelete?: () => void;
+  onRefresh?: () => void;
 }
 
-export default function AgentModal({ agent, isOpen, onClose, onDelete }: AgentModalProps) {
+export default function AgentModal({ agent, isOpen, onClose, onDelete, onRefresh }: AgentModalProps) {
   if (!isOpen) return null;
+
+  // Check if delete is allowed from x-registry extension field
+  // Check both at top level (flattened from agent_card) and in agent_card itself
+  const allowDelete = agent?.['x-registry']?.allowDelete === true || agent.agent_card?.['x-registry']?.allowDelete === true;
 
   const getAvatarColor = (name: string) => {
     const colors = [
@@ -213,15 +218,38 @@ export default function AgentModal({ agent, isOpen, onClose, onDelete }: AgentMo
         </div>
 
         {/* Footer */}
-        {onDelete && (
+        {(onRefresh || (onDelete && allowDelete)) && (
           <div className="border-t border-slate-700/50 p-4 bg-slate-800/30">
-            <button
-              onClick={onDelete}
-              className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
-            >
-              <Trash2 size={16} />
-              Delete Agent
-            </button>
+            <div className="flex items-center justify-between gap-3">
+              {/* Refresh Button */}
+              {onRefresh && (
+                <button
+                  onClick={onRefresh}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  <RefreshCw size={16} />
+                  Refresh AgentCard
+                </button>
+              )}
+
+              {/* Delete Button - only show if allowDelete is true */}
+              {onDelete && allowDelete && (
+                <button
+                  onClick={onDelete}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  <Trash2 size={16} />
+                  Delete Agent
+                </button>
+              )}
+
+              {/* Info message if delete not allowed */}
+              {onDelete && !allowDelete && (
+                <div className="flex-1 text-sm text-slate-400 italic">
+                  Delete is not allowed (x-registry.allowDelete is not true in AgentCard)
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

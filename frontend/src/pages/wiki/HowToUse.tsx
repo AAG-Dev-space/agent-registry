@@ -576,6 +576,151 @@ export default function HowToUse() {
               </div>
             </div>
           </section>
+
+          {/* Part 3: Deleting Agents */}
+          <section className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="flex items-center gap-2 mb-6">
+              <Terminal className="h-6 w-6 text-brand-500" />
+              <h2 className="text-xl font-semibold text-gray-900">
+                {t('3. 에이전트 삭제하기', '3. Deleting Your Agent')}
+              </h2>
+            </div>
+
+            <div className="space-y-6">
+              {/* Overview */}
+              <div>
+                <p className="text-gray-600 mb-4">
+                  {t(
+                    'Registry에서 에이전트를 삭제하려면 AgentCard 소유권을 증명해야 합니다. AgentCard URL을 제어할 수 있는 사람만 에이전트를 삭제할 수 있습니다.',
+                    'To delete your agent from the registry, you must prove ownership of the AgentCard. Only those who control the AgentCard URL can delete the agent.'
+                  )}
+                </p>
+              </div>
+
+              {/* Step-by-step guide */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                  {t('삭제 절차', 'Deletion Process')}
+                </h3>
+                <ol className="list-decimal list-inside space-y-3 text-gray-600">
+                  <li>
+                    <span className="font-medium text-gray-900">
+                      {t('AgentCard에 x-registry 필드 추가', 'Add x-registry field to AgentCard')}
+                    </span>
+                    <p className="ml-6 mt-2 text-sm">
+                      {t(
+                        'AgentCard JSON 파일에 x-registry.allowDelete 필드를 추가하고 true로 설정하세요:',
+                        'Add the x-registry.allowDelete field to your AgentCard JSON and set it to true:'
+                      )}
+                    </p>
+                    <div className="ml-6 mt-2 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <pre className="text-sm text-gray-800 overflow-x-auto">
+{`{
+  "protocolVersion": "0.3.0",
+  "name": "your-agent",
+  ...
+  "x-registry": {
+    "allowDelete": true
+  }
+}`}
+                      </pre>
+                    </div>
+                  </li>
+                  <li>
+                    <span className="font-medium text-gray-900">
+                      {t('Registry에서 Refresh', 'Refresh in Registry')}
+                    </span>
+                    <p className="ml-6 mt-2 text-sm">
+                      {t(
+                        'Registry UI에서 해당 에이전트의 상세 페이지로 이동하여 초록색 "Refresh" 버튼을 클릭하세요. Registry가 최신 AgentCard를 다시 가져옵니다.',
+                        'Go to the agent detail page in the Registry UI and click the green "Refresh" button. The registry will fetch the latest AgentCard.'
+                      )}
+                    </p>
+                  </li>
+                  <li>
+                    <span className="font-medium text-gray-900">
+                      {t('Delete 버튼 클릭', 'Click Delete button')}
+                    </span>
+                    <p className="ml-6 mt-2 text-sm">
+                      {t(
+                        'Refresh 후 빨간색 "Delete" 버튼이 나타나면 클릭하여 에이전트를 삭제할 수 있습니다.',
+                        'After refresh, the red "Delete" button will appear. Click it to delete your agent.'
+                      )}
+                    </p>
+                  </li>
+                </ol>
+              </div>
+
+              {/* Important notes */}
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h4 className="font-semibold text-yellow-900 mb-2">
+                  {t('중요 사항', 'Important Notes')}
+                </h4>
+                <ul className="list-disc list-inside space-y-1 text-sm text-yellow-800">
+                  <li>
+                    {t(
+                      'x-registry.allowDelete가 false이거나 없으면 Delete 버튼이 비활성화됩니다',
+                      'Delete button will be disabled if x-registry.allowDelete is false or missing'
+                    )}
+                  </li>
+                  <li>
+                    {t(
+                      'AgentCard URL을 제어할 수 없으면 삭제할 수 없습니다 (소유권 증명)',
+                      'Cannot delete if you do not control the AgentCard URL (ownership proof)'
+                    )}
+                  </li>
+                  <li>
+                    {t(
+                      '삭제는 되돌릴 수 없으므로 신중하게 진행하세요',
+                      'Deletion is irreversible, proceed with caution'
+                    )}
+                  </li>
+                </ul>
+              </div>
+
+              {/* Why x-registry field? */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                  {t('왜 x-registry 필드가 필요한가요?', 'Why is x-registry field needed?')}
+                </h3>
+                <p className="text-gray-600 mb-2">
+                  {t(
+                    'x-registry는 Registry 관리를 위한 확장 필드입니다. A2A 프로토콜 스펙에 포함되지 않는 Registry 전용 설정을 위해 사용됩니다:',
+                    'x-registry is an extension field for Registry management. It is used for registry-specific settings not included in the A2A protocol specification:'
+                  )}
+                </p>
+                <ul className="list-disc list-inside space-y-2 text-gray-600 ml-4">
+                  <li>
+                    <span className="font-medium">
+                      {t('소유권 증명:', 'Ownership Proof:')}
+                    </span>{' '}
+                    {t(
+                      'AgentCard URL 접근 권한 = 에이전트 소유권',
+                      'AgentCard URL access = agent ownership'
+                    )}
+                  </li>
+                  <li>
+                    <span className="font-medium">
+                      {t('실수 방지:', 'Prevent Accidents:')}
+                    </span>{' '}
+                    {t(
+                      '명시적으로 allowDelete를 true로 설정해야만 삭제 가능',
+                      'Deletion only possible when explicitly set allowDelete to true'
+                    )}
+                  </li>
+                  <li>
+                    <span className="font-medium">
+                      {t('확장성:', 'Extensibility:')}
+                    </span>{' '}
+                    {t(
+                      'x- 접두사는 A2A 스펙에서 확장 필드로 권장하는 방식',
+                      'x- prefix is the recommended way for extension fields in A2A spec'
+                    )}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </div>

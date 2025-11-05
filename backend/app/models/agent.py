@@ -22,12 +22,8 @@ class AgentModel(Base):
     # Primary key
     name = Column(String(255), primary_key=True, index=True)
 
-    # Agent card fields
-    description = Column(Text, nullable=True)
-    url = Column(String(512), nullable=False)
-    version = Column(String(50), nullable=True)
-    protocol_version = Column(String(50), nullable=True)
-    preferred_transport = Column(String(50), nullable=True)
+    # AgentCard URL (where the card is hosted)
+    agent_card_url = Column(String(512), nullable=True)
 
     # Store complete agent card as JSONB for flexibility
     agent_card = Column(JSONB, nullable=False)
@@ -46,14 +42,12 @@ class AgentModel(Base):
 
     def to_dict(self):
         """Convert model to dictionary."""
-        return {
-            "name": self.name,
-            "description": self.description,
-            "url": self.url,
-            "version": self.version,
-            "protocol_version": self.protocol_version,
-            "preferred_transport": self.preferred_transport,
-            "agent_card": self.agent_card,
+        # Return agent_card fields + metadata
+        result = dict(self.agent_card) if self.agent_card else {}
+        result.update({
+            "agent_card": self.agent_card,  # Include raw card for reference
+            "agent_card_url": self.agent_card_url,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-        }
+        })
+        return result

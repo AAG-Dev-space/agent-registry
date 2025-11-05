@@ -76,6 +76,12 @@ export const agentApi = {
     const response = await apiClient.delete<{ success: boolean }>(`/v1/agents/${agentId}`);
     return response.data;
   },
+
+  // Refresh agent card
+  refreshAgentCard: async (agentId: string): Promise<AgentCard> => {
+    const response = await apiClient.post<{ agent_card: AgentCard }>(`/v1/agents/${agentId}/refresh`);
+    return response.data.agent_card;
+  },
 };
 
 export default apiClient;

@@ -55,12 +55,8 @@ class AgentService:
 
         if existing:
             # Update existing agent
-            existing.description = agent_card.get("description")
-            existing.url = agent_card.get("url")
-            existing.version = agent_card.get("version")
-            existing.protocol_version = agent_card.get("protocol_version")
-            existing.preferred_transport = agent_card.get("preferred_transport")
             existing.agent_card = agent_card
+            existing.agent_card_url = agent_card.get("agent_card_url")
             existing.updated_at = utc_now()
 
             await self.db.commit()
@@ -73,12 +69,8 @@ class AgentService:
             # Create new agent
             agent_model = AgentModel(
                 name=agent_id,
-                description=agent_card.get("description"),
-                url=agent_card.get("url"),
-                version=agent_card.get("version"),
-                protocol_version=agent_card.get("protocol_version"),
-                preferred_transport=agent_card.get("preferred_transport"),
                 agent_card=agent_card,
+                agent_card_url=agent_card.get("agent_card_url"),
             )
             self.db.add(agent_model)
 

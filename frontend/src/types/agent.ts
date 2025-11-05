@@ -33,6 +33,10 @@ export interface HealthCheckConfig {
   expected_status?: number;
 }
 
+export interface AgentRegistryConfig {
+  allowDelete?: boolean;
+}
+
 export interface AgentCard {
   name: string;
   description: string;
@@ -47,6 +51,8 @@ export interface AgentCard {
   metadata?: Record<string, any>;
   health_status?: HealthStatus;
   health_check?: HealthCheckConfig;
+  agent_card?: Record<string, any>; // Raw AgentCard from backend
+  'x-registry'?: AgentRegistryConfig; // Registry extension field
 }
 
 export interface RegisterAgentRequest {

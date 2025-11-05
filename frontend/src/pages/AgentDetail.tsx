@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Loader2, AlertCircle, Copy, Check, Code, CheckCircle, XCircle, AlertTriangle, Activity } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Loader2, AlertCircle, Copy, Check, Code, CheckCircle, XCircle, AlertTriangle, Activity, RefreshCw, Trash2 } from 'lucide-react';
 import { agentApi } from '../api/client';
 import type { AgentCard, HealthStatus } from '../types/agent';
 
@@ -11,6 +11,8 @@ export default function AgentDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedUrl, setCopiedUrl] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (agentId) {
@@ -75,6 +77,48 @@ export default function AgentDetail() {
   };
 
   const apiUrl = getApiUrl();
+
+  // Check if delete is allowed
+  // Check both at top level (flattened from agent_card) and in agent_card itself
+  const allowDelete = agent?.['x-registry']?.allowDelete === true || agent?.agent_card?.['x-registry']?.allowDelete === true;
+
+  // Handle refresh AgentCard
+  const handleRefresh = async () => {
+    if (!agentId) return;
+
+    try {
+      setRefreshing(true);
+      const updatedAgent = await agentApi.refreshAgentCard(decodeURIComponent(agentId));
+      setAgent(updatedAgent);
+      alert('AgentCard refreshed successfully!');
+    } catch (err: any) {
+      console.error('Failed to refresh agent card:', err);
+      alert(err.response?.data?.detail || 'Failed to refresh AgentCard');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Handle delete agent
+  const handleDelete = async () => {
+    if (!agentId || !agent) return;
+
+    if (!confirm(`Are you sure you want to delete agent "${agent.name}"?`)) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      await agentApi.deleteAgent(decodeURIComponent(agentId));
+      alert('Agent deleted successfully!');
+      navigate('/agents');
+    } catch (err: any) {
+      console.error('Failed to delete agent:', err);
+      alert(err.response?.data?.detail || 'Failed to delete agent');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Get endpoint URL based on platform
   const getEndpointUrl = () => {
@@ -207,6 +251,33 @@ export default function AgentDetail() {
                   </>
                 )}
               </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-2 ml-4">
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-500 hover:bg-green-600 disabled:bg-green-300 text-white rounded-md text-xs font-medium transition-colors shadow-sm"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+                {refreshing ? 'Refreshing...' : 'Refresh'}
+              </button>
+
+              {allowDelete ? (
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {deleting ? 'Deleting...' : 'Delete'}
+                </button>
+              ) : (
+                <div className="text-xs text-gray-400 italic">
+                  Delete not allowed
+                </div>
+              )}
             </div>
           </div>
 
