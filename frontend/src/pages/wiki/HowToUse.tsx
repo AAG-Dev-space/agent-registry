@@ -26,44 +26,26 @@ export default function HowToUse() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const exampleAgentCard = {
+  const exampleAgentCard: any = {
     protocolVersion: "0.3.0",
-    name: "chatbot-assistant",
-    description: "A general-purpose conversational AI assistant that can help with various tasks including answering questions, providing information, and engaging in natural dialogue",
-    url: "https://api.example.com/chatbot",
-    version: "1.2.0",
+    name: "test-chatbot",
+    description: "A simple test chatbot for A2A registry testing",
+    url: "http://localhost:8080",
+    version: "1.0.0",
     preferredTransport: "JSONRPC",
     capabilities: {
-      streaming: true,
+      streaming: false,
       pushNotifications: false,
-      stateTransitionHistory: true
+      stateTransitionHistory: false
     },
     defaultInputModes: ["text/plain"],
     defaultOutputModes: ["text/plain"],
     skills: [
       {
         id: "conversation",
-        name: "Conversation",
-        description: "Natural language conversation and dialogue",
-        tags: ["conversation", "chat", "dialogue", "NLP"],
-        inputModes: ["text/plain"],
-        outputModes: ["text/plain"],
-        examples: [
-          "Let's talk about the weather",
-          "Tell me a joke"
-        ]
-      },
-      {
-        id: "question-answering",
-        name: "Question Answering",
-        description: "Answer factual questions across various domains",
-        tags: ["QA", "knowledge", "information-retrieval"],
-        inputModes: ["text/plain"],
-        outputModes: ["text/plain"],
-        examples: [
-          "What is the capital of France?",
-          "How does photosynthesis work?"
-        ]
+        name: "Basic Conversation",
+        description: "Simple conversation skill",
+        tags: ["chat", "test"]
       }
     ]
   };
@@ -301,7 +283,14 @@ export default function HowToUse() {
                 <h3 className="font-semibold text-gray-900 mb-3">
                   {t('AgentCard JSON 예시:', 'AgentCard JSON Example:')}
                 </h3>
-                <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto max-h-96">
+                <div className="relative bg-gray-900 rounded-lg p-4 overflow-x-auto max-h-96">
+                  <button
+                    onClick={() => copyToClipboard(JSON.stringify(exampleAgentCard, null, 2))}
+                    className="absolute top-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors"
+                    title={t('클립보드에 복사', 'Copy to clipboard')}
+                  >
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
                   <pre className="text-xs text-gray-100 font-mono">
                     {JSON.stringify(exampleAgentCard, null, 2)}
                   </pre>
@@ -374,7 +363,14 @@ export default function HowToUse() {
                 {/* Response Example */}
                 <div className="mt-4">
                   <p className="text-xs font-medium text-gray-700 mb-2">{t('응답 예시:', 'Response Example:')}</p>
-                  <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto max-h-96">
+                  <div className="relative bg-gray-900 rounded-lg p-4 overflow-x-auto max-h-96">
+                    <button
+                      onClick={() => copyToClipboard(JSON.stringify(exampleAgentCard, null, 2))}
+                      className="absolute top-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors"
+                      title={t('클립보드에 복사', 'Copy to clipboard')}
+                    >
+                      {copied ? <Check size={16} /> : <Copy size={16} />}
+                    </button>
                     <pre className="text-xs text-gray-100 font-mono">
                       {JSON.stringify(exampleAgentCard, null, 2)}
                     </pre>
