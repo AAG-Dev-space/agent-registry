@@ -228,24 +228,33 @@ export default function TermsAndSpecs() {
                   {t('핵심 스키마 요소', 'Core Schema Elements')}
                 </h3>
                 <div className="space-y-3">
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-sm font-medium text-gray-900 mb-2">{t('필수 필드:', 'Required Fields:')}</p>
+                  <div className="bg-red-50 rounded-lg p-3 border-2 border-red-300">
+                    <p className="text-sm font-bold text-red-900 mb-2">⚠️ {t('필수 필드 (MUST):', 'Required Fields (MUST):')}</p>
                     <ul className="space-y-1 text-sm text-gray-700">
-                      <li>• <code className="bg-gray-200 px-1 rounded">protocolVersion</code> - {t('기본값 "0.3.0"', 'Default "0.3.0"')}</li>
-                      <li>• <code className="bg-gray-200 px-1 rounded">name</code> / <code className="bg-gray-200 px-1 rounded">description</code> - {t('에이전트 식별 정보', 'Agent identification')}</li>
-                      <li>• <code className="bg-gray-200 px-1 rounded">url</code> - {t('메인 엔드포인트', 'Main endpoint')}</li>
-                      <li>• <code className="bg-gray-200 px-1 rounded">preferredTransport</code> - {t('선호 전송 프로토콜 (url과 일치 필수)', 'Preferred transport (must match url)')}</li>
+                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">name</code> - {t('에이전트 이름', 'Agent name')}</li>
+                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">description</code> - {t('에이전트 설명', 'Agent description')}</li>
+                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">url</code> - {t('메인 엔드포인트 URL', 'Main endpoint URL')}</li>
+                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">version</code> - {t('에이전트 버전', 'Agent version')}</li>
+                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">preferredTransport</code> - {t('메인 URL의 전송 프로토콜', 'Transport protocol for main URL')} (JSONRPC/gRPC/REST)</li>
+                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">capabilities</code> - {t('지원 기능 선언', 'Supported capabilities declaration')} (streaming, pushNotifications 등)</li>
+                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">defaultInputModes</code> - {t('기본 입력 MIME 타입 배열', 'Default input MIME types array')}</li>
+                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">defaultOutputModes</code> - {t('기본 출력 MIME 타입 배열', 'Default output MIME types array')}</li>
+                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">skills</code> - {t('에이전트 스킬 목록', 'Agent skills array')}</li>
                     </ul>
                   </div>
 
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <p className="text-sm font-medium text-gray-900 mb-2">{t('권장 필드:', 'Recommended Fields:')}</p>
+                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                    <p className="text-sm font-medium text-blue-900 mb-2">{t('권장 필드 (SHOULD):', 'Recommended Fields (SHOULD):')}</p>
                     <ul className="space-y-1 text-sm text-gray-700">
-                      <li>• <code className="bg-gray-200 px-1 rounded">additionalInterfaces</code> - {t('추가 전송 인터페이스', 'Additional transport interfaces')}</li>
-                      <li>• <code className="bg-gray-200 px-1 rounded">capabilities</code> - streaming, pushNotifications, stateTransitionHistory</li>
-                      <li>• <code className="bg-gray-200 px-1 rounded">skills</code> - {t('에이전트가 수행 가능한 스킬 목록', 'List of skills the agent can perform')}</li>
-                      <li>• <code className="bg-gray-200 px-1 rounded">securitySchemes</code> - {t('인증 방식 정의', 'Authentication method definition')}</li>
-                      <li>• <code className="bg-gray-200 px-1 rounded">signatures</code> - {t('JWS 서명 (선택)', 'JWS signature (optional)')}</li>
+                      <li>• <code className="bg-blue-100 px-1 rounded">protocolVersion</code> - {t('A2A 프로토콜 버전 (기본값 "0.3.0")', 'A2A protocol version (defaults to "0.3.0")')}</li>
+                      <li>• <code className="bg-blue-100 px-1 rounded">provider</code> - {t('에이전트 제공자 정보', 'Agent provider information')}</li>
+                      <li>• <code className="bg-blue-100 px-1 rounded">documentationUrl</code> - {t('문서 URL', 'Documentation URL')}</li>
+                      <li>• <code className="bg-blue-100 px-1 rounded">iconUrl</code> - {t('아이콘 URL', 'Icon URL')}</li>
+                      <li>• <code className="bg-blue-100 px-1 rounded">securitySchemes</code> - {t('인증 방식 선언', 'Security schemes declaration')}</li>
+                      <li>• <code className="bg-blue-100 px-1 rounded">security</code> - {t('보안 요구사항', 'Security requirements')}</li>
+                      <li>• <code className="bg-blue-100 px-1 rounded">additionalInterfaces</code> - {t('추가 전송 인터페이스', 'Additional transport interfaces')}</li>
+                      <li>• <code className="bg-blue-100 px-1 rounded">supportsAuthenticatedExtendedCard</code> - {t('인증된 확장 카드 지원 여부', 'Supports authenticated extended card')}</li>
+                      <li>• <code className="bg-blue-100 px-1 rounded">signatures</code> - {t('JWS 서명', 'JWS signatures')}</li>
                     </ul>
                   </div>
                 </div>
