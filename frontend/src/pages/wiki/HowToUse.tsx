@@ -27,27 +27,27 @@ export default function HowToUse() {
   };
 
   const exampleAgentCard = {
+    protocolVersion: "0.3.0",
     name: "chatbot-assistant",
     description: "A general-purpose conversational AI assistant that can help with various tasks including answering questions, providing information, and engaging in natural dialogue",
     url: "https://api.example.com/chatbot",
     version: "1.2.0",
-    protocol_version: "0.3.0",
-    preferred_transport: "JSONRPC",
+    preferredTransport: "JSONRPC",
     capabilities: {
       streaming: true,
-      push_notifications: false,
-      state_transition_history: true
+      pushNotifications: false,
+      stateTransitionHistory: true
     },
-    default_input_modes: ["text"],
-    default_output_modes: ["text"],
+    defaultInputModes: ["text/plain"],
+    defaultOutputModes: ["text/plain"],
     skills: [
       {
         id: "conversation",
         name: "Conversation",
         description: "Natural language conversation and dialogue",
         tags: ["conversation", "chat", "dialogue", "NLP"],
-        input_modes: ["text"],
-        output_modes: ["text"],
+        inputModes: ["text/plain"],
+        outputModes: ["text/plain"],
         examples: [
           "Let's talk about the weather",
           "Tell me a joke"
@@ -58,8 +58,8 @@ export default function HowToUse() {
         name: "Question Answering",
         description: "Answer factual questions across various domains",
         tags: ["QA", "knowledge", "information-retrieval"],
-        input_modes: ["text"],
-        output_modes: ["text"],
+        inputModes: ["text/plain"],
+        outputModes: ["text/plain"],
         examples: [
           "What is the capital of France?",
           "How does photosynthesis work?"
@@ -104,13 +104,41 @@ export default function HowToUse() {
             <div className="space-y-6">
               <p className="text-sm text-gray-600">
                 {t(
-                  '에이전트를 레지스트리에 등록하려면 ',
-                  'To register your agent in the registry, visit the '
+                  'Agent Registry는 URL 기반 등록 방식을 사용합니다. AgentCard JSON 파일을 작성하여 웹 서버에 호스팅한 후, 해당 URL을 레지스트리에 제출하세요.',
+                  'Agent Registry uses a URL-based registration method. Create an AgentCard JSON file, host it on your web server, then submit the URL to the registry.'
                 )}
-                <a href="/register" className="text-brand-500 hover:underline font-medium">
-                  {t('에이전트 제출', 'Submit Agent')}
-                </a>
-                {t(' 페이지로 이동하여 다음 필드를 입력하세요:', ' page and fill in the following fields:')}
+              </p>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-900 font-medium mb-2">
+                  {t('등록 절차:', 'Registration Process:')}
+                </p>
+                <ol className="text-sm text-blue-800 space-y-2 ml-4 list-decimal">
+                  <li>{t('AgentCard JSON 파일 작성', 'Create AgentCard JSON file')}</li>
+                  <li>{t('웹 서버에 정적 파일로 호스팅', 'Host as static file on web server')}</li>
+                  <li>{t('URL이 공개적으로 접근 가능한지 확인', 'Verify URL is publicly accessible')}</li>
+                  <li>
+                    <a href="/register" className="text-brand-600 hover:underline font-medium">
+                      {t('레지스트리에 URL 제출', 'Submit URL to registry')}
+                    </a>
+                  </li>
+                </ol>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm font-medium text-gray-900 mb-2">
+                  {t('권장 URL 형식:', 'Recommended URL format:')}
+                </p>
+                <code className="text-sm bg-white border border-gray-300 px-3 py-2 rounded text-brand-600 block">
+                  https://myagent.company.com/.well-known/agent-card.json
+                </code>
+              </div>
+
+              <p className="text-sm text-gray-600">
+                {t(
+                  'AgentCard에는 다음 필드들이 포함되어야 합니다:',
+                  'Your AgentCard should include the following fields:'
+                )}
               </p>
 
               {/* Field Descriptions */}
@@ -179,73 +207,72 @@ export default function HowToUse() {
                   </code>
                 </div>
 
-                {/* Protocol Version */}
+                {/* Preferred Transport */}
                 <div className="border-l-4 border-brand-500 pl-4 py-2">
                   <h3 className="font-semibold text-gray-900 mb-1">
-                    {t('프로토콜 버전', 'Protocol Version')} <span className="text-error-500">*</span>
+                    {t('전송 프로토콜', 'Preferred Transport')} <span className="text-error-500">*</span>
                   </h3>
                   <p className="text-sm text-gray-600 mb-2">
                     {t(
-                      '에이전트가 지원하는 A2A 프로토콜 버전입니다. 현재는 0.3.0을 사용하세요.',
-                      'A2A protocol version your agent supports. Use 0.3.0 for now.'
+                      '에이전트가 사용하는 통신 프로토콜입니다. A2A v0.3.0에서 지원하는 3가지 중 하나를 선택하세요.',
+                      'Communication protocol your agent uses. Choose one of the 3 protocols supported by A2A v0.3.0.'
+                    )}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <code className="text-xs bg-blue-100 px-2 py-1 rounded text-blue-700 font-semibold">JSONRPC</code>
+                    <code className="text-xs bg-green-100 px-2 py-1 rounded text-green-700 font-semibold">gRPC</code>
+                    <code className="text-xs bg-purple-100 px-2 py-1 rounded text-purple-700 font-semibold">REST</code>
+                  </div>
+                </div>
+
+                {/* Capabilities */}
+                <div className="border-l-4 border-brand-500 pl-4 py-2">
+                  <h3 className="font-semibold text-gray-900 mb-1">
+                    {t('기능 선언', 'Capabilities')} <span className="text-error-500">*</span>
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    {t(
+                      '에이전트가 지원하는 선택적 기능을 선언합니다. 필수 필드이며, 각 기능을 지원하지 않을 경우 false로 설정하세요.',
+                      'Declare optional capabilities your agent supports. This is a required field; set to false if not supported.'
+                    )}
+                  </p>
+                  <ul className="text-sm text-gray-600 space-y-1 ml-4 list-disc">
+                    <li><strong>streaming:</strong> {t('실시간 스트리밍 응답 지원', 'Real-time streaming responses')}</li>
+                    <li><strong>pushNotifications:</strong> {t('클라이언트에 푸시 알림 전송 가능', 'Can send push notifications to clients')}</li>
+                    <li><strong>stateTransitionHistory:</strong> {t('상태 전환 이력 추적', 'Tracks state transition history')}</li>
+                  </ul>
+                </div>
+
+                {/* Input/Output Modes */}
+                <div className="border-l-4 border-brand-500 pl-4 py-2">
+                  <h3 className="font-semibold text-gray-900 mb-1">
+                    {t('입출력 MIME 타입', 'Default Input/Output Modes')} <span className="text-error-500">*</span>
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    {t(
+                      '에이전트가 지원하는 기본 입력/출력 MIME 타입 배열입니다. 모든 스킬에 공통으로 적용됩니다.',
+                      'Array of default input/output MIME types supported by the agent. Applies to all skills.'
+                    )}
+                  </p>
+                  <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
+                    {t('예시:', 'Example:')} ["text/plain"], ["application/json"], ["image/png"]
+                  </code>
+                </div>
+
+                {/* Protocol Version */}
+                <div className="border-l-4 border-gray-400 pl-4 py-2">
+                  <h3 className="font-semibold text-gray-900 mb-1">
+                    {t('프로토콜 버전', 'Protocol Version')} <span className="text-gray-400 text-sm">{t('(권장)', '(Recommended)')}</span>
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    {t(
+                      '에이전트가 지원하는 A2A 프로토콜 버전입니다. 생략 시 기본값 "0.3.0"이 사용됩니다.',
+                      'A2A protocol version your agent supports. Defaults to "0.3.0" if omitted.'
                     )}
                   </p>
                   <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
                     {t('예시:', 'Example:')} 0.3.0
                   </code>
-                </div>
-
-                {/* Preferred Transport */}
-                <div className="border-l-4 border-brand-500 pl-4 py-2">
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    {t('전송 방법', 'Preferred Transport')} <span className="text-error-500">*</span>
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '에이전트가 사용하는 통신 프로토콜입니다.',
-                      'Communication protocol your agent uses.'
-                    )}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <code className="text-xs bg-blue-100 px-2 py-1 rounded text-blue-700">JSONRPC</code>
-                    <code className="text-xs bg-green-100 px-2 py-1 rounded text-green-700">REST</code>
-                    <code className="text-xs bg-purple-100 px-2 py-1 rounded text-purple-700">GRPC</code>
-                    <code className="text-xs bg-orange-100 px-2 py-1 rounded text-orange-700">GraphQL</code>
-                  </div>
-                </div>
-
-                {/* Input/Output Modes */}
-                <div className="border-l-4 border-gray-400 pl-4 py-2">
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    {t('입출력 모드', 'Input/Output Modes')} <span className="text-gray-400 text-sm">{t('(선택)', '(Optional)')}</span>
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '에이전트가 지원하는 기본 입력/출력 데이터 형식입니다.',
-                      'Default input/output data formats your agent supports.'
-                    )}
-                  </p>
-                  <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
-                    {t('예시:', 'Example:')} text, audio, video, structured, image
-                  </code>
-                </div>
-
-                {/* Capabilities */}
-                <div className="border-l-4 border-gray-400 pl-4 py-2">
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    {t('기능', 'Capabilities')} <span className="text-gray-400 text-sm">{t('(선택)', '(Optional)')}</span>
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '에이전트가 지원하는 고급 기능을 활성화합니다.',
-                      'Enable advanced features your agent supports.'
-                    )}
-                  </p>
-                  <ul className="text-sm text-gray-600 space-y-1 ml-4 list-disc">
-                    <li><strong>Streaming:</strong> {t('실시간 스트리밍 응답 지원', 'Real-time streaming responses')}</li>
-                    <li><strong>Push Notifications:</strong> {t('클라이언트에 푸시 알림 전송 가능', 'Can send push notifications to clients')}</li>
-                    <li><strong>State History:</strong> {t('상태 전환 이력 추적', 'Tracks state transition history')}</li>
-                  </ul>
                 </div>
 
                 {/* Skills */}
@@ -267,22 +294,37 @@ export default function HowToUse() {
                     <li><strong>{t('예시:', 'Examples:')}</strong> {t('사용 예시 프롬프트', 'Example prompts')} ("Tell me a joke")</li>
                   </ul>
                 </div>
+              </div>
 
-                {/* Health Check */}
-                <div className="border-l-4 border-gray-400 pl-4 py-2">
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    {t('헬스 체크', 'Health Check')} <span className="text-gray-400 text-sm">{t('(선택, 권장)', '(Optional, Recommended)')}</span>
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '에이전트의 상태를 주기적으로 모니터링하는 엔드포인트입니다. 3회 연속 실패 시 비활성으로 표시됩니다.',
-                      'Endpoint to periodically monitor your agent status. Marked inactive after 3 consecutive failures.'
-                    )}
-                  </p>
-                  <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
-                    {t('예시 URL:', 'Example URL:')} https://api.example.com/chatbot/health
-                  </code>
+              {/* AgentCard Example */}
+              <div className="mt-6">
+                <h3 className="font-semibold text-gray-900 mb-3">
+                  {t('AgentCard JSON 예시:', 'AgentCard JSON Example:')}
+                </h3>
+                <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto max-h-96">
+                  <pre className="text-xs text-gray-100 font-mono">
+                    {JSON.stringify(exampleAgentCard, null, 2)}
+                  </pre>
                 </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {t(
+                    '이 JSON 파일을 웹 서버의 /.well-known/agent-card.json 경로에 호스팅하세요.',
+                    'Host this JSON file at /.well-known/agent-card.json on your web server.'
+                  )}
+                </p>
+              </div>
+
+              {/* Auto Sync Info */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-sm text-green-900 font-medium mb-2">
+                  ✅ {t('자동 동기화', 'Automatic Synchronization')}
+                </p>
+                <p className="text-sm text-green-800">
+                  {t(
+                    'Registry는 하루 1회 자동으로 AgentCard URL을 폴링하여 변경사항을 감지합니다. AgentCard를 업데이트하면 자동으로 반영됩니다!',
+                    'The registry automatically polls your AgentCard URL once per day to detect changes. Update your AgentCard and it will be automatically reflected!'
+                  )}
+                </p>
               </div>
             </div>
           </section>
@@ -318,31 +360,15 @@ export default function HowToUse() {
                 <div className="relative">
                   <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
                     <code className="text-xs text-gray-100 font-mono">
-                      curl {apiUrl}/agents/chatbot-assistant
+                      curl {apiUrl}/api/v1/agents/chatbot-assistant
                     </code>
                   </div>
                   <button
-                    onClick={() => copyToClipboard(`curl ${apiUrl}/agents/chatbot-assistant`)}
+                    onClick={() => copyToClipboard(`curl ${apiUrl}/api/v1/agents/chatbot-assistant`)}
                     className="absolute top-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors"
                   >
                     {copied ? <Check size={16} /> : <Copy size={16} />}
                   </button>
-                </div>
-
-                {/* URL Encoding Note */}
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-xs text-yellow-800 mb-2">
-                    <strong>{t('참고:', 'Note:')}</strong> {t(
-                      '에이전트 이름에 공백이나 특수문자가 있는 경우 URL 인코딩이 필요합니다.',
-                      'If the agent name contains spaces or special characters, URL encoding is required.'
-                    )}
-                  </p>
-                  <div className="bg-gray-900 rounded p-2">
-                    <code className="text-xs text-gray-100 font-mono">
-                      # {t('공백이 있는 이름 (예: "Meeting Agent")', 'Name with space (e.g., "Meeting Agent")')}<br/>
-                      curl {apiUrl}/agents/Meeting%20Agent
-                    </code>
-                  </div>
                 </div>
 
                 {/* Response Example */}
@@ -353,6 +379,16 @@ export default function HowToUse() {
                       {JSON.stringify(exampleAgentCard, null, 2)}
                     </pre>
                   </div>
+                </div>
+
+                {/* Registry API Note */}
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-xs text-blue-800">
+                    <strong>{t('참고:', 'Note:')}</strong> {t(
+                      'Registry API는 등록된 AgentCard를 반환합니다. 실제 에이전트 호출은 AgentCard의 url 필드를 사용하세요.',
+                      'The Registry API returns the registered AgentCard. Use the url field in the AgentCard to make actual agent calls.'
+                    )}
+                  </p>
                 </div>
               </div>
 
@@ -371,7 +407,7 @@ export default function HowToUse() {
                 {/* JSONRPC Example */}
                 <div className="mb-4">
                   <p className="text-sm font-medium text-gray-900 mb-2">
-                    {t('JSONRPC 방식:', 'JSONRPC Method:')}
+                    {t('JSONRPC 2.0 방식:', 'JSONRPC 2.0 Method:')}
                   </p>
                   <div className="relative">
                     <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
@@ -382,17 +418,20 @@ export default function HowToUse() {
   "jsonrpc": "2.0",
   "method": "message/send",
   "params": {
-    "message": {
-      "role": "user",
-      "parts": [
-        {
-          "type": "text",
-          "content": "Tell me a joke"
-        }
-      ]
-    }
+    "skillId": "conversation",
+    "messages": [
+      {
+        "role": "user",
+        "parts": [
+          {
+            "type": "text",
+            "text": "Tell me a joke"
+          }
+        ]
+      }
+    ]
   },
-  "id": "1"
+  "id": 1
 }'`}
                       </pre>
                     </div>
@@ -404,17 +443,20 @@ export default function HowToUse() {
   "jsonrpc": "2.0",
   "method": "message/send",
   "params": {
-    "message": {
-      "role": "user",
-      "parts": [
-        {
-          "type": "text",
-          "content": "Tell me a joke"
-        }
-      ]
-    }
+    "skillId": "conversation",
+    "messages": [
+      {
+        "role": "user",
+        "parts": [
+          {
+            "type": "text",
+            "text": "Tell me a joke"
+          }
+        ]
+      }
+    ]
   },
-  "id": "1"
+  "id": 1
 }'`;
                         copyToClipboard(cmd);
                       }}
@@ -434,17 +476,16 @@ export default function HowToUse() {
 {`{
   "jsonrpc": "2.0",
   "result": {
-    "message": {
-      "role": "assistant",
-      "parts": [
-        {
-          "type": "text",
-          "content": "Why did the AI go to therapy? Because it had too many unresolved dependencies!"
-        }
-      ]
-    }
+    "taskId": "task-123",
+    "status": "completed",
+    "artifacts": [
+      {
+        "type": "text",
+        "text": "Why did the AI go to therapy? Because it had too many unresolved dependencies!"
+      }
+    ]
   },
-  "id": "1"
+  "id": 1
 }`}
                   </pre>
                 </div>
@@ -509,20 +550,26 @@ export default function HowToUse() {
                 <ul className="text-xs text-blue-700 space-y-1 ml-4 list-disc">
                   <li>
                     {t(
-                      'capabilities.streaming이 true인 경우 실시간 스트리밍 응답을 받을 수 있습니다',
-                      'If capabilities.streaming is true, you can receive real-time streaming responses'
+                      'capabilities.streaming이 true인 경우 message/stream 메서드로 실시간 스트리밍 응답을 받을 수 있습니다',
+                      'If capabilities.streaming is true, you can receive real-time streaming responses via message/stream method'
                     )}
                   </li>
                   <li>
                     {t(
-                      'default_input_modes와 default_output_modes를 확인하여 지원되는 데이터 형식을 파악하세요',
-                      'Check default_input_modes and default_output_modes to understand supported data formats'
+                      'defaultInputModes와 defaultOutputModes를 확인하여 지원되는 MIME 타입을 파악하세요',
+                      'Check defaultInputModes and defaultOutputModes to understand supported MIME types'
                     )}
                   </li>
                   <li>
                     {t(
-                      '각 스킬의 input_modes와 output_modes를 확인하여 특정 스킬에 맞는 데이터 형식을 사용하세요',
-                      'Check input_modes and output_modes of each skill to use appropriate data formats'
+                      '각 스킬의 inputModes와 outputModes를 확인하여 특정 스킬에 맞는 데이터 형식을 사용하세요',
+                      'Check inputModes and outputModes of each skill to use appropriate data formats'
+                    )}
+                  </li>
+                  <li>
+                    {t(
+                      'A2A v0.3.0은 tasks/get, tasks/cancel 메서드도 제공하여 작업 상태 조회 및 취소가 가능합니다',
+                      'A2A v0.3.0 also provides tasks/get and tasks/cancel methods for task status queries and cancellation'
                     )}
                   </li>
                 </ul>

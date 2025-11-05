@@ -1,4 +1,4 @@
-import { Book, Rocket, Code, CheckCircle } from 'lucide-react';
+import { Book, Rocket, Code } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import LanguageToggle from '../../components/LanguageToggle';
 
@@ -92,73 +92,24 @@ export default function GettingStarted() {
                     {t('에이전트 등록하기', 'Register Your Agent')}
                   </h3>
                   <p className="text-sm text-gray-600 mb-3">
+                    {t(
+                      'AgentCard JSON 파일을 작성하여 웹 서버에 호스팅한 후, ',
+                      'Create an AgentCard JSON file, host it on your web server, then submit the '
+                    )}
                     <a href="/register" className="text-brand-500 hover:underline">
-                      {t('에이전트 제출', 'Submit Agent')}
-                    </a>{' '}
+                      {t('URL을 제출', 'URL')}
+                    </a>
                     {t(
-                      '을 클릭하여 자신의 에이전트를 등록하세요. 기본 정보, 스킬 및 선택적 헬스 체크 구성을 제공합니다.',
-                      'to register your own agent. Provide basic information, skills, and optional health check configuration.'
-                    )}
-                  </p>
-                  <div className="bg-gray-50 rounded-lg p-3 text-xs font-mono text-gray-700">
-                    {t(
-                      '필수 항목: 이름, 설명, URL, 버전, 프로토콜 버전',
-                      'Required: Name, Description, URL, Version, Protocol Version'
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Step 3 */}
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-brand-100 text-brand-600 font-semibold">
-                  3
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-2">
-                    {t('헬스 체크 구성 (선택 사항)', 'Configure Health Checks (Optional)')}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-3">
-                    {t(
-                      '헬스 체크 엔드포인트를 제공하여 자동 헬스 모니터링을 활성화하세요. 시스템은 5분마다 에이전트의 상태를 확인합니다.',
-                      'Enable automatic health monitoring by providing a health check endpoint. The system will check your agent\'s status every 5 minutes.'
-                    )}
-                  </p>
-                  <ul className="text-sm text-gray-600 space-y-1 ml-4 list-disc">
-                    <li>
-                      {t('헬스 체크 URL: 에이전트의 헬스 엔드포인트', 'Health Check URL: Your agent\'s health endpoint')}
-                    </li>
-                    <li>{t('타임아웃: 요청 타임아웃 (기본값: 10초)', 'Timeout: Request timeout (default: 10s)')}</li>
-                    <li>
-                      {t('예상 상태: HTTP 상태 코드 (기본값: 200)', 'Expected Status: HTTP status code (default: 200)')}
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              {/* Step 4 */}
-              <div className="flex gap-4">
-                <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-brand-100 text-brand-600 font-semibold">
-                  4
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-900 mb-2">
-                    {t('접근 제어 관리', 'Manage Access Control')}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-3">
-                    {t(
-                      '자격 증명으로 로그인하여 관리 기능에 액세스하세요. 관리자 사용자는 에이전트를 삭제하고 레지스트리를 관리할 수 있습니다.',
-                      'Login with your credentials to access management features. Admin users can delete agents and manage the registry.'
+                      '하세요. Registry가 자동으로 AgentCard를 가져와 등록합니다.',
+                      ' on the registration page. The registry will automatically fetch and register your AgentCard.'
                     )}
                   </p>
                   <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span>{t('사용자: 에이전트 보기 및 등록', 'User: View and register agents')}</span>
+                    <div className="text-xs font-mono text-gray-700">
+                      {t('권장 URL 형식:', 'Recommended URL format:')}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-gray-600">
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span>{t('관리자: 삭제를 포함한 전체 제어', 'Admin: Full control including deletion')}</span>
+                    <div className="text-xs font-mono text-brand-600">
+                      https://myagent.com/.well-known/agent-card.json
                     </div>
                   </div>
                 </div>
@@ -200,24 +151,21 @@ ${t('응답:', 'Response:')}
 
               <div>
                 <h3 className="text-sm font-medium text-gray-900 mb-2">
-                  {t('에이전트 등록', 'Register Agent')}
+                  {t('에이전트 등록 (URL 제출)', 'Register Agent (Submit URL)')}
                 </h3>
                 <pre className="bg-gray-900 text-gray-100 rounded-lg p-4 text-xs overflow-x-auto">
-{`POST http://localhost:8000/agents
+{`POST http://localhost:8000/api/v1/agents
 Content-Type: application/json
 
 {
-  "agent_card": {
-    "name": "my-agent",
-    "description": "${t('설명', 'Description')}",
-    "url": "https://my-agent.com",
-    "version": "1.0.0",
-    "protocol_version": "0.3.0",
-    "preferred_transport": "JSONRPC",
-    "skills": [
-      {"id": "skill-name", "description": "${t('스킬 설명', 'Skill desc')}"}
-    ]
-  }
+  "agent_card_url": "https://myagent.com/.well-known/agent-card.json"
+}
+
+${t('응답:', 'Response:')}
+{
+  "id": "uuid-here",
+  "name": "my-agent",
+  "status": "active"
 }`}
                 </pre>
               </div>
