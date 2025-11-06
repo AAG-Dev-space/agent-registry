@@ -53,6 +53,8 @@ export interface AgentCard {
   health_check?: HealthCheckConfig;
   agent_card?: Record<string, any>; // Raw AgentCard from backend
   'x-registry'?: AgentRegistryConfig; // Registry extension field
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface RegisterAgentRequest {

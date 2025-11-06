@@ -59,8 +59,8 @@ export const agentApi = {
 
   // Get agent by ID
   getAgent: async (agentId: string): Promise<AgentCard> => {
-    const response = await apiClient.get<{ agent_card: AgentCard }>(`/v1/agents/${agentId}`);
-    return response.data.agent_card;
+    const response = await apiClient.get<AgentCard>(`/v1/agents/${agentId}`);
+    return response.data;
   },
 
   // Search agents
@@ -79,8 +79,8 @@ export const agentApi = {
 
   // Sync agent card
   refreshAgentCard: async (agentId: string): Promise<AgentCard> => {
-    const response = await apiClient.post<{ agent_card: AgentCard }>(`/v1/agents/${agentId}/sync`);
-    return response.data.agent_card;
+    const response = await apiClient.post<AgentCard>(`/v1/agents/${agentId}/sync`);
+    return response.data;
   },
 };
 

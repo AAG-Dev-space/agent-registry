@@ -44,6 +44,18 @@ class AgentModel(Base):
         """Convert model to dictionary."""
         # Return agent_card fields + metadata
         result = dict(self.agent_card) if self.agent_card else {}
+
+        # Convert camelCase to snake_case for A2A protocol fields
+        # Agent Card는 json 파일로 camleCase, frontend와 backend 간의 일관성을 위해 snake_case 사용
+        if "protocolVersion" in result:
+            result["protocol_version"] = result["protocolVersion"]
+        if "preferredTransport" in result:
+            result["preferred_transport"] = result["preferredTransport"]
+        if "defaultInputModes" in result:
+            result["default_input_modes"] = result["defaultInputModes"]
+        if "defaultOutputModes" in result:
+            result["default_output_modes"] = result["defaultOutputModes"]
+
         result.update({
             "agent_card": self.agent_card,  # Include raw card for reference
             "agent_card_url": self.agent_card_url,

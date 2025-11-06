@@ -13,7 +13,7 @@ export default function AgentList() {
 
   // Extract unique tags from agents
   const tags = Array.from(new Set(agents.flatMap(agent =>
-    agent.skills?.map(skill => skill.id) || []
+    agent.agent_card?.skills?.map(skill => skill.id) || []
   )));
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function AgentList() {
     // Apply tag filter
     if (selectedTag) {
       filtered = filtered.filter(
-        (agent) => agent.skills?.some(skill => skill.id === selectedTag)
+        (agent) => agent.agent_card?.skills?.some(skill => skill.id === selectedTag)
       );
     }
 
@@ -218,9 +218,9 @@ export default function AgentList() {
                     </p>
 
                     {/* Tags */}
-                    {agent.skills && agent.skills.length > 0 && (
+                    {agent.agent_card?.skills && agent.agent_card.skills.length > 0 && (
                       <div className="flex flex-wrap gap-2 mb-4">
-                        {agent.skills.slice(0, 3).map((skill, idx) => (
+                        {agent.agent_card.skills.slice(0, 3).map((skill, idx) => (
                           <span
                             key={idx}
                             className="px-3 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700"
@@ -228,9 +228,9 @@ export default function AgentList() {
                             {skill.id}
                           </span>
                         ))}
-                        {agent.skills.length > 3 && (
+                        {agent.agent_card.skills.length > 3 && (
                           <span className="px-3 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
-                            +{agent.skills.length - 3}
+                            +{agent.agent_card.skills.length - 3}
                           </span>
                         )}
                       </div>
