@@ -77,9 +77,9 @@ export const agentApi = {
     return response.data;
   },
 
-  // Refresh agent card
+  // Sync agent card
   refreshAgentCard: async (agentId: string): Promise<AgentCard> => {
-    const response = await apiClient.post<{ agent_card: AgentCard }>(`/v1/agents/${agentId}/refresh`);
+    const response = await apiClient.post<{ agent_card: AgentCard }>(`/v1/agents/${agentId}/sync`);
     return response.data.agent_card;
   },
 };

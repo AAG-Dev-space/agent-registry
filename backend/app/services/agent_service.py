@@ -117,13 +117,13 @@ class AgentService:
             return agent_model.to_dict()
 
     async def get_agent(self, agent_id: str) -> dict | None:
-        """Get agent by ID.
+        """Get agent by ID with health status.
 
         Args:
             agent_id: Agent name/ID
 
         Returns:
-            Agent dictionary or None if not found
+            Agent dictionary with health info or None if not found
         """
         result = await self.db.execute(
             select(AgentModel).where(AgentModel.name == agent_id)
@@ -131,18 +131,43 @@ class AgentService:
         agent = result.scalar_one_or_none()
 
         if agent:
-            return agent.to_dict()
+            agent_dict = agent.to_dict()
+
+            # Add health status
+            health_result = await self.db.execute(
+                select(HealthStatusModel).where(HealthStatusModel.agent_name == agent_id)
+            )
+            health = health_result.scalar_one_or_none()
+
+            if health:
+                agent_dict["health_status"] = {
+                    "status": health.status,
+                    "last_check_at": health.last_check_at.isoformat() if health.last_check_at else None,
+                    "last_response_time_ms": health.last_response_time_ms,
+                    "failure_count": health.failure_count,
+                    "last_error": health.last_error,
+                }
+            else:
+                agent_dict["health_status"] = {
+                    "status": "unknown",
+                    "last_check_at": None,
+                    "last_response_time_ms": None,
+                    "failure_count": 0,
+                    "last_error": None,
+                }
+
+            return agent_dict
         return None
 
     async def list_agents(self, limit: int = 100, offset: int = 0) -> tuple[list[dict], int]:
-        """List all agents with pagination.
+        """List all agents with pagination and health status.
 
         Args:
             limit: Maximum number of agents to return
             offset: Number of agents to skip
 
         Returns:
-            Tuple of (agent list, total count)
+            Tuple of (agent list with health info, total count)
         """
         # Get total count
         count_result = await self.db.execute(select(AgentModel))
@@ -154,7 +179,37 @@ class AgentService:
         )
         agents = result.scalars().all()
 
-        return [agent.to_dict() for agent in agents], total_count
+        # Add health status to each agent
+        agents_with_health = []
+        for agent in agents:
+            agent_dict = agent.to_dict()
+
+            # Get health status
+            health_result = await self.db.execute(
+                select(HealthStatusModel).where(HealthStatusModel.agent_name == agent.name)
+            )
+            health = health_result.scalar_one_or_none()
+
+            if health:
+                agent_dict["health_status"] = {
+                    "status": health.status,
+                    "last_check_at": health.last_check_at.isoformat() if health.last_check_at else None,
+                    "last_response_time_ms": health.last_response_time_ms,
+                    "failure_count": health.failure_count,
+                    "last_error": health.last_error,
+                }
+            else:
+                agent_dict["health_status"] = {
+                    "status": "unknown",
+                    "last_check_at": None,
+                    "last_response_time_ms": None,
+                    "failure_count": 0,
+                    "last_error": None,
+                }
+
+            agents_with_health.append(agent_dict)
+
+        return agents_with_health, total_count
 
     async def delete_agent(self, agent_id: str) -> bool:
         """Delete an agent.

@@ -34,6 +34,7 @@ class AgentResponse(BaseModel):
     agent_card: dict[str, Any]
     created_at: str | None = None
     updated_at: str | None = None
+    health_status: dict[str, Any] | None = None
 
 
 class AgentListResponse(BaseModel):

@@ -131,19 +131,28 @@ export default function Health() {
             </div>
             <div className="space-y-2 text-sm">
               <div className="text-slate-300">
-                <span className="text-blue-400">GET</span> /agents
+                <span className="text-blue-400">GET</span> /v1/agents
               </div>
               <div className="text-slate-300">
-                <span className="text-green-400">POST</span> /agents
+                <span className="text-green-400">POST</span> /v1/agents/register-by-url
               </div>
               <div className="text-slate-300">
-                <span className="text-blue-400">GET</span> /agents/:id
+                <span className="text-blue-400">GET</span> /v1/agents/:id
               </div>
               <div className="text-slate-300">
-                <span className="text-orange-400">POST</span> /agents/search
+                <span className="text-red-400">DELETE</span> /v1/agents/:id
               </div>
               <div className="text-slate-300">
-                <span className="text-red-400">DELETE</span> /agents/:id
+                <span className="text-purple-400">POST</span> /v1/agents/:id/sync
+              </div>
+              <div className="text-slate-300">
+                <span className="text-orange-400">POST</span> /v1/agents/search
+              </div>
+              <div className="text-slate-300">
+                <span className="text-cyan-400">POST</span> /v1/agents/verify
+              </div>
+              <div className="text-slate-300">
+                <span className="text-green-400">POST</span> /v1/agents (legacy)
               </div>
             </div>
           </div>
