@@ -31,10 +31,6 @@ COPY --from=builder /opt/venv /opt/venv
 
 # Copy application code
 COPY backend ./backend
-COPY config ./config
-
-# Copy sample data (will be used if volume is not mounted)
-COPY data /app/data
 
 # Set environment variables
 ENV PATH="/opt/venv/bin:$PATH" \
