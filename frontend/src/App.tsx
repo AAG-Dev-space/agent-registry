@@ -1,7 +1,6 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider } from './contexts/LanguageContext';
 import Layout from './components/Layout';
-import Home from './pages/Home';
 import AgentList from './pages/AgentList';
 import AgentDetail from './pages/AgentDetail';
 import RegisterAgent from './pages/RegisterAgent';
@@ -17,7 +16,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
+            <Route index element={<Navigate to="/agents" replace />} />
             <Route path="wiki/getting-started" element={<GettingStarted />} />
             <Route path="wiki/how-to-use" element={<HowToUse />} />
             <Route path="wiki/roadmap" element={<Roadmap />} />
