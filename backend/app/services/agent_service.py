@@ -63,6 +63,19 @@ class AgentService:
             await self.db.refresh(existing)
 
             logger.info(f"Updated existing agent: {agent_id}")
+
+            # If agent_card_url exists, verify it to update health status
+            agent_card_url = agent_card.get("agent_card_url")
+            if agent_card_url:
+                logger.info(f"Verifying AgentCard URL for updated agent: {agent_id}")
+                verification = await self.verify_agent_card_url(agent_card_url)
+                await self._update_health_status(
+                    agent_name=agent_id,
+                    success=verification["success"],
+                    response_time_ms=verification.get("response_time_ms"),
+                    error=verification.get("error"),
+                )
+
             return existing.to_dict()
 
         else:
@@ -88,6 +101,19 @@ class AgentService:
             await self.db.refresh(agent_model)
 
             logger.info(f"Registered new agent: {agent_id}")
+
+            # If agent_card_url exists, verify it immediately to set proper health status
+            agent_card_url = agent_card.get("agent_card_url")
+            if agent_card_url:
+                logger.info(f"Verifying AgentCard URL for newly registered agent: {agent_id}")
+                verification = await self.verify_agent_card_url(agent_card_url)
+                await self._update_health_status(
+                    agent_name=agent_id,
+                    success=verification["success"],
+                    response_time_ms=verification.get("response_time_ms"),
+                    error=verification.get("error"),
+                )
+
             return agent_model.to_dict()
 
     async def get_agent(self, agent_id: str) -> dict | None:
@@ -265,3 +291,179 @@ class AgentService:
                 "error": str(e),
                 "response_time_ms": response_time_ms,
             }
+
+    async def _update_health_status(
+        self,
+        agent_name: str,
+        success: bool,
+        response_time_ms: int | None = None,
+        error: str | None = None
+    ) -> None:
+        """Update health status for an agent based on AgentCard fetch result.
+
+        Args:
+            agent_name: Agent name/ID
+            success: Whether the fetch was successful
+            response_time_ms: Response time in milliseconds
+            error: Error message if failed
+        """
+        # Get or create health status
+        result = await self.db.execute(
+            select(HealthStatusModel).where(HealthStatusModel.agent_name == agent_name)
+        )
+        health = result.scalar_one_or_none()
+
+        now = utc_now()
+
+        if not health:
+            # Create new health status
+            health = HealthStatusModel(
+                agent_name=agent_name,
+                status="active" if success else "inactive",
+                last_check_at=now,
+                last_response_time_ms=response_time_ms,
+                failure_count=0 if success else 1,
+                last_error=error,
+            )
+            self.db.add(health)
+        else:
+            # Update existing health status
+            health.last_check_at = now
+            health.last_response_time_ms = response_time_ms
+            health.last_error = error
+            health.updated_at = now
+
+            if success:
+                health.status = "active"
+                health.failure_count = 0
+            else:
+                health.failure_count += 1
+                # Mark as deprecated after 3 consecutive failures
+                if health.failure_count >= 3:
+                    health.status = "deprecated"
+                else:
+                    health.status = "inactive"
+
+        await self.db.commit()
+        logger.info(f"Health status updated for {agent_name}: {health.status} (failures: {health.failure_count})")
+
+    async def sync_agent_card(self, agent_id: str) -> dict:
+        """Sync agent's AgentCard from its URL and update health status.
+
+        Args:
+            agent_id: Agent name/ID
+
+        Returns:
+            Dictionary with sync result:
+            {
+                "success": bool,
+                "agent": dict | None,
+                "error": str | None,
+                "response_time_ms": int | None
+            }
+        """
+        # Get agent
+        agent = await self.get_agent(agent_id)
+        if not agent:
+            return {
+                "success": False,
+                "error": f"Agent not found: {agent_id}",
+            }
+
+        agent_card_url = agent.get("agent_card_url")
+        if not agent_card_url:
+            return {
+                "success": False,
+                "error": "Agent does not have agent_card_url configured",
+            }
+
+        # Fetch AgentCard
+        verification = await self.verify_agent_card_url(agent_card_url)
+
+        # Update health status
+        await self._update_health_status(
+            agent_name=agent_id,
+            success=verification["success"],
+            response_time_ms=verification.get("response_time_ms"),
+            error=verification.get("error"),
+        )
+
+        if not verification["success"]:
+            return {
+                "success": False,
+                "error": verification["error"],
+                "response_time_ms": verification.get("response_time_ms"),
+            }
+
+        # Update agent card in database
+        result = await self.db.execute(
+            select(AgentModel).where(AgentModel.name == agent_id)
+        )
+        agent_model = result.scalar_one_or_none()
+
+        if agent_model:
+            agent_model.agent_card = verification["agent_card"]
+            agent_model.updated_at = utc_now()
+            await self.db.commit()
+            await self.db.refresh(agent_model)
+
+            logger.info(f"AgentCard synced for: {agent_id}")
+            return {
+                "success": True,
+                "agent": agent_model.to_dict(),
+                "response_time_ms": verification.get("response_time_ms"),
+            }
+
+        return {
+            "success": False,
+            "error": "Failed to update agent in database",
+        }
+
+    async def sync_all_agents(self) -> dict:
+        """Sync all agents' AgentCards and update health statuses.
+
+        This method should be called by the scheduler (daily).
+
+        Returns:
+            Dictionary with sync summary:
+            {
+                "total": int,
+                "success": int,
+                "failed": int,
+                "results": list[dict]
+            }
+        """
+        # Get all agents
+        result = await self.db.execute(select(AgentModel))
+        agents = result.scalars().all()
+
+        total = len(agents)
+        success_count = 0
+        failed_count = 0
+        results = []
+
+        logger.info(f"Starting sync for {total} agents...")
+
+        for agent in agents:
+            sync_result = await self.sync_agent_card(agent.name)
+
+            if sync_result["success"]:
+                success_count += 1
+            else:
+                failed_count += 1
+
+            results.append({
+                "agent_name": agent.name,
+                "success": sync_result["success"],
+                "error": sync_result.get("error"),
+                "response_time_ms": sync_result.get("response_time_ms"),
+            })
+
+        logger.info(f"Sync completed: {success_count}/{total} successful, {failed_count}/{total} failed")
+
+        return {
+            "total": total,
+            "success": success_count,
+            "failed": failed_count,
+            "results": results,
+        }

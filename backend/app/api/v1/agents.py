@@ -127,14 +127,14 @@ async def get_agent(
         )
 
 
-@router.post("/{agent_id}/refresh", response_model=AgentResponse)
-async def refresh_agent_card(
+@router.post("/{agent_id}/sync", response_model=AgentResponse)
+async def sync_agent_card(
     agent_id: str,
     db: Annotated[AsyncSession, Depends(get_db)],
 ):
-    """Manually refresh agent's AgentCard from its URL.
+    """Manually sync agent's AgentCard from its URL.
 
-    Fetches the latest AgentCard and updates the database.
+    Fetches the latest AgentCard, updates the database, and updates health status.
 
     Returns:
         Updated agent information
@@ -144,57 +144,31 @@ async def refresh_agent_card(
         500: Failed to fetch or update
     """
     try:
-        from sqlalchemy import update
-        from backend.app.models.agent import AgentModel
-
         service = AgentService(db)
 
-        # 1. Get existing agent
-        agent = await service.get_agent(agent_id)
-        if not agent:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Agent not found: {agent_id}"
-            )
+        sync_result = await service.sync_agent_card(agent_id)
 
-        # 2. Fetch latest AgentCard from stored URL
-        agent_card_url = agent.get("agent_card_url")
-        if not agent_card_url:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Agent does not have agent_card_url configured"
-            )
+        if not sync_result["success"]:
+            if "not found" in sync_result.get("error", ""):
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=sync_result["error"]
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=sync_result.get("error", "Failed to sync agent card")
+                )
 
-        try:
-            fresh_card = await fetch_agent_card(agent_card_url)
-        except Exception as e:
-            logger.error(f"Failed to fetch AgentCard from {agent_card_url}: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to fetch AgentCard: {str(e)}"
-            )
-
-        # 3. Update agent_card in database
-        stmt = (
-            update(AgentModel)
-            .where(AgentModel.name == agent_id)
-            .values(agent_card=fresh_card)
-        )
-        await db.execute(stmt)
-        await db.commit()
-
-        # 4. Return updated agent
-        updated_agent = await service.get_agent(agent_id)
-        logger.info(f"AgentCard refreshed for: {agent_id}")
-        return AgentResponse(**updated_agent)
+        return AgentResponse(**sync_result["agent"])
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Failed to refresh agent card: {e}")
+        logger.error(f"Failed to sync agent card: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to refresh agent card"
+            detail="Failed to sync agent card"
         )
 
 

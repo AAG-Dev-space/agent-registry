@@ -24,10 +24,21 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("Database initialized")
 
+    # Start background scheduler
+    from backend.app.scheduler import start_scheduler
+    start_scheduler()
+    logger.info("Scheduler started")
+
     yield
 
     # Shutdown
     logger.info("Shutting down A2A Registry...")
+
+    # Stop scheduler
+    from backend.app.scheduler import stop_scheduler
+    stop_scheduler()
+    logger.info("Scheduler stopped")
+
     await close_db()
     logger.info("Database connections closed")
 

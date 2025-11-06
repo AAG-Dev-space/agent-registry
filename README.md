@@ -167,20 +167,60 @@ a2a-registry/
 
 ## API 엔드포인트
 
-### Backend API (http://localhost:8000)
+### Backend API (http://localhost:7601)
 
-#### 에이전트 관리 (모두 Public API)
-- `GET /api/v1/agents` - 등록된 에이전트 목록 조회
-- `POST /api/v1/agents` - 새 에이전트 등록 (Body: `{ "agent_card_url": "https://..." }`)
-- `GET /api/v1/agents/{agent_id}` - 특정 에이전트 상세 정보
-- `DELETE /api/v1/agents/{agent_id}` - 에이전트 삭제 (URL 소유권 검증)
-- `POST /api/v1/agents/{agent_id}/verify` - AgentCard URL 수동 검증
-- `GET /api/v1/agents/{agent_id}/sync-status` - 동기화 상태 조회
-- `POST /api/v1/agents/search` - 에이전트 검색
+모든 엔드포인트는 **Public API**입니다 (인증 불필요).
 
-#### 스킬 관리
-- `POST /api/v1/agents/{agent_id}/skills` - 에이전트에 스킬 등록
-- `GET /api/v1/agents/{agent_id}/skills` - 에이전트의 스킬 목록 조회
+#### 에이전트 관리
+
+| Method | Endpoint | 설명 | Request Body |
+|--------|----------|------|--------------|
+| `GET` | `/api/v1/agents` | 등록된 에이전트 목록 조회 | - |
+| `POST` | `/api/v1/agents/register-by-url` | AgentCard URL로 에이전트 등록 | `{"agent_card_url": "https://..."}` |
+| `GET` | `/api/v1/agents/{name}` | 특정 에이전트 상세 정보 조회 | - |
+| `DELETE` | `/api/v1/agents/{name}` | 에이전트 삭제 (소유권 검증) | - |
+| `POST` | `/api/v1/agents/{name}/sync` | 에이전트 AgentCard 수동 동기화 | - |
+| `POST` | `/api/v1/agents/search` | 에이전트 검색 | `{"query": "...", "tags": [...]}` |
+| `POST` | `/api/v1/agents/verify` | AgentCard URL 검증 (등록 없이) | `{"url": "https://..."}` |
+| `POST` | `/api/v1/agents` | AgentCard 직접 등록 (레거시) | `{AgentCard JSON}` |
+
+#### 엔드포인트 상세 설명
+
+**1. 에이전트 등록 (권장 방식)**
+```bash
+curl -X POST http://localhost:7601/api/v1/agents/register-by-url \
+  -H "Content-Type: application/json" \
+  -d '{"agent_card_url": "https://myagent.com/.well-known/agent-card.json"}'
+```
+- Registry가 자동으로 URL에서 AgentCard를 fetch
+- 검증 후 DB에 저장
+- Health status 자동 초기화
+
+**2. 에이전트 동기화**
+```bash
+curl -X POST http://localhost:7601/api/v1/agents/{name}/sync
+```
+- 수동으로 AgentCard를 최신 버전으로 업데이트
+- Health status도 함께 갱신
+- 응답: 업데이트된 Agent 정보
+
+**3. 에이전트 삭제**
+```bash
+curl -X DELETE http://localhost:7601/api/v1/agents/{name}
+```
+- AgentCard의 `x-registry.allowDelete: true` 확인 후 삭제
+- URL 소유권 기반 검증
+- 성공 시 204 No Content 응답
+
+**4. URL 검증 (등록 전 확인)**
+```bash
+curl -X POST http://localhost:7601/api/v1/agents/verify \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://myagent.com/.well-known/agent-card.json"}'
+```
+- AgentCard URL이 유효한지 미리 확인
+- DB에 저장하지 않음 (검증만)
+- 응답: AgentCard 내용 및 응답 시간
 
 ### Frontend Routes (http://localhost:5173)
 - `/` - 홈페이지 (에이전트 목록)
