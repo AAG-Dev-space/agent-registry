@@ -36,6 +36,14 @@ export default function Layout() {
               >
                 Agents
               </Link>
+              <Link
+                to="/dashboard"
+                className={`text-sm font-medium transition-colors ${
+                  isActive('/dashboard') ? 'text-gray-900' : 'text-gray-700 hover:text-brand-500'
+                }`}
+              >
+                Dashboard
+              </Link>
 
               {/* Wiki Dropdown */}
               <div className="relative">
