@@ -295,7 +295,12 @@ class AgentService:
         start_time = time.time()
 
         try:
-            async with httpx.AsyncClient(timeout=10.0, follow_redirects=True) as client:
+            async with httpx.AsyncClient(
+                timeout=10.0,
+                follow_redirects=True,
+                trust_env=False, 
+                proxy=None, 
+            ) as client:
                 response = await client.get(url)
                 response_time_ms = int((time.time() - start_time) * 1000)
 

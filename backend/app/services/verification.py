@@ -20,7 +20,11 @@ async def fetch_agent_card(url: str) -> dict:
         httpx.HTTPError: If fetch fails
         ValueError: If JSON parsing fails
     """
-    async with httpx.AsyncClient(timeout=10.0) as client:
+    async with httpx.AsyncClient(
+        timeout=10.0,
+        trust_env=False, 
+        proxy=None, 
+    ) as client:
         response = await client.get(url)
         response.raise_for_status()
         return response.json()
