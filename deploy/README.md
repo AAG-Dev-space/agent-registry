@@ -1,235 +1,134 @@
 # A2A Agent Registry - Docker 배포 가이드
 
-Docker를 사용하여 A2A Agent Registry를 배포하는 방법을 설명합니다.
-
-## 📋 사전 요구사항
-
-- Docker 20.10 이상
-- Docker Compose 2.0 이상
-
 ## 🚀 빠른 시작
-
-### 1. Docker 이미지 빌드
 
 ```bash
 cd deploy
+
+# 빌드 & 실행
 ./build.sh
-```
-
-### 2. 환경 변수 설정 (선택사항)
-
-배포 디렉토리에 `.env` 파일을 생성하여 환경 변수를 설정할 수 있습니다:
-
-```bash
-# .env 파일 예시
-SECRET_KEY=your-secret-key-here-change-in-production
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-PORT=80
-```
-
-### 3. Docker Compose로 실행
-
-```bash
 docker compose up -d
+
+# 접속
+# Frontend: http://localhost:7600
+# Backend:  http://localhost:7601
 ```
 
-### 4. 애플리케이션 접속
+---
 
-- **Frontend**: http://localhost:7600
-- **Backend API**: http://localhost:7601
-- **API 문서**: http://localhost:7601/docs
+## 📁 데이터 저장
 
-## 📦 이미지 구성
+PostgreSQL 데이터는 Docker managed volume `agent_registry_db`에 자동 저장됩니다.
 
-### Backend 이미지
-- **Base Image**: `python:3.11-slim`
-- **Multi-stage build**로 최적화
-- 최종 이미지 크기: ~239MB
-- 포함 내용:
-  - Python 애플리케이션
-  - 필수 의존성만 포함 (Vector search는 optional)
-  - 파일 기반 저장소 지원
+**Volume 위치**: `/var/lib/docker/volumes/agent_registry_db/_data`
 
-### Frontend 이미지
-- **Base Image**: `nginx:1.25-alpine`
-- **Multi-stage build**로 최적화
-- 최종 이미지 크기: ~25MB (예상)
-- 포함 내용:
-  - 빌드된 정적 파일
-  - Nginx 웹 서버
-  - 최적화된 nginx 설정
+**장점**:
+- Docker가 자동 관리
+- 권한 문제 없음
+- 컨테이너 재시작 시 데이터 유지
 
-## 🏗️ 개별 이미지 빌드
+---
 
-### Backend 빌드
-```bash
-cd ..  # 프로젝트 루트로 이동
-docker build -f deploy/Dockerfile.backend -t a2a-registry-backend:latest .
-```
-
-### Frontend 빌드
-```bash
-docker build -f deploy/Dockerfile.frontend -t a2a-registry-frontend:latest .
-```
-
-## 🔧 설정
-
-### 환경 변수
-
-#### Backend
-- `STORAGE_TYPE`: 저장소 타입 (기본값: `file`)
-- `STORAGE_DATA_DIR`: 데이터 디렉토리 경로 (기본값: `/app/data`)
-- `SECRET_KEY`: JWT 시크릿 키 (**프로덕션에서 반드시 변경**)
-- `ACCESS_TOKEN_EXPIRE_MINUTES`: 액세스 토큰 만료 시간 (기본값: `30`)
-
-#### Frontend
-- `PORT`: 외부 노출 포트 (기본값: `80`)
-
-### 볼륨
-
-#### backend-data
-- 경로: `/app/data`
-- 용도: 에이전트, 사용자, 헬스 상태 데이터 저장
-- 타입: Docker 볼륨
-
-## 📊 헬스 체크
-
-### Backend
-- 엔드포인트: `http://localhost:8000/health`
-- 간격: 30초
-- 타임아웃: 10초
-- 재시도: 3회
-
-### Frontend
-- 엔드포인트: `http://localhost:80/`
-- 간격: 30초
-- 타임아웃: 3초
-- 재시도: 3회
-
-## 🔄 코드 업데이트 방법
-
-### Backend 코드만 수정한 경우
-```bash
-./update.sh backend
-```
-- ✅ DB 데이터 유지
-- ⏱️ 약 30초-1분 소요
-- 사용 예: Python 코드 수정, API 로직 변경
-
-### Frontend 코드만 수정한 경우
-```bash
-./update.sh frontend
-```
-- ✅ DB 데이터 유지
-- ⏱️ 약 30초-1분 소요
-- 사용 예: React 코드 수정, UI 변경
-
-### 전체 업데이트 (Git pull 후)
-```bash
-./update.sh all
-```
-- ✅ DB 데이터 유지
-- ⏱️ 약 1-2분 소요
-
-### 완전 초기화 (모든 데이터 삭제)
-```bash
-./update.sh clean
-```
-- ⚠️ **주의**: 모든 DB 데이터가 삭제됩니다!
-
-### 수동 업데이트 (스크립트 없이)
-```bash
-# Backend만 재빌드 & 재시작
-docker compose build backend
-docker compose up -d backend
-
-# Frontend만
-docker compose build frontend
-docker compose up -d frontend
-
-# 전체
-docker compose build
-docker compose up -d
-```
-
-## 🛠️ 관리 명령어
+## 🛠️ 주요 명령어
 
 ### 로그 확인
 ```bash
-# 실시간 로그 (update.sh 사용)
-./update.sh logs backend
-./update.sh logs frontend
-
-# 또는 직접 사용
 docker compose logs -f backend
 docker compose logs -f frontend
-docker compose logs -f  # 전체 로그
+docker compose logs -f postgres
 ```
 
-### 컨테이너 상태 확인
-```bash
-docker compose ps
-```
-
-### 컨테이너 재시작
-```bash
-# 빌드 없이 빠른 재시작
-docker compose restart backend
-docker compose restart frontend
-docker compose restart  # 전체
-```
-
-### 컨테이너 중지
+### 중지 (데이터 유지)
 ```bash
 docker compose down
 ```
 
-### 데이터 포함 완전 삭제
+### 재시작
 ```bash
-docker compose down -v  # ⚠️ 모든 DB 데이터 삭제됨!
+docker compose restart backend
+docker compose restart frontend
 ```
+
+### 완전 초기화 (데이터 삭제 주의!)
+```bash
+docker compose down -v
+```
+
+---
+
+## 🔄 코드 업데이트
+
+### Backend만 수정
+```bash
+docker compose build backend
+docker compose up -d backend
+```
+
+### Frontend만 수정
+```bash
+docker compose build frontend
+docker compose up -d frontend
+```
+
+### 전체 재빌드
+```bash
+./build.sh
+docker compose up -d
+```
+
+---
+
+## 📌 환경 변수 (선택사항)
+
+`.env` 파일 생성:
+```bash
+# deploy/.env
+POSTGRES_PASSWORD=your_password
+SECRET_KEY=your-secret-key
+ACCESS_TOKEN_EXPIRE_MINUTES=1440
+```
+
+---
 
 ## 🔍 문제 해결
 
-### 포트 충돌
-포트 80이 이미 사용 중인 경우 `.env` 파일에서 다른 포트를 설정:
+### 변경사항이 반영 안 됨
 ```bash
-PORT=8080
+# 이미지 재빌드 필요
+docker compose build --no-cache
+docker compose up -d
 ```
 
-### 데이터 초기화
-저장된 데이터를 초기화하려면:
+### 데이터 백업
 ```bash
-docker-compose down -v
-docker-compose up -d
+# Volume 백업
+docker run --rm \
+  -v agent_registry_db:/data \
+  -v $(pwd):/backup \
+  alpine tar czf /backup/backup-$(date +%Y%m%d).tar.gz -C /data .
 ```
 
-### 로그 확인
-에러 발생 시 로그를 확인:
+### 데이터 복원
 ```bash
-docker-compose logs --tail=100 backend
-docker-compose logs --tail=100 frontend
+# Volume 복원
+docker run --rm \
+  -v agent_registry_db:/data \
+  -v $(pwd):/backup \
+  alpine tar xzf /backup/backup-YYYYMMDD.tar.gz -C /data
 ```
 
-## 📝 프로덕션 배포 체크리스트
+### Volume 확인
+```bash
+# Volume 목록
+docker volume ls
 
-- [ ] `SECRET_KEY` 환경 변수를 안전한 랜덤 값으로 변경
-- [ ] HTTPS 설정 (리버스 프록시 사용 권장)
-- [ ] 방화벽 설정
-- [ ] 백업 전략 수립 (볼륨 데이터)
-- [ ] 모니터링 설정
-- [ ] 로그 로테이션 설정
+# Volume 상세 정보
+docker volume inspect agent_registry_db
+```
 
-## 🌐 네트워크 구성
+---
 
-Docker Compose는 다음과 같은 네트워크를 생성합니다:
+## 📚 추가 문서
 
-- **a2a-network**: Frontend와 Backend가 통신하는 브리지 네트워크
-- Frontend는 `/api/*` 요청을 Backend로 프록시
-
-## 📚 추가 자료
-
-- [Docker 공식 문서](https://docs.docker.com/)
-- [Docker Compose 문서](https://docs.docker.com/compose/)
-- [프로젝트 README](../README.md)
-- [상세 구현 문서](../DETAIL_ko.md)
+- **프로젝트 README**: [../README.md](../README.md)
+- **Docker 공식 문서**: https://docs.docker.com/compose/

@@ -1,3 +1,6 @@
+# A2A Agent Registry - Docker Compose Configuration
+# Usage: docker compose up -d
+
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -8,7 +11,8 @@ services:
       - POSTGRES_USER=a2a_user
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-a2a_password_change_me}
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      # Docker managed volume for persistent data
+      - agent_registry_db:/var/lib/postgresql/data
     networks:
       - a2a-network
     healthcheck:
@@ -21,7 +25,7 @@ services:
   backend:
     build:
       context: ..
-      dockerfile: backend/Dockerfile
+      dockerfile: Dockerfile.backend
     image: a2a-registry-backend:latest
     container_name: a2a-registry-backend
     restart: unless-stopped
@@ -30,12 +34,8 @@ services:
     environment:
       - STORAGE_TYPE=postgres
       - DATABASE_URL=postgresql+asyncpg://a2a_user:${POSTGRES_PASSWORD:-a2a_password_change_me}@postgres:5432/a2a_registry
-      - STORAGE_DATA_DIR=/app/data
       - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
-    volumes:
-      - backend-data:/app/data
-      - ../config:/app/config:ro
     networks:
       - a2a-network
     depends_on:
@@ -51,7 +51,7 @@ services:
   frontend:
     build:
       context: ..
-      dockerfile: frontend/Dockerfile
+      dockerfile: Dockerfile.frontend
     image: a2a-registry-frontend:latest
     container_name: a2a-registry-frontend
     restart: unless-stopped
@@ -73,7 +73,5 @@ networks:
     driver: bridge
 
 volumes:
-  postgres-data:
-    driver: local
-  backend-data:
+  agent_registry_db:
     driver: local
