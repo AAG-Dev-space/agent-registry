@@ -31,19 +31,6 @@ export default function Dashboard() {
     const inactive = agents.filter(a => a.health_status?.status === 'inactive').length;
     const deprecated = agents.filter(a => a.health_status?.status === 'deprecated').length;
 
-    // Skill distribution
-    const skillCounts: Record<string, number> = {};
-    agents.forEach(agent => {
-      agent.agent_card?.skills?.forEach((skill: any) => {
-        skillCounts[skill.id] = (skillCounts[skill.id] || 0) + 1;
-      });
-    });
-
-    // Sort skills by count and take top 10
-    const topSkills = Object.entries(skillCounts)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 10);
-
     // Recent additions (last 7 days)
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
@@ -73,7 +60,6 @@ export default function Dashboard() {
       deprecated,
       uptimePercentage,
       recentCount: recentAgents.length,
-      topSkills,
       recentAgents: recentAgents.slice(0, 10),
     };
   }, [agents]);
@@ -164,41 +150,6 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Skill Distribution */}
-        <div className="bg-white rounded-xl border border-gray-200 p-8 shadow-sm mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-            🏷️ Skill 분포
-          </h2>
-          {stats.topSkills.length > 0 ? (
-            <div className="space-y-3 text-gray-700">
-              {stats.topSkills.map(([skill, count], index) => (
-                <div key={skill} className="flex items-start gap-3">
-                  <span className="text-gray-400">
-                    {index === stats.topSkills.length - 1 ? '└─' : '├─'}
-                  </span>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium">{skill}:</span>
-                      <span className="text-sm text-gray-600 font-semibold">{count} agents</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-brand-500 h-2 rounded-full transition-all"
-                        style={{ width: `${(count / stats.total) * 100}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-start gap-3 text-gray-500">
-              <span className="text-gray-400">└─</span>
-              <span>No skills data available</span>
-            </div>
-          )}
         </div>
 
         {/* Recent Activity */}

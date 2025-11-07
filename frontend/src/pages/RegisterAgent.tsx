@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, Loader2, CheckCircle, AlertCircle, Check, XCircle, Copy, FileJson, Cloud, Link as LinkIcon, Eye } from 'lucide-react';
+import { Save, Loader2, CheckCircle, AlertCircle, Check, XCircle, Copy, FileJson, Cloud, Link as LinkIcon, Eye, ExternalLink } from 'lucide-react';
 import { agentApi } from '../api/client';
 import type { AgentCard } from '../types/agent';
 import AgentCardPreview from '../components/AgentCardPreview';
@@ -48,7 +48,12 @@ export default function RegisterAgent() {
       }
     ],
     "x-registry": {
-      allowDelete: false
+      allowDelete: false,
+      contact: "agent-owner@example.com",
+      owner: "knoxid",
+      department: "AI Research Team",
+      homepage: "https://example.com/my-agent",
+      usageDescription: "Send JSONRPC 2.0 requests to the endpoint with your desired method and parameters"
     }
   };
 
@@ -209,8 +214,26 @@ export default function RegisterAgent() {
                   <li><code className="bg-blue-100 px-1 rounded">capabilities</code> - {t('스트리밍, 푸시알림 등', 'streaming, pushNotifications, etc.')}</li>
                   <li><code className="bg-blue-100 px-1 rounded">skills</code> - {t('에이전트 능력 목록 및 설명', 'List of agent capabilities with descriptions')}</li>
                 </ul>
-                <h4 className="text-sm font-medium text-blue-900 mt-3 mb-2">{t('레지스트리 확장 필드:', 'Registry Extension Fields:')}</h4>
+                <h4 className="text-sm font-medium text-blue-900 mt-3 mb-2">{t('레지스트리 확장 필드 (MUST):', 'Registry Extension Fields (MUST):')}</h4>
                 <ul className="text-xs text-blue-800 space-y-1">
+                  <li>
+                    <code className="bg-blue-100 px-1 rounded">x-registry.contact</code> - {t('담당자 이메일 주소 (예: knox@example.com)', 'Contact email (e.g., knox@example.com)')}
+                  </li>
+                  <li>
+                    <code className="bg-blue-100 px-1 rounded">x-registry.owner</code> - {t('소유자 ID (예: knox)', 'Owner ID (e.g., knox)')}
+                  </li>
+                  <li>
+                    <code className="bg-blue-100 px-1 rounded">x-registry.department</code> - {t('부서/팀 이름 (예: AI Platform Team)', 'Department/Team name (e.g., AI Platform Team)')}
+                  </li>
+                  <li>
+                    <code className="bg-blue-100 px-1 rounded">x-registry.homepage</code> - {t('Confluence 페이지 또는 Agent 사용 Frontend/Web UI', 'Confluence page or Agent Frontend/Web UI')}
+                  </li>
+                </ul>
+                <h4 className="text-sm font-medium text-blue-900 mt-3 mb-2">{t('레지스트리 확장 필드 (선택):', 'Registry Extension Fields (Optional):')}</h4>
+                <ul className="text-xs text-blue-800 space-y-1">
+                  <li>
+                    <code className="bg-blue-100 px-1 rounded">x-registry.usageDescription</code> - {t('Agent 사용 방법 설명', 'Description of how to use the agent')}
+                  </li>
                   <li>
                     <code className="bg-blue-100 px-1 rounded">x-registry.allowDelete</code> - {t('에이전트 삭제 허용 여부 (기본값: false). ', 'Allow agent deletion (default: false). ')}
                     <strong>{t('true로 설정 시 UI에 Delete 버튼 생성됨', 'When set to true, Delete button appears in UI')}</strong>
@@ -254,6 +277,22 @@ export default function RegisterAgent() {
                   <li>{t('Content-Type: application/json 반환', 'Must return')} <code className="bg-gray-100 px-1 rounded">Content-Type: application/json</code></li>
                   <li>{t('A2A v0.3.0 스키마에 맞는 유효한 JSON 파일', 'Must be a valid JSON file matching A2A v0.3.0 schema')}</li>
                 </ul>
+              </div>
+
+              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  {t('필요시, 아래 방법을 참조하세요:', 'If needed, refer to the guide below:')}
+                  {' '}
+                  <a
+                    href="https://confluence.samsungds.net/spaces/SLSIAI/pages/3029679239/04-02+Register+Agent"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-blue-600 hover:text-blue-700 hover:underline inline-flex items-center gap-1"
+                  >
+                    Confluence Guide
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </p>
               </div>
             </div>
           </div>
@@ -339,6 +378,19 @@ export default function RegisterAgent() {
                     {t('"검증" 버튼을 클릭하여 AgentCard를 가져오고 검증하세요', 'Click "Verify" to fetch and validate your AgentCard')}
                   </p>
                 )}
+              </div>
+
+              {/* Auto Sync Info */}
+              <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm font-medium text-blue-900 mb-2">
+                  ✅ {t('자동 동기화', 'Automatic Synchronization')}
+                </p>
+                <p className="text-sm text-blue-800">
+                  {t(
+                    'Registry에 등록된 AgentCard는 매일 1회 자동으로 URL을 폴링하여 변경사항을 감지합니다. AgentCard를 업데이트하면 자동으로 반영됩니다!',
+                    'Registered AgentCards are automatically polled once per day to detect changes. Update your AgentCard and it will be automatically reflected in the registry!'
+                  )}
+                </p>
               </div>
             </div>
           </div>

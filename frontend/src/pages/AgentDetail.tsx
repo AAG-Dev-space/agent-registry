@@ -65,19 +65,6 @@ export default function AgentDetail() {
     }
   };
 
-  // Get API URL dynamically
-  const getApiUrl = () => {
-    const currentUrl = window.location.origin;
-    // If running on port 7600 (frontend), backend is on 7601
-    if (currentUrl.includes(':7600')) {
-      return currentUrl.replace(':7600', ':7601');
-    }
-    // Otherwise assume backend is on /api
-    return `${currentUrl}/api`;
-  };
-
-  const apiUrl = getApiUrl();
-
   // Check if delete is allowed
   // Check both at top level (flattened from agent_card) and in agent_card itself
   const allowDelete = agent?.['x-registry']?.allowDelete === true || agent?.agent_card?.['x-registry']?.allowDelete === true;
@@ -118,67 +105,6 @@ export default function AgentDetail() {
     } finally {
       setDeleting(false);
     }
-  };
-
-  // Get endpoint URL based on platform
-  const getEndpointUrl = () => {
-    const platform = agent?.metadata?.platform || 'generic';
-    const baseUrl = agent?.url || '';
-
-    if (platform === 'agno') {
-      // Agno uses /a2a/message/send endpoint
-      return `${baseUrl}/a2a/message/send`;
-    }
-
-    // Generic uses base URL
-    return baseUrl;
-  };
-
-  // Get message example based on platform
-  const getMessageExample = () => {
-    const platform = agent?.metadata?.platform || 'generic';
-    const exampleMessage = agent?.skills && agent.skills[0]?.examples?.[0] || 'Hello, can you help me?';
-    const agentIdFromMeta = agent?.metadata?.agentId || 'your-agent-id';
-
-    if (platform === 'agno') {
-      // Agno uses A2A v0.3.0 standard with /a2a/message/send endpoint
-      return {
-        jsonrpc: '2.0',
-        method: 'message/send',
-        params: {
-          message: {
-            role: 'user',
-            agentId: agentIdFromMeta,
-            messageId: 'msg-123',
-            parts: [
-              {
-                kind: 'text',
-                text: exampleMessage
-              }
-            ]
-          }
-        },
-        id: 'request-123'
-      };
-    }
-
-    // Generic JSON-RPC format
-    return {
-      jsonrpc: '2.0',
-      method: 'message/send',
-      params: {
-        message: {
-          role: 'user',
-          parts: [
-            {
-              type: 'text',
-              content: exampleMessage
-            }
-          ]
-        }
-      },
-      id: '1'
-    };
   };
 
 
@@ -316,6 +242,100 @@ export default function AgentDetail() {
           </div>
         </div>
 
+        {/* URL Section */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-6 md:p-8 mb-6">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">Agent URL</h2>
+          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <code className="flex-1 text-sm text-gray-700 font-mono break-all">
+              {agent.url}
+            </code>
+            <button
+              onClick={() => copyToClipboard(agent.url)}
+              className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Copy to clipboard"
+            >
+              {copiedUrl ? (
+                <Check className="h-5 w-5 text-success-500" />
+              ) : (
+                <Copy className="h-5 w-5 text-gray-500" />
+              )}
+            </button>
+            <a
+              href={agent.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              title="Open in new tab"
+            >
+              <ExternalLink className="h-5 w-5 text-gray-500" />
+            </a>
+          </div>
+        </div>
+
+        {/* Owner Information Section */}
+        {(agent['x-registry'] || agent.agent_card?.['x-registry']) && (
+          <div className="rounded-2xl border border-gray-200 bg-white p-6 md:p-8 mb-6">
+            <h2 className="text-base font-semibold text-gray-900 mb-4">Owner Information</h2>
+
+            {(() => {
+              const xRegistry = agent['x-registry'] || agent.agent_card?.['x-registry'];
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Contact */}
+                  {xRegistry?.contact && (
+                    <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+                      <div className="text-xs text-gray-500 mb-2">Contact</div>
+                      <a
+                        href={`mailto:${xRegistry.contact}`}
+                        className="text-sm font-semibold text-brand-600 hover:text-brand-700 hover:underline"
+                      >
+                        {xRegistry.contact}
+                      </a>
+                    </div>
+                  )}
+
+                  {/* Owner */}
+                  {xRegistry?.owner && (
+                    <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+                      <div className="text-xs text-gray-500 mb-2">Owner</div>
+                      <div className="text-sm font-semibold text-gray-900">{xRegistry.owner}</div>
+                    </div>
+                  )}
+
+                  {/* Department */}
+                  {xRegistry?.department && (
+                    <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+                      <div className="text-xs text-gray-500 mb-2">Department</div>
+                      <div className="text-sm font-semibold text-gray-900">{xRegistry.department}</div>
+                    </div>
+                  )}
+
+                  {/* Homepage */}
+                  {xRegistry?.homepage && (
+                    <div className="p-4 rounded-lg bg-gray-50 border border-gray-100">
+                      <div className="text-xs text-gray-500 mb-2">Homepage</div>
+                      <div className="text-sm font-semibold text-gray-900">{xRegistry.homepage}</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Usage Information */}
+            {(() => {
+              const xRegistry = agent['x-registry'] || agent.agent_card?.['x-registry'];
+              return xRegistry?.usageDescription && (
+                <div className="mt-4 p-4 rounded-lg bg-blue-50 border border-blue-200">
+                  <div className="text-xs font-medium text-blue-900 mb-2">How to Use</div>
+                  <div className="text-sm text-blue-800">
+                    {xRegistry.usageDescription}
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
+
         {/* Health Status Section */}
         {agent.health_status && (
           <div className="rounded-2xl border border-gray-200 bg-white p-6 md:p-8 mb-6">
@@ -393,36 +413,6 @@ export default function AgentDetail() {
             )}
           </div>
         )}
-
-        {/* URL Section */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 md:p-8 mb-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">Agent URL</h2>
-          <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <code className="flex-1 text-sm text-gray-700 font-mono break-all">
-              {agent.url}
-            </code>
-            <button
-              onClick={() => copyToClipboard(agent.url)}
-              className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Copy to clipboard"
-            >
-              {copiedUrl ? (
-                <Check className="h-5 w-5 text-success-500" />
-              ) : (
-                <Copy className="h-5 w-5 text-gray-500" />
-              )}
-            </button>
-            <a
-              href={agent.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-shrink-0 p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Open in new tab"
-            >
-              <ExternalLink className="h-5 w-5 text-gray-500" />
-            </a>
-          </div>
-        </div>
 
         {/* Skills Details Section */}
         {agent.skills && agent.skills.length > 0 && (
@@ -566,136 +556,6 @@ export default function AgentDetail() {
             </pre>
           </div>
         )}
-
-        {/* How to Use */}
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 md:p-8">
-          <h2 className="text-base font-semibold text-gray-900 mb-6">How to Use This Agent</h2>
-
-          <div className="space-y-6">
-            {/* Step 1: Agent Card */}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900 mb-3">1. Get Agent Card</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                Retrieve the agent's metadata from the registry API:
-              </p>
-              <div className="relative">
-                <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                  <code className="text-xs text-gray-100 font-mono">
-                    {`curl ${apiUrl}/agents/${encodeURIComponent(agent.name)}`}
-                  </code>
-                </div>
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(`curl ${apiUrl}/agents/${encodeURIComponent(agent.name)}`);
-                    setCopiedUrl(true);
-                    setTimeout(() => setCopiedUrl(false), 2000);
-                  }}
-                  className="absolute top-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors"
-                  title="Copy to clipboard"
-                >
-                  {copiedUrl ? <Check size={16} /> : <Copy size={16} />}
-                </button>
-              </div>
-
-              {/* Agent Card JSON */}
-              <div className="mt-4">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-xs font-medium text-gray-700">Agent Card JSON:</p>
-                  <button
-                    onClick={() => {
-                      const agentCard = {
-                        name: agent.name,
-                        description: agent.description,
-                        url: agent.url,
-                        version: agent.version,
-                        protocol_version: agent.protocol_version,
-                        preferred_transport: agent.preferred_transport,
-                        capabilities: agent.capabilities,
-                        default_input_modes: agent.default_input_modes,
-                        default_output_modes: agent.default_output_modes,
-                        skills: agent.skills,
-                        health_check: agent.health_check,
-                      };
-                      navigator.clipboard.writeText(JSON.stringify(agentCard, null, 2));
-                      setCopiedUrl(true);
-                      setTimeout(() => setCopiedUrl(false), 2000);
-                    }}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-brand-500 hover:bg-brand-600 text-white text-xs rounded-lg transition-colors"
-                  >
-                    {copiedUrl ? (
-                      <>
-                        <Check size={14} />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={14} />
-                        Copy JSON
-                      </>
-                    )}
-                  </button>
-                </div>
-                <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto max-h-96">
-                  <pre className="text-xs text-gray-100 font-mono">
-                    {JSON.stringify(
-                      {
-                        name: agent.name,
-                        description: agent.description,
-                        url: agent.url,
-                        version: agent.version,
-                        protocol_version: agent.protocol_version,
-                        preferred_transport: agent.preferred_transport,
-                        capabilities: agent.capabilities,
-                        default_input_modes: agent.default_input_modes,
-                        default_output_modes: agent.default_output_modes,
-                        skills: agent.skills,
-                        health_check: agent.health_check,
-                      },
-                      null,
-                      2
-                    )}
-                  </pre>
-                </div>
-              </div>
-            </div>
-
-            {/* Step 2: Send Message */}
-            <div>
-              <div className="flex items-center gap-2 mb-3">
-                <h3 className="text-sm font-semibold text-gray-900">2. Send Message (JSON-RPC)</h3>
-                {agent.metadata?.platform && agent.metadata.platform !== 'generic' && (
-                  <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700 rounded">
-                    {agent.metadata.platform}
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-gray-600 mb-3">
-                Call the agent using JSON-RPC 2.0 over HTTP:
-              </p>
-              <div className="relative">
-                <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
-                  <pre className="text-xs text-gray-100 font-mono">
-{`curl --noproxy "*" -X POST ${getEndpointUrl()} \\
-  -H "Content-Type: application/json" \\
-  -d '${JSON.stringify(getMessageExample(), null, 2)}'`}
-                  </pre>
-                </div>
-                <button
-                  onClick={async () => {
-                    const curlCommand = `curl --noproxy "*" -X POST ${getEndpointUrl()} \\
-  -H "Content-Type: application/json" \\
-  -d '${JSON.stringify(getMessageExample(), null, 2)}'`;
-                    await copyToClipboard(curlCommand);
-                  }}
-                  className="absolute top-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors"
-                  title="Copy to clipboard"
-                >
-                  {copiedUrl ? <Check size={16} /> : <Copy size={16} />}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   );

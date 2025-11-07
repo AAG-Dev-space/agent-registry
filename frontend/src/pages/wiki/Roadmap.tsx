@@ -240,12 +240,12 @@ export default function Roadmap() {
 
               {/* v0.2 */}
               <div className="flex items-start gap-3">
-                <Circle className="h-5 w-5 text-brand-500 mt-0.5 flex-shrink-0" />
+                <CheckCircle2 className="h-5 w-5 text-success-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-semibold text-gray-900">v0.2</h3>
-                    <span className="text-xs bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full">
-                      {t('진행 중', 'In Progress')}
+                    <span className="text-xs bg-success-100 text-success-700 px-2 py-0.5 rounded-full">
+                      {t('완료', 'Completed')}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600">
@@ -259,36 +259,36 @@ export default function Roadmap() {
 
               {/* v0.3 */}
               <div className="flex items-start gap-3">
-                <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                <CheckCircle2 className="h-5 w-5 text-success-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-semibold text-gray-900">v0.3</h3>
-                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
-                      {t('예정', 'Planned')}
+                    <span className="text-xs bg-success-100 text-success-700 px-2 py-0.5 rounded-full">
+                      {t('완료', 'Completed')}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 mb-2">
                     {t(
-                      '간단한 통계 기능 구현',
-                      'Basic analytics implementation'
+                      '백업을 위한 DB 구현',
+                      'Database implementation for backup'
                     )}
                   </p>
                   <ul className="text-xs text-gray-500 space-y-1 ml-4">
-                    <li>• {t('어떤 에이전트가 사용되는지', 'Which agents are being used')}</li>
-                    <li>• {t('어떤 스킬이 인기 있는지', 'Which skills are popular')}</li>
-                    <li>• {t('어떤 부서에서 활용하는지', 'Which departments are utilizing agents')}</li>
+                    <li>• {t('에이전트 데이터 안정적 보관', 'Secure storage of agent data')}</li>
+                    <li>• {t('히스토리 및 변경 이력 추적', 'History and change tracking')}</li>
+                    <li>• {t('데이터 복구 및 롤백 기능', 'Data recovery and rollback capabilities')}</li>
                   </ul>
                 </div>
               </div>
 
               {/* v1.0 */}
               <div className="flex items-start gap-3">
-                <Circle className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                <Circle className="h-5 w-5 text-brand-500 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-semibold text-gray-900">v1.0</h3>
-                    <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">
-                      {t('1차 릴리스', 'First Release')}
+                    <span className="text-xs bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full">
+                      {t('진행 중', 'In Progress')}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600">

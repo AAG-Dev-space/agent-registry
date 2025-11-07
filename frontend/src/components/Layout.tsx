@@ -73,13 +73,6 @@ export default function Layout() {
                         Getting Started
                       </Link>
                       <Link
-                        to="/wiki/how-to-use"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-500 transition-colors"
-                        onClick={() => setWikiDropdownOpen(false)}
-                      >
-                        How to Use
-                      </Link>
-                      <Link
                         to="/wiki/terms-and-specs"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-brand-500 transition-colors"
                         onClick={() => setWikiDropdownOpen(false)}

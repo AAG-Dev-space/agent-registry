@@ -114,7 +114,7 @@ export default function AgentList() {
               Discover Agents
             </h1>
             <p className="text-theme-xl text-gray-500">
-              Browse and discover powerful agents to enhance your AI applications.
+              Browse and discover powerful agents to enhance your applications.
             </p>
           </div>
         </section>

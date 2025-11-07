@@ -7,7 +7,6 @@ import Dashboard from './pages/Dashboard';
 import RegisterAgent from './pages/RegisterAgent';
 import Health from './pages/Health';
 import GettingStarted from './pages/wiki/GettingStarted';
-import HowToUse from './pages/wiki/HowToUse';
 import Roadmap from './pages/wiki/Roadmap';
 import TermsAndSpecs from './pages/wiki/TermsAndSpecs';
 
@@ -22,7 +21,6 @@ function App() {
             <Route path="agents/:agentId" element={<AgentDetail />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="wiki/getting-started" element={<GettingStarted />} />
-            <Route path="wiki/how-to-use" element={<HowToUse />} />
             <Route path="wiki/roadmap" element={<Roadmap />} />
             <Route path="wiki/terms-and-specs" element={<TermsAndSpecs />} />
             <Route path="register" element={<RegisterAgent />} />
