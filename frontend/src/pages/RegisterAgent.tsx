@@ -57,9 +57,42 @@ export default function RegisterAgent() {
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedJson(true);
-    setTimeout(() => setCopiedJson(false), 2000);
+    // Try modern clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          setCopiedJson(true);
+          setTimeout(() => setCopiedJson(false), 2000);
+        })
+        .catch(() => {
+          // Fallback to legacy method
+          fallbackCopyToClipboard(text);
+        });
+    } else {
+      // Fallback to legacy method
+      fallbackCopyToClipboard(text);
+    }
+  };
+
+  const fallbackCopyToClipboard = (text: string) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+      document.execCommand('copy');
+      setCopiedJson(true);
+      setTimeout(() => setCopiedJson(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+
+    document.body.removeChild(textArea);
   };
 
   // Verify AgentCard URL
