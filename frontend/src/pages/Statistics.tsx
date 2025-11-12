@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { agentApi } from '../api/client';
 import type { AgentCard } from '../types/agent';
 
-export default function Dashboard() {
+export default function Statistics() {
   const [agents, setAgents] = useState<AgentCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
