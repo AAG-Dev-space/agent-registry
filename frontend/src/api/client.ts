@@ -43,6 +43,7 @@ export const agentApi = {
     success: boolean;
     agent_card?: AgentCard;
     error?: string;
+    validation_errors?: string[];
     response_time_ms?: number;
   }> => {
     const response = await apiClient.post('/v1/agents/verify', {

@@ -19,6 +19,7 @@ export default function RegisterAgent() {
   const [verifying, setVerifying] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [verificationMessage, setVerificationMessage] = useState('');
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [verifiedAgentCard, setVerifiedAgentCard] = useState<AgentCard | null>(null);
 
   // Copy to clipboard state
@@ -68,6 +69,7 @@ export default function RegisterAgent() {
     setVerifying(true);
     setVerificationStatus('idle');
     setVerificationMessage('');
+    setValidationErrors([]);
     setVerifiedAgentCard(null);
 
     try {
@@ -76,15 +78,18 @@ export default function RegisterAgent() {
       if (result.success && result.agent_card) {
         setVerificationStatus('success');
         setVerificationMessage(`✓ AgentCard verified successfully (${result.response_time_ms}ms)`);
+        setValidationErrors([]);
         setVerifiedAgentCard(result.agent_card);
       } else {
         setVerificationStatus('error');
         setVerificationMessage(`✗ ${result.error || 'Verification failed'}`);
+        setValidationErrors(result.validation_errors || []);
         setVerifiedAgentCard(null);
       }
     } catch (err: any) {
       setVerificationStatus('error');
       setVerificationMessage(`✗ ${err.response?.data?.detail || err.message || 'Verification failed'}`);
+      setValidationErrors(err.response?.data?.validation_errors || []);
       setVerifiedAgentCard(null);
     } finally {
       setVerifying(false);
@@ -384,6 +389,7 @@ export default function RegisterAgent() {
                       setAgentCardUrl(e.target.value);
                       setVerificationStatus('idle');
                       setVerificationMessage('');
+                      setValidationErrors([]);
                       setVerifiedAgentCard(null);
                     }}
                     placeholder="http://your-domain.com/.well-known/agent-card.json"
@@ -419,14 +425,33 @@ export default function RegisterAgent() {
                   </div>
                 )}
                 {verificationStatus === 'error' && (
-                  <div className="mt-3 p-3 rounded-lg bg-red-50 border border-red-200">
-                    <div className="flex items-center gap-2 text-sm text-red-700 font-medium">
-                      <XCircle size={18} />
-                      <span>{verificationMessage}</span>
+                  <div className="mt-3 p-4 rounded-lg bg-red-50 border border-red-200">
+                    <div className="flex items-start gap-2 text-sm text-red-700 font-medium">
+                      <XCircle size={18} className="flex-shrink-0 mt-0.5" />
+                      <div className="flex-1">
+                        <p>{verificationMessage}</p>
+
+                        {validationErrors.length > 0 && (
+                          <div className="mt-3 space-y-2">
+                            <p className="text-xs text-red-800 font-semibold">
+                              {t('검증 실패 상세:', 'Validation Errors:')}
+                            </p>
+                            <ul className="space-y-1.5 text-xs text-red-700">
+                              {validationErrors.map((error, index) => (
+                                <li key={index} className="flex items-start gap-2">
+                                  <span className="text-red-500 flex-shrink-0 mt-0.5">•</span>
+                                  <span>{error}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        <p className="text-xs text-red-600 mt-3">
+                          {t('AgentCard URL을 확인하고 공개적으로 접근 가능한지, 필수 필드가 모두 포함되어 있는지 확인하세요.', "Please check your AgentCard URL and ensure it's publicly accessible with all required fields.")}
+                        </p>
+                      </div>
                     </div>
-                    <p className="text-xs text-red-600 mt-1 ml-6">
-                      {t('AgentCard URL을 확인하고 공개적으로 접근 가능한지 확인하세요.', "Please check your AgentCard URL and ensure it's publicly accessible.")}
-                    </p>
                   </div>
                 )}
                 {verificationStatus === 'idle' && (

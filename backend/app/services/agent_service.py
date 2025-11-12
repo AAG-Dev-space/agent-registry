@@ -321,13 +321,54 @@ class AgentService:
                     }
 
                 # Validate required fields
-                required_fields = ["name", "description"]
-                missing_fields = [field for field in required_fields if not agent_card.get(field)]
+                validation_errors = []
 
-                if missing_fields:
+                # Check basic required fields
+                basic_required_fields = {
+                    "name": "Agent name",
+                    "description": "Agent description",
+                    "url": "Agent endpoint URL",
+                    "preferredTransport": "Transport protocol (JSONRPC, REST, gRPC)"
+                }
+
+                for field, field_name in basic_required_fields.items():
+                    if not agent_card.get(field):
+                        validation_errors.append(f"Missing required field: {field_name} ({field})")
+
+                # Check skills (must have at least one)
+                skills = agent_card.get("skills", [])
+                if not skills or not isinstance(skills, list) or len(skills) == 0:
+                    validation_errors.append("Missing required field: At least one skill is required (skills)")
+
+                # Check x-registry extension fields
+                x_registry = agent_card.get("x-registry", {})
+                if not x_registry or not isinstance(x_registry, dict):
+                    validation_errors.append("Missing required field: x-registry extension object")
+                else:
+                    x_registry_required_fields = {
+                        "contact": "Contact email",
+                        "owner": "Owner ID",
+                        "department": "Department",
+                        "homepage": "Agent homepage URL",
+                        "usageDescription": "Usage description",
+                        "allowDelete": "Delete permission flag"
+                    }
+
+                    for field, field_name in x_registry_required_fields.items():
+                        if field not in x_registry:
+                            validation_errors.append(f"Missing required field: {field_name} (x-registry.{field})")
+
+                # Validate preferredTransport value
+                if agent_card.get("preferredTransport"):
+                    valid_transports = ["JSONRPC", "REST", "gRPC"]
+                    if agent_card["preferredTransport"] not in valid_transports:
+                        validation_errors.append(f"Invalid preferredTransport value: '{agent_card['preferredTransport']}'. Must be one of: {', '.join(valid_transports)}")
+
+                if validation_errors:
                     return {
                         "success": False,
-                        "error": f"Missing required fields: {', '.join(missing_fields)}",
+                        "error": "AgentCard validation failed:\n• " + "\n• ".join(validation_errors),
+                        "validation_errors": validation_errors,
                         "response_time_ms": response_time_ms,
                     }
 
