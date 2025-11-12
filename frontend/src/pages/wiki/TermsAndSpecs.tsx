@@ -98,8 +98,8 @@ export default function TermsAndSpecs() {
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
                     <span>
-                      <strong>{t('HTTPS 필수:', 'HTTPS Required:')}</strong>{' '}
-                      {t('모든 통신은 HTTP(S) 위에서 이루어지며, 프로덕션 환경에서는 HTTPS가 필수입니다.', 'All communication occurs over HTTP(S), with HTTPS mandatory in production.')}
+                      <strong>{t('HTTP(S) 사용:', 'HTTP(S) Usage:')}</strong>{' '}
+                      {t('모든 통신은 HTTP(S) 위에서 이루어지며, 프로덕션 환경에서는 HTTPS가 권장됩니다. (현재 사내에서는 편의를 위해 HTTP를 사용합니다)', 'All communication occurs over HTTP(S), with HTTPS recommended in production. (Currently using HTTP internally for convenience)')}
                     </span>
                   </li>
                   <li className="flex items-start gap-2">
@@ -139,54 +139,38 @@ export default function TermsAndSpecs() {
                 </p>
               </div>
 
-              {/* Streaming */}
+              {/* Transport Declaration */}
               <div className="border-l-4 border-green-500 pl-4 py-2">
                 <h3 className="font-semibold text-gray-900 mb-2">
-                  3. {t('스트리밍/푸시 (Streaming/Push)', 'Streaming/Push')}
+                  3. {t('전송 방식 선언 및 AgentCard 발견 경로', 'Transport Declaration and AgentCard Discovery Path')}
                 </h3>
-                <ul className="space-y-2 text-sm text-gray-700">
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500 mt-0.5">•</span>
-                    <span>
-                      <strong>JSON-RPC/REST:</strong> SSE (Server-Sent Events, <code className="bg-gray-100 px-1 rounded">text/event-stream</code>) 사용
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500 mt-0.5">•</span>
-                    <span>
-                      <strong>gRPC:</strong> {t('서버 스트리밍 사용', 'Use server streaming')}
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500 mt-0.5">•</span>
-                    <span>
-                      {t('스트리밍 제공 시 AgentCard에 ', 'When providing streaming, declare in AgentCard: ')}
-                      <code className="bg-gray-100 px-1 rounded">capabilities.streaming: true</code>
-                    </span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Security */}
-              <div className="border-l-4 border-red-500 pl-4 py-2">
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  4. {t('보안 (Security)', 'Security')}
-                </h3>
-                <ul className="space-y-2 text-sm text-gray-700">
-                  <li className="flex items-start gap-2">
-                    <Shield className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                    <span>
-                      <strong>TLS(HTTPS) 필수:</strong> {t('최신 TLS(권장 1.3+) 구성, 서버 신원(TLS 인증서) 검증 권장', 'Latest TLS (1.3+ recommended), server identity (TLS certificate) verification recommended')}
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Shield className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
-                    <span>
-                      <strong>{t('인증/인가:', 'Authentication/Authorization:')}</strong>{' '}
-                      {t('전송 계층에서 처리 (A2A 페이로드에 ID를 싣지 않음)', 'Handled at transport layer (do not embed ID in A2A payload)')}
-                    </span>
-                  </li>
-                </ul>
+                <p className="text-sm text-gray-700 mb-3">
+                  {t(
+                    'Agent는 Agent Card를 제공해야 하고, Agent Card 내에서 preferredTransport 및 additionalInterfaces 필드를 통해 자신이 지원하는 전송 방식을 선언해야 합니다.',
+                    'Agents must provide an Agent Card and declare their supported transport methods through preferredTransport and additionalInterfaces fields in the Agent Card.'
+                  )}
+                </p>
+                <div className="bg-green-50 rounded-lg p-3 mt-2">
+                  <p className="text-sm font-semibold text-green-900 mb-2">
+                    {t('AgentCard 발견 경로:', 'AgentCard Discovery Path:')}
+                  </p>
+                  <p className="text-sm text-green-800 mb-2">
+                    {t(
+                      '작성한 AgentCard JSON 파일을 공개적으로 접근 가능한 URL에 호스팅하세요.',
+                      'Host your AgentCard JSON file at a publicly accessible URL.'
+                    )}
+                  </p>
+                  <p className="text-sm text-green-800">
+                    <strong>{t('권장 경로:', 'Recommended Path:')}</strong>{' '}
+                    <code className="bg-green-100 px-1 rounded">/.well-known/agent-card.json</code>
+                  </p>
+                  <p className="text-xs text-green-700 mt-1">
+                    {t(
+                      '예: https://your-domain.com/.well-known/agent-card.json',
+                      'Example: https://your-domain.com/.well-known/agent-card.json'
+                    )}
+                  </p>
+                </div>
               </div>
             </div>
           </section>
@@ -196,7 +180,7 @@ export default function TermsAndSpecs() {
             <div className="flex items-center gap-3 mb-4">
               <BookOpen className="h-6 w-6 text-brand-500" />
               <h2 className="text-xl font-semibold text-gray-900">
-                {t('AgentCard 요구사항', 'AgentCard Requirements')}
+                {t('AgentCard 작성', 'AgentCard Creation')}
               </h2>
             </div>
 
@@ -207,69 +191,164 @@ export default function TermsAndSpecs() {
               )}
             </p>
 
-            <div className="space-y-4">
-              {/* Discovery Path */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">
-                  {t('발견 경로 (Discovery Path)', 'Discovery Path')}
-                </h3>
-                <p className="text-sm text-blue-800 mb-2">
-                  <strong>{t('권장 경로:', 'Recommended path:')}</strong>{' '}
-                  <code className="bg-blue-100 px-2 py-1 rounded">https://&#123;domain&#125;/.well-known/agent-card.json</code>
-                </p>
-                <p className="text-xs text-blue-700">
-                  {t('RFC 8615 원칙을 따르며, 레지스트리/카탈로그/직접 설정도 허용됩니다.', 'Follows RFC 8615 principles. Registry/catalog/direct configuration also allowed.')}
-                </p>
-              </div>
+            <div className="bg-blue-50 border-2 border-blue-300 rounded-lg p-4 mb-4">
+              <p className="text-sm text-blue-900 font-bold mb-2">
+                📋 {t('이 Registry의 정책', 'This Registry Policy')}
+              </p>
+              <p className="text-sm text-blue-800 mb-2">
+                {t(
+                  '이 Registry는 A2A 프로토콜 v0.3.0을 참조하되, 등록 절차를 단순화하기 위해 다음과 같은 정책을 적용합니다:',
+                  'This Registry references A2A Protocol v0.3.0 but applies the following policy to simplify registration:'
+                )}
+              </p>
+              <ul className="text-sm text-blue-800 space-y-1 ml-4 list-disc">
+                <li>{t('필수 필드를 최소화하고, 선택 필드에 대해 합리적인 기본값을 제공합니다.', 'Minimize required fields and provide reasonable defaults for optional fields.')}</li>
+                <li>{t('Registry 관리를 위한 x-registry 확장 필드를 필수로 요구합니다.', 'Require x-registry extension fields for Registry management.')}</li>
+              </ul>
+            </div>
 
-              {/* Core Schema Elements */}
-              <div className="border-l-4 border-brand-500 pl-4 py-2">
-                <h3 className="font-semibold text-gray-900 mb-3">
-                  {t('핵심 스키마 요소', 'Core Schema Elements')}
+            <div className="space-y-4">
+              {/* Required Fields */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                  1. {t('필수 필드', 'Required Fields')}
                 </h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  {t(
+                    '다음 필드들은 반드시 포함되어야 합니다:',
+                    'The following fields are mandatory:'
+                  )}
+                </p>
                 <div className="space-y-3">
-                  <div className="bg-red-50 rounded-lg p-3 border-2 border-red-300">
-                    <p className="text-sm font-bold text-red-900 mb-2">⚠️ {t('필수 필드 (MUST):', 'Required Fields (MUST):')}</p>
-                    <ul className="space-y-1 text-sm text-gray-700">
-                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">name</code> - {t('에이전트 이름', 'Agent name')}</li>
-                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">description</code> - {t('에이전트 설명', 'Agent description')}</li>
-                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">url</code> - {t('메인 엔드포인트 URL', 'Main endpoint URL')}</li>
-                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">version</code> - {t('에이전트 버전', 'Agent version')}</li>
-                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">preferredTransport</code> - {t('메인 URL의 전송 프로토콜', 'Transport protocol for main URL')} (JSONRPC/gRPC/REST)</li>
-                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">capabilities</code> - {t('지원 기능 선언', 'Supported capabilities declaration')} (streaming, pushNotifications 등)</li>
-                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">defaultInputModes</code> - {t('기본 입력 MIME 타입 배열', 'Default input MIME types array')}</li>
-                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">defaultOutputModes</code> - {t('기본 출력 MIME 타입 배열', 'Default output MIME types array')}</li>
-                      <li>• <code className="bg-red-100 px-1 rounded font-semibold">skills</code> - {t('에이전트 스킬 목록', 'Agent skills array')}</li>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 mb-2">{t('기본 정보:', 'Basic Information:')}</p>
+                    <ul className="space-y-2 text-sm text-gray-700">
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-500 mt-0.5">•</span>
+                        <span><code className="bg-gray-100 px-1 rounded font-semibold">name</code> - {t('에이전트 이름', 'Agent name')}</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-500 mt-0.5">•</span>
+                        <span><code className="bg-gray-100 px-1 rounded font-semibold">description</code> - {t('에이전트 설명', 'Agent description')}</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-500 mt-0.5">•</span>
+                        <span><code className="bg-gray-100 px-1 rounded font-semibold">url</code> - {t('메인 엔드포인트 URL', 'Main endpoint URL')}</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-500 mt-0.5">•</span>
+                        <span><code className="bg-gray-100 px-1 rounded font-semibold">preferredTransport</code> - {t('전송 프로토콜 (JSONRPC, REST, gRPC)', 'Transport protocol (JSONRPC, REST, gRPC)')}</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-500 mt-0.5">•</span>
+                        <span><code className="bg-gray-100 px-1 rounded font-semibold">skills</code> - {t('에이전트 스킬 목록 (최소 1개)', 'Agent skills array (at least 1)')}</span>
+                      </li>
                     </ul>
                   </div>
-
-                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                    <p className="text-sm font-medium text-blue-900 mb-2">{t('권장 필드 (SHOULD):', 'Recommended Fields (SHOULD):')}</p>
-                    <ul className="space-y-1 text-sm text-gray-700">
-                      <li>• <code className="bg-blue-100 px-1 rounded">protocolVersion</code> - {t('A2A 프로토콜 버전 (기본값 "0.3.0")', 'A2A protocol version (defaults to "0.3.0")')}</li>
-                      <li>• <code className="bg-blue-100 px-1 rounded">provider</code> - {t('에이전트 제공자 정보', 'Agent provider information')}</li>
-                      <li>• <code className="bg-blue-100 px-1 rounded">documentationUrl</code> - {t('문서 URL', 'Documentation URL')}</li>
-                      <li>• <code className="bg-blue-100 px-1 rounded">iconUrl</code> - {t('아이콘 URL', 'Icon URL')}</li>
-                      <li>• <code className="bg-blue-100 px-1 rounded">securitySchemes</code> - {t('인증 방식 선언', 'Security schemes declaration')}</li>
-                      <li>• <code className="bg-blue-100 px-1 rounded">security</code> - {t('보안 요구사항', 'Security requirements')}</li>
-                      <li>• <code className="bg-blue-100 px-1 rounded">additionalInterfaces</code> - {t('추가 전송 인터페이스', 'Additional transport interfaces')}</li>
-                      <li>• <code className="bg-blue-100 px-1 rounded">supportsAuthenticatedExtendedCard</code> - {t('인증된 확장 카드 지원 여부', 'Supports authenticated extended card')}</li>
-                      <li>• <code className="bg-blue-100 px-1 rounded">signatures</code> - {t('JWS 서명', 'JWS signatures')}</li>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900 mb-2">{t('x-registry 확장 필드:', 'x-registry Extension Fields:')}</p>
+                    <ul className="space-y-2 text-sm text-gray-700">
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-500 mt-0.5">•</span>
+                        <span><code className="bg-gray-100 px-1 rounded font-semibold">x-registry.contact</code> - {t('담당자 이메일', 'Contact email')}</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-500 mt-0.5">•</span>
+                        <span><code className="bg-gray-100 px-1 rounded font-semibold">x-registry.owner</code> - {t('소유자 ID', 'Owner ID')}</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-500 mt-0.5">•</span>
+                        <span><code className="bg-gray-100 px-1 rounded font-semibold">x-registry.department</code> - {t('소속 부서', 'Department')}</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-500 mt-0.5">•</span>
+                        <span><code className="bg-gray-100 px-1 rounded font-semibold">x-registry.homepage</code> - {t('에이전트 홈페이지 URL (Confluence 링크, Frontend Web UI 등 자유롭게 기술)', 'Agent homepage URL (Confluence link, Frontend Web UI, etc. - flexible description)')}</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-500 mt-0.5">•</span>
+                        <span><code className="bg-gray-100 px-1 rounded font-semibold">x-registry.usageDescription</code> - {t('사용 방법 설명', 'Usage description')}</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-red-500 mt-0.5">•</span>
+                        <span><code className="bg-gray-100 px-1 rounded font-semibold">x-registry.allowDelete</code> - {t('삭제 허용 여부', 'Allow deletion')} (true/false)</span>
+                      </li>
                     </ul>
                   </div>
                 </div>
               </div>
 
+              {/* Optional Fields */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                  2. {t('선택 필드 (기본값 자동 할당)', 'Optional Fields (Auto-assigned Defaults)')}
+                </h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  {t(
+                    '다음 필드들은 생략할 수 있으며, 생략 시 Registry가 자동으로 기본값을 할당합니다:',
+                    'The following fields can be omitted, and the Registry will automatically assign default values:'
+                  )}
+                </p>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span><code className="bg-gray-100 px-1 rounded">protocolVersion</code> → <code className="text-xs">"0.3.0"</code></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span><code className="bg-gray-100 px-1 rounded">version</code> → <code className="text-xs">"0.0"</code></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span><code className="bg-gray-100 px-1 rounded">capabilities</code> → <code className="text-xs">{'{streaming: false, pushNotifications: false, stateTransitionHistory: false}'}</code></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span><code className="bg-gray-100 px-1 rounded">defaultInputModes</code> → <code className="text-xs">["text/plain"]</code></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-500 mt-0.5">•</span>
+                    <span><code className="bg-gray-100 px-1 rounded">defaultOutputModes</code> → <code className="text-xs">["text/plain"]</code></span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* A2A Spec Reference */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                  3. {t('A2A 스펙 참조 (권장 필드)', 'A2A Spec Reference (Recommended)')}
+                </h3>
+                <p className="text-sm text-gray-600 mb-3">
+                  {t(
+                    'A2A v0.3.0 스펙에서는 다음 필드들도 권장합니다. 필요에 따라 추가할 수 있습니다:',
+                    'A2A v0.3.0 spec also recommends the following fields. You may add them as needed:'
+                  )}
+                </p>
+                <ul className="space-y-2 text-sm text-gray-700">
+                  <li className="flex items-start gap-2">
+                    <span className="text-gray-500 mt-0.5">•</span>
+                    <span><code className="bg-gray-100 px-1 rounded">provider</code>, <code className="bg-gray-100 px-1 rounded">documentationUrl</code>, <code className="bg-gray-100 px-1 rounded">iconUrl</code></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-gray-500 mt-0.5">•</span>
+                    <span><code className="bg-gray-100 px-1 rounded">securitySchemes</code>, <code className="bg-gray-100 px-1 rounded">security</code></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-gray-500 mt-0.5">•</span>
+                    <span><code className="bg-gray-100 px-1 rounded">additionalInterfaces</code>, <code className="bg-gray-100 px-1 rounded">signatures</code></span>
+                  </li>
+                </ul>
+              </div>
+
               {/* Validation Rules */}
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <h3 className="font-semibold text-yellow-900 mb-2">
-                  ⚠️ {t('검증 규칙', 'Validation Rules')}
+                  ⚠️ {t('검증 규칙 (Registry 정책)', 'Validation Rules (Registry Policy)')}
                 </h3>
                 <ul className="space-y-1 text-sm text-yellow-800">
-                  <li>• {t('메인 url과 preferredTransport는 반드시 일치해야 함', 'Main url and preferredTransport must match')}</li>
-                  <li>• {t('additionalInterfaces는 메인 URL/전송을 포괄해야 함 (완전성)', 'additionalInterfaces must encompass main URL/transport (completeness)')}</li>
-                  <li>• {t('같은 URL에 서로 다른 전송 방식을 선언하면 안됨 (상충 금지)', 'Cannot declare different transports for the same URL (no conflicts)')}</li>
-                  <li>• {t('민감정보(평문 키 등)를 포함하면 안됨', 'Must not contain sensitive information (plaintext keys, etc.)')}</li>
+                  <li>• {t('필수 필드 누락 시 등록 거부됨', 'Registration rejected if required fields are missing')}</li>
+                  <li>• {t('선택 필드 누락 시 자동으로 기본값이 할당됨', 'Optional fields automatically assigned defaults if omitted')}</li>
+                  <li>• {t('AgentCard URL이 공개적으로 접근 가능해야 함', 'AgentCard URL must be publicly accessible')}</li>
+                  <li>• {t('x-registry 필드는 모두 필수 (contact, owner, department, homepage, usageDescription, allowDelete)', 'All x-registry fields are required (contact, owner, department, homepage, usageDescription, allowDelete)')}</li>
                 </ul>
               </div>
             </div>
@@ -344,27 +423,6 @@ export default function TermsAndSpecs() {
                     <Shield className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
                     <span>
                       {t('(선택) 서명된 AgentCard(JWS)를 검증하여 신뢰도 향상', '(Optional) Verify signed AgentCards (JWS) to improve trust')}
-                    </span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Operations */}
-              <div className="border-l-4 border-green-500 pl-4 py-2">
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  4. {t('운영/가용성', 'Operations/Availability')}
-                </h3>
-                <ul className="space-y-2 text-sm text-gray-700">
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500 mt-0.5">•</span>
-                    <span>
-                      {t('(선택) 상태 점검 URL을 메타데이터로 받아 가용성 필터링 지원', '(Optional) Accept health check URLs as metadata to support availability filtering')}
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-green-500 mt-0.5">•</span>
-                    <span>
-                      {t('(선택) 사내 정책에 맞는 승인/버전 정책 및 폐기(디리스트) 관리', '(Optional) Manage approval/versioning policies and deprecation (delist) per internal policies')}
                     </span>
                   </li>
                 </ul>

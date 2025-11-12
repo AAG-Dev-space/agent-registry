@@ -24,21 +24,13 @@ export default function RegisterAgent() {
   // Copy to clipboard state
   const [copiedJson, setCopiedJson] = useState(false);
 
-  // Sample AgentCard JSON
+  // Sample AgentCard JSON (Minimal Required Fields)
   const sampleAgentCard = {
-    protocolVersion: "0.3.0",
+    // Required fields only (optional fields will use Registry defaults)
     name: "my-agent",
     description: "Description of your agent",
     url: "http://your-domain.com",
-    version: "1.0.0",
     preferredTransport: "JSONRPC",
-    capabilities: {
-      streaming: false,
-      pushNotifications: false,
-      stateTransitionHistory: false
-    },
-    defaultInputModes: ["text/plain"],
-    defaultOutputModes: ["text/plain"],
     skills: [
       {
         id: "skill-id",
@@ -48,13 +40,19 @@ export default function RegisterAgent() {
       }
     ],
     "x-registry": {
-      allowDelete: false,
       contact: "agent-owner@example.com",
       owner: "knoxid",
       department: "AI Research Team",
-      homepage: "https://example.com/my-agent",
-      usageDescription: "Send JSONRPC 2.0 requests to the endpoint with your desired method and parameters"
+      homepage: "http://example.com/my-agent",
+      usageDescription: "Send JSONRPC 2.0 requests to the endpoint with your desired method and parameters",
+      allowDelete: false
     }
+    // Optional fields (will be auto-filled by Registry if omitted):
+    // protocolVersion: "0.3.0" (default)
+    // version: "0.0" (default)
+    // capabilities: {streaming: false, pushNotifications: false, stateTransitionHistory: false} (default)
+    // defaultInputModes: ["text/plain"] (default)
+    // defaultOutputModes: ["text/plain"] (default)
   };
 
   const copyToClipboard = (text: string) => {
@@ -175,9 +173,16 @@ export default function RegisterAgent() {
               </div>
             </div>
 
-            <p className="text-sm text-gray-600 mb-4 ml-11">
-              {t('A2A 프로토콜 v0.3.0 규격에 따라 에이전트 정보가 담긴 JSON 파일을 작성하세요.', 'Create a JSON file with your agent information following the A2A protocol v0.3.0 specification.')}
-            </p>
+            <div className="ml-11 mb-4">
+              <p className="text-sm text-gray-600 mb-3">
+                {t('에이전트 정보가 담긴 JSON 파일을 작성하세요. 이 Registry는 A2A 프로토콜 v0.3.0을 참조하되, 등록을 간소화하기 위해 선택 필드에 자동으로 기본값을 할당합니다.', 'Create a JSON file with your agent information. This Registry references A2A protocol v0.3.0 but simplifies registration by auto-assigning defaults to optional fields.')}
+              </p>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                <p className="text-xs text-blue-800">
+                  💡 {t('필수 필드만 작성하면 등록 가능합니다. 선택 필드는 생략 시 자동으로 기본값이 할당됩니다.', 'Only required fields are needed for registration. Optional fields will be auto-assigned if omitted.')}
+                </p>
+              </div>
+            </div>
 
             {/* Sample AgentCard */}
             <div className="ml-11">
@@ -199,46 +204,97 @@ export default function RegisterAgent() {
               </div>
 
               {/* Field Descriptions */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-                <h4 className="text-sm font-medium text-blue-900 mb-2">{t('필수 필드 (MUST):', 'Required Fields (MUST):')}</h4>
-                <ul className="text-xs text-blue-800 space-y-1">
-                  <li><code className="bg-blue-100 px-1 rounded">protocolVersion</code> - {t('A2A 프로토콜 버전 (예: "0.3.0")', 'A2A protocol version (e.g., "0.3.0")')}</li>
-                  <li><code className="bg-blue-100 px-1 rounded">name</code> - {t('고유 에이전트 식별자 (예: "my-agent")', 'Unique agent identifier (e.g., "my-agent")')}</li>
-                  <li><code className="bg-blue-100 px-1 rounded">description</code> - {t('에이전트 설명', 'Brief description of your agent')}</li>
-                  <li><code className="bg-blue-100 px-1 rounded">url</code> - {t('에이전트 엔드포인트 URL', "Your agent's endpoint URL")}</li>
-                  <li><code className="bg-blue-100 px-1 rounded">version</code> - {t('에이전트 버전 (예: "1.0.0")', 'Agent version (e.g., "1.0.0")')}</li>
-                </ul>
-                <h4 className="text-sm font-medium text-blue-900 mt-3 mb-2">{t('선택 필드 (SHOULD):', 'Optional Fields (SHOULD):')}</h4>
-                <ul className="text-xs text-blue-800 space-y-1">
-                  <li><code className="bg-blue-100 px-1 rounded">preferredTransport</code> - {t('JSONRPC, REST, 또는 gRPC', 'JSONRPC, REST, or gRPC')}</li>
-                  <li><code className="bg-blue-100 px-1 rounded">capabilities</code> - {t('스트리밍, 푸시알림 등', 'streaming, pushNotifications, etc.')}</li>
-                  <li><code className="bg-blue-100 px-1 rounded">skills</code> - {t('에이전트 능력 목록 및 설명', 'List of agent capabilities with descriptions')}</li>
-                </ul>
-                <h4 className="text-sm font-medium text-blue-900 mt-3 mb-2">{t('레지스트리 확장 필드 (MUST):', 'Registry Extension Fields (MUST):')}</h4>
-                <ul className="text-xs text-blue-800 space-y-1">
-                  <li>
-                    <code className="bg-blue-100 px-1 rounded">x-registry.contact</code> - {t('담당자 이메일 주소 (예: knox@example.com)', 'Contact email (e.g., knox@example.com)')}
-                  </li>
-                  <li>
-                    <code className="bg-blue-100 px-1 rounded">x-registry.owner</code> - {t('소유자 ID (예: knox)', 'Owner ID (e.g., knox)')}
-                  </li>
-                  <li>
-                    <code className="bg-blue-100 px-1 rounded">x-registry.department</code> - {t('부서/팀 이름 (예: AI Platform Team)', 'Department/Team name (e.g., AI Platform Team)')}
-                  </li>
-                  <li>
-                    <code className="bg-blue-100 px-1 rounded">x-registry.homepage</code> - {t('Confluence 페이지 또는 Agent 사용 Frontend/Web UI', 'Confluence page or Agent Frontend/Web UI')}
-                  </li>
-                </ul>
-                <h4 className="text-sm font-medium text-blue-900 mt-3 mb-2">{t('레지스트리 확장 필드 (선택):', 'Registry Extension Fields (Optional):')}</h4>
-                <ul className="text-xs text-blue-800 space-y-1">
-                  <li>
-                    <code className="bg-blue-100 px-1 rounded">x-registry.usageDescription</code> - {t('Agent 사용 방법 설명', 'Description of how to use the agent')}
-                  </li>
-                  <li>
-                    <code className="bg-blue-100 px-1 rounded">x-registry.allowDelete</code> - {t('에이전트 삭제 허용 여부 (기본값: false). ', 'Allow agent deletion (default: false). ')}
-                    <strong>{t('true로 설정 시 UI에 Delete 버튼 생성됨', 'When set to true, Delete button appears in UI')}</strong>
-                  </li>
-                </ul>
+              <div className="space-y-4 mt-4">
+                {/* Required Fields */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">1. {t('필수 필드', 'Required Fields')}</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 mb-2">{t('기본 정보:', 'Basic Information:')}</p>
+                      <ul className="text-sm text-gray-700 space-y-2">
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-500 mt-0.5">•</span>
+                          <span><code className="bg-gray-100 px-1 rounded font-semibold">name</code> - {t('고유 에이전트 식별자 (예: "my-agent")', 'Unique agent identifier (e.g., "my-agent")')}</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-500 mt-0.5">•</span>
+                          <span><code className="bg-gray-100 px-1 rounded font-semibold">description</code> - {t('에이전트 설명', 'Brief description of your agent')}</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-500 mt-0.5">•</span>
+                          <span><code className="bg-gray-100 px-1 rounded font-semibold">url</code> - {t('에이전트 엔드포인트 URL', "Your agent's endpoint URL")}</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-500 mt-0.5">•</span>
+                          <span><code className="bg-gray-100 px-1 rounded font-semibold">preferredTransport</code> - {t('전송 프로토콜 (JSONRPC, REST, gRPC)', 'Transport protocol (JSONRPC, REST, gRPC)')}</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-500 mt-0.5">•</span>
+                          <span><code className="bg-gray-100 px-1 rounded font-semibold">skills</code> - {t('에이전트 스킬 목록 (최소 1개)', 'Agent skills array (at least 1)')}</span>
+                        </li>
+                      </ul>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 mb-2">{t('x-registry 확장 필드:', 'x-registry Extension Fields:')}</p>
+                      <ul className="text-sm text-gray-700 space-y-2">
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-500 mt-0.5">•</span>
+                          <span><code className="bg-gray-100 px-1 rounded font-semibold">x-registry.contact</code> - {t('담당자 이메일 (예: knox@example.com)', 'Contact email (e.g., knox@example.com)')}</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-500 mt-0.5">•</span>
+                          <span><code className="bg-gray-100 px-1 rounded font-semibold">x-registry.owner</code> - {t('소유자 ID (예: knox)', 'Owner ID (e.g., knox)')}</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-500 mt-0.5">•</span>
+                          <span><code className="bg-gray-100 px-1 rounded font-semibold">x-registry.department</code> - {t('소속 부서 (예: AI Platform Team)', 'Department (e.g., AI Platform Team)')}</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-500 mt-0.5">•</span>
+                          <span><code className="bg-gray-100 px-1 rounded font-semibold">x-registry.homepage</code> - {t('에이전트 홈페이지 URL (Confluence 링크, Frontend Web UI 등 자유롭게 기술)', 'Agent homepage URL (Confluence link, Frontend Web UI, etc. - flexible description)')}</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-500 mt-0.5">•</span>
+                          <span><code className="bg-gray-100 px-1 rounded font-semibold">x-registry.usageDescription</code> - {t('사용 방법 설명', 'Usage description')}</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="text-red-500 mt-0.5">•</span>
+                          <span><code className="bg-gray-100 px-1 rounded font-semibold">x-registry.allowDelete</code> - {t('삭제 허용 여부 (true/false)', 'Allow deletion (true/false)')}</span>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Optional Fields with Defaults */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">2. {t('선택 필드 (기본값 자동 할당)', 'Optional Fields (Auto-assigned Defaults)')}</h4>
+                  <p className="text-sm text-gray-600 mb-3">
+                    {t('다음 필드들은 생략할 수 있으며, 생략 시 Registry가 자동으로 기본값을 할당합니다.', 'The following fields can be omitted, and the Registry will automatically assign default values.')}
+                  </p>
+                  <ul className="text-sm text-gray-700 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-0.5">•</span>
+                      <span><code className="bg-gray-100 px-1 rounded">protocolVersion</code> → <code className="text-xs">"0.3.0"</code></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-0.5">•</span>
+                      <span><code className="bg-gray-100 px-1 rounded">version</code> → <code className="text-xs">"0.0"</code></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-0.5">•</span>
+                      <span><code className="bg-gray-100 px-1 rounded">capabilities</code> → <code className="text-xs">{'{streaming: false, pushNotifications: false, stateTransitionHistory: false}'}</code></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-0.5">•</span>
+                      <span><code className="bg-gray-100 px-1 rounded">defaultInputModes</code> → <code className="text-xs">["text/plain"]</code></span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-blue-500 mt-0.5">•</span>
+                      <span><code className="bg-gray-100 px-1 rounded">defaultOutputModes</code> → <code className="text-xs">["text/plain"]</code></span>
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
@@ -275,13 +331,13 @@ export default function RegisterAgent() {
                 <ul className="list-disc list-inside space-y-1">
                   <li>{t('공개적으로 접근 가능한 URL이어야 함', 'Must be publicly accessible URL')}</li>
                   <li>{t('Content-Type: application/json 반환', 'Must return')} <code className="bg-gray-100 px-1 rounded">Content-Type: application/json</code></li>
-                  <li>{t('A2A v0.3.0 스키마에 맞는 유효한 JSON 파일', 'Must be a valid JSON file matching A2A v0.3.0 schema')}</li>
+                  <li>{t('A2A v0.3.0을 참조하는 유효한 JSON 파일 (필수 필드 포함)', 'Must be a valid JSON file referencing A2A v0.3.0 (with required fields)')}</li>
                 </ul>
               </div>
 
               <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
                 <p className="text-sm text-blue-800">
-                  {t('필요시, 아래 방법을 참조하세요:', 'If needed, refer to the guide below:')}
+                  {t('필요시, 링크의 방법을 참조하세요:', 'If needed, refer to the guide in the link:')}
                   {' '}
                   <a
                     href="https://confluence.samsungds.net/spaces/SLSIAI/pages/3029679239/04-02+Register+Agent"

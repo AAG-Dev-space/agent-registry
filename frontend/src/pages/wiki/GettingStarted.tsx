@@ -1,4 +1,4 @@
-import { BookOpen, PlusCircle, Terminal, Copy, Check } from 'lucide-react';
+import { BookOpen, PlusCircle, Copy, Check, PlayCircle, Trash2 } from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import LanguageToggle from '../../components/LanguageToggle';
 import { useState } from 'react';
@@ -21,25 +21,50 @@ export default function HowToUse() {
   const apiUrl = getApiUrl();
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    // Try modern clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        })
+        .catch(() => {
+          // Fallback to legacy method
+          fallbackCopyToClipboard(text);
+        });
+    } else {
+      // Fallback to legacy method
+      fallbackCopyToClipboard(text);
+    }
+  };
+
+  const fallbackCopyToClipboard = (text: string) => {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+      document.execCommand('copy');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+
+    document.body.removeChild(textArea);
   };
 
   const exampleAgentCard: any = {
-    protocolVersion: "0.3.0",
+    // Required fields only (optional fields will use Registry defaults)
     name: "test-chatbot",
     description: "A simple test chatbot for A2A registry testing",
     url: "http://localhost:8080",
-    version: "1.0.0",
     preferredTransport: "JSONRPC",
-    capabilities: {
-      streaming: false,
-      pushNotifications: false,
-      stateTransitionHistory: false
-    },
-    defaultInputModes: ["text/plain"],
-    defaultOutputModes: ["text/plain"],
     skills: [
       {
         id: "conversation",
@@ -49,13 +74,19 @@ export default function HowToUse() {
       }
     ],
     "x-registry": {
-      allowDelete: false,
       contact: "agent-owner@example.com",
       owner: "knoxid",
       department: "AI Research Team",
-      homepage: "https://example.com/test-chatbot",
-      usageDescription: "Send JSONRPC 2.0 requests to the endpoint with method 'chat' and params containing 'message' field"
+      homepage: "http://example.com/test-chatbot",
+      usageDescription: "Send JSONRPC 2.0 requests to the endpoint with method 'chat' and params containing 'message' field",
+      allowDelete: false
     }
+    // Optional fields (will be auto-filled by Registry):
+    // protocolVersion: "0.3.0" (default)
+    // version: "0.0" (default)
+    // capabilities: {streaming: false, pushNotifications: false, stateTransitionHistory: false} (default)
+    // defaultInputModes: ["text/plain"] (default)
+    // defaultOutputModes: ["text/plain"] (default)
   };
 
   return (
@@ -92,39 +123,56 @@ export default function HowToUse() {
             </div>
 
             <div className="space-y-6">
-              <p className="text-sm text-gray-600">
+              <p className="text-base text-gray-700">
                 {t(
                   'Agent Registry는 URL 기반 등록 방식을 사용합니다. AgentCard JSON 파일을 작성하여 웹 서버에 호스팅한 후, 해당 URL을 레지스트리에 제출하세요.',
                   'Agent Registry uses a URL-based registration method. Create an AgentCard JSON file, host it on your web server, then submit the URL to the registry.'
                 )}
               </p>
 
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-900 font-medium mb-2">
-                  {t('등록 절차:', 'Registration Process:')}
-                </p>
-                <ol className="text-sm text-blue-800 space-y-2 ml-4 list-decimal">
+              {/* Registration Process */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                  {t('등록 절차', 'Registration Process')}
+                </h3>
+                <ol className="text-sm text-gray-700 space-y-1.5 ml-5 list-decimal">
                   <li>{t('AgentCard JSON 파일 작성', 'Create AgentCard JSON file')}</li>
                   <li>{t('웹 서버에 정적 파일로 호스팅', 'Host as static file on web server')}</li>
                   <li>{t('URL이 공개적으로 접근 가능한지 확인', 'Verify URL is publicly accessible')}</li>
                   <li>
-                    <a href="/register" className="text-brand-600 hover:underline font-medium">
-                      {t('레지스트리에 URL 제출', 'Submit URL to registry')}
-                    </a>
+                    {t('레지스트리에 URL 제출', 'Submit URL to registry')}
                   </li>
                 </ol>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-4">
-                <p className="text-sm font-medium text-gray-900 mb-2">
-                  {t('권장 URL 형식:', 'Recommended URL format:')}
-                </p>
-                <code className="text-sm bg-white border border-gray-300 px-3 py-2 rounded text-brand-600 block">
-                  https://myagent.company.com/.well-known/agent-card.json
-                </code>
+              {/* Recommended URL Format */}
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                  {t('권장 URL 형식', 'Recommended URL Format')}
+                </h3>
+                <div className="relative">
+                  <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+                    <code className="text-xs text-gray-100 font-mono">
+                      http://myagent.company.com/.well-known/agent-card.json
+                    </code>
+                  </div>
+                  <button
+                    onClick={() => copyToClipboard('http://myagent.company.com/.well-known/agent-card.json')}
+                    className="absolute top-2 right-2 p-2 bg-gray-800 hover:bg-gray-700 rounded text-gray-300 transition-colors"
+                  >
+                    {copied ? <Check size={16} /> : <Copy size={16} />}
+                  </button>
+                </div>
               </div>
 
-              <p className="text-sm text-gray-600">
+              <p className="text-base text-gray-700">
+                {t(
+                  '이 Registry는 A2A 프로토콜 v0.3.0을 참조하되, 기본값과 확장 필드를 추가하여 구현되었습니다. 필수 필드는 최소한으로 유지하되, 관리와 검색을 위한 x-registry 확장 필드를 사용합니다.',
+                  'This Registry is implemented with reference to A2A Protocol v0.3.0, with additional default values and extension fields. Required fields are kept minimal, using x-registry extension fields for management and discovery.'
+                )}
+              </p>
+
+              <p className="text-base text-gray-700">
                 {t(
                   'AgentCard에는 다음 필드들이 포함되어야 합니다:',
                   'Your AgentCard should include the following fields:'
@@ -138,7 +186,7 @@ export default function HowToUse() {
                   <h3 className="font-semibold text-gray-900 mb-1">
                     {t('에이전트 이름', 'Agent Name')} <span className="text-error-500">*</span>
                   </h3>
-                  <p className="text-sm text-gray-600 mb-2">
+                  <p className="text-base text-gray-700 mb-2">
                     {t(
                       '에이전트를 식별하는 고유한 이름입니다. URL에 사용되므로 영문 소문자, 숫자, 하이픈(-)만 사용하세요.',
                       'Unique identifier for your agent. Use lowercase letters, numbers, and hyphens only as it will be used in URLs.'
@@ -154,7 +202,7 @@ export default function HowToUse() {
                   <h3 className="font-semibold text-gray-900 mb-1">
                     {t('설명', 'Description')} <span className="text-error-500">*</span>
                   </h3>
-                  <p className="text-sm text-gray-600 mb-2">
+                  <p className="text-base text-gray-700 mb-2">
                     {t(
                       '에이전트가 무엇을 하는지 명확하게 설명합니다. 사용자가 에이전트 목록에서 볼 수 있는 중요한 정보입니다.',
                       'Clear description of what your agent does. This is what users see in the agent list.'
@@ -170,30 +218,14 @@ export default function HowToUse() {
                   <h3 className="font-semibold text-gray-900 mb-1">
                     {t('에이전트 URL', 'Agent URL')} <span className="text-error-500">*</span>
                   </h3>
-                  <p className="text-sm text-gray-600 mb-2">
+                  <p className="text-base text-gray-700 mb-2">
                     {t(
                       '에이전트 서비스의 기본 엔드포인트 URL입니다. 클라이언트가 이 URL로 요청을 보냅니다.',
                       'Base endpoint URL of your agent service. Clients will send requests to this URL.'
                     )}
                   </p>
                   <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
-                    {t('예시:', 'Example:')} https://api.example.com/chatbot
-                  </code>
-                </div>
-
-                {/* Version */}
-                <div className="border-l-4 border-brand-500 pl-4 py-2">
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    {t('버전', 'Version')} <span className="text-error-500">*</span>
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '에이전트의 현재 버전입니다. Semantic Versioning (major.minor.patch) 형식을 권장합니다.',
-                      'Current version of your agent. Semantic Versioning (major.minor.patch) format is recommended.'
-                    )}
-                  </p>
-                  <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
-                    {t('예시:', 'Example:')} 1.2.0, 2.0.1
+                    {t('예시:', 'Example:')} http://api.example.com/chatbot
                   </code>
                 </div>
 
@@ -202,66 +234,14 @@ export default function HowToUse() {
                   <h3 className="font-semibold text-gray-900 mb-1">
                     {t('전송 프로토콜', 'Preferred Transport')} <span className="text-error-500">*</span>
                   </h3>
-                  <p className="text-sm text-gray-600 mb-2">
+                  <p className="text-base text-gray-700 mb-2">
                     {t(
-                      '에이전트가 사용하는 통신 프로토콜입니다. A2A v0.3.0에서 지원하는 3가지 중 하나를 선택하세요.',
-                      'Communication protocol your agent uses. Choose one of the 3 protocols supported by A2A v0.3.0.'
-                    )}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <code className="text-xs bg-blue-100 px-2 py-1 rounded text-blue-700 font-semibold">JSONRPC</code>
-                    <code className="text-xs bg-green-100 px-2 py-1 rounded text-green-700 font-semibold">gRPC</code>
-                    <code className="text-xs bg-purple-100 px-2 py-1 rounded text-purple-700 font-semibold">REST</code>
-                  </div>
-                </div>
-
-                {/* Capabilities */}
-                <div className="border-l-4 border-brand-500 pl-4 py-2">
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    {t('기능 선언', 'Capabilities')} <span className="text-error-500">*</span>
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '에이전트가 지원하는 선택적 기능을 선언합니다. 필수 필드이며, 각 기능을 지원하지 않을 경우 false로 설정하세요.',
-                      'Declare optional capabilities your agent supports. This is a required field; set to false if not supported.'
-                    )}
-                  </p>
-                  <ul className="text-sm text-gray-600 space-y-1 ml-4 list-disc">
-                    <li><strong>streaming:</strong> {t('실시간 스트리밍 응답 지원', 'Real-time streaming responses')}</li>
-                    <li><strong>pushNotifications:</strong> {t('클라이언트에 푸시 알림 전송 가능', 'Can send push notifications to clients')}</li>
-                    <li><strong>stateTransitionHistory:</strong> {t('상태 전환 이력 추적', 'Tracks state transition history')}</li>
-                  </ul>
-                </div>
-
-                {/* Input/Output Modes */}
-                <div className="border-l-4 border-brand-500 pl-4 py-2">
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    {t('입출력 MIME 타입', 'Default Input/Output Modes')} <span className="text-error-500">*</span>
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '에이전트가 지원하는 기본 입력/출력 MIME 타입 배열입니다. 모든 스킬에 공통으로 적용됩니다.',
-                      'Array of default input/output MIME types supported by the agent. Applies to all skills.'
+                      '에이전트가 사용하는 전송 프로토콜입니다. AgentCard에 선언해야 합니다.',
+                      'Transport protocol used by your agent. Must be declared in AgentCard.'
                     )}
                   </p>
                   <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
-                    {t('예시:', 'Example:')} ["text/plain"], ["application/json"], ["image/png"]
-                  </code>
-                </div>
-
-                {/* Protocol Version */}
-                <div className="border-l-4 border-gray-400 pl-4 py-2">
-                  <h3 className="font-semibold text-gray-900 mb-1">
-                    {t('프로토콜 버전', 'Protocol Version')} <span className="text-gray-400 text-sm">{t('(권장)', '(Recommended)')}</span>
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    {t(
-                      '에이전트가 지원하는 A2A 프로토콜 버전입니다. 생략 시 기본값 "0.3.0"이 사용됩니다.',
-                      'A2A protocol version your agent supports. Defaults to "0.3.0" if omitted.'
-                    )}
-                  </p>
-                  <code className="text-xs bg-gray-100 px-2 py-1 rounded text-gray-700">
-                    {t('예시:', 'Example:')} 0.3.0
+                    {t('예시:', 'Example:')} JSONRPC, REST, gRPC
                   </code>
                 </div>
 
@@ -270,7 +250,7 @@ export default function HowToUse() {
                   <h3 className="font-semibold text-gray-900 mb-1">
                     {t('스킬', 'Skills')} <span className="text-error-500">*</span>
                   </h3>
-                  <p className="text-sm text-gray-600 mb-2">
+                  <p className="text-base text-gray-700 mb-2">
                     {t(
                       '에이전트가 수행할 수 있는 구체적인 작업들입니다. 각 스킬은 다음을 포함합니다:',
                       'Specific tasks your agent can perform. Each skill includes:'
@@ -284,13 +264,78 @@ export default function HowToUse() {
                     <li><strong>{t('예시:', 'Examples:')}</strong> {t('사용 예시 프롬프트', 'Example prompts')} ("Tell me a joke")</li>
                   </ul>
                 </div>
+
+                {/* x-registry Fields - Required */}
+                <div className="bg-yellow-50 border-l-4 border-yellow-500 rounded-lg pl-4 py-3 mt-4">
+                  <h3 className="font-semibold text-gray-900 mb-1">
+                    {t('⚠️ x-registry 확장 필드', '⚠️ x-registry Extension Fields')} <span className="text-error-500">*</span>
+                  </h3>
+                  <p className="text-base text-gray-700 mb-3">
+                    {t(
+                      'Registry 관리를 위한 확장 필드입니다. 모든 x-registry 필드는 필수입니다.',
+                      'Extension fields for Registry management. All x-registry fields are required.'
+                    )}
+                  </p>
+                  <ul className="text-sm text-gray-600 space-y-2 ml-4 list-disc">
+                    <li><strong>contact:</strong> {t('담당자 이메일 주소', 'Contact email address')} (예: agent-owner@example.com)</li>
+                    <li><strong>owner:</strong> {t('소유자 ID', 'Owner ID')} (예: knoxid)</li>
+                    <li><strong>department:</strong> {t('소속 부서', 'Department')} (예: AI Research Team)</li>
+                    <li><strong>homepage:</strong> {t('에이전트 홈페이지 URL (Confluence 링크, Frontend Web UI 등 자유롭게 기술)', 'Agent homepage URL (Confluence link, Frontend Web UI, etc. - flexible description)')} (예: http://example.com/agent)</li>
+                    <li><strong>usageDescription:</strong> {t('사용 방법 설명', 'Usage description')} (예: "Send JSONRPC 2.0 requests...")</li>
+                    <li><strong>allowDelete:</strong> {t('삭제 허용 여부 (true/false)', 'Allow deletion (true/false)')} (예: false)</li>
+                  </ul>
+                </div>
+
+                {/* Optional Fields with Defaults */}
+                <div className="bg-blue-50 border-l-4 border-blue-400 rounded-lg pl-4 py-3 mt-4">
+                  <h3 className="font-semibold text-gray-900 mb-1">
+                    {t('💡 선택 필드 (기본값 제공)', '💡 Optional Fields (with Defaults)')}
+                  </h3>
+                  <p className="text-base text-gray-700 mb-3">
+                    {t(
+                      '다음 필드들은 생략할 수 있으며, 생략 시 Registry가 자동으로 기본값을 할당합니다.',
+                      'The following fields can be omitted, and the Registry will automatically assign default values.'
+                    )}
+                  </p>
+                  <ul className="text-sm text-gray-600 space-y-2 ml-4 list-disc">
+                    <li>
+                      <strong>protocolVersion:</strong> {t('프로토콜 버전', 'Protocol version')}
+                      <code className="ml-2 text-xs bg-blue-100 px-2 py-0.5 rounded">{t('기본값:', 'default:')} "0.3.0"</code>
+                    </li>
+                    <li>
+                      <strong>version:</strong> {t('에이전트 버전', 'Agent version')}
+                      <code className="ml-2 text-xs bg-blue-100 px-2 py-0.5 rounded">{t('기본값:', 'default:')} "0.0"</code>
+                    </li>
+                    <li>
+                      <strong>capabilities:</strong> {t('기능 선언', 'Capabilities')}
+                      <code className="ml-2 text-xs bg-blue-100 px-2 py-0.5 rounded">{t('기본값:', 'default:')} {'{streaming: false, pushNotifications: false, stateTransitionHistory: false}'}</code>
+                    </li>
+                    <li>
+                      <strong>defaultInputModes:</strong> {t('입력 MIME 타입', 'Input MIME types')}
+                      <code className="ml-2 text-xs bg-blue-100 px-2 py-0.5 rounded">{t('기본값:', 'default:')} ["text/plain"]</code>
+                    </li>
+                    <li>
+                      <strong>defaultOutputModes:</strong> {t('출력 MIME 타입', 'Output MIME types')}
+                      <code className="ml-2 text-xs bg-blue-100 px-2 py-0.5 rounded">{t('기본값:', 'default:')} ["text/plain"]</code>
+                    </li>
+                  </ul>
+                </div>
+
               </div>
 
               {/* AgentCard Example */}
               <div className="mt-6">
                 <h3 className="font-semibold text-gray-900 mb-3">
-                  {t('AgentCard JSON 예시:', 'AgentCard JSON Example:')}
+                  {t('AgentCard JSON 예시 (최소 필수 필드)', 'AgentCard JSON Example (Minimal Required Fields)')}
                 </h3>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+                  <p className="text-xs text-blue-800">
+                    {t(
+                      '💡 선택 필드들은 생략되었습니다. Registry가 자동으로 기본값을 할당합니다.',
+                      '💡 Optional fields are omitted. The Registry will automatically assign default values.'
+                    )}
+                  </p>
+                </div>
                 <div className="relative bg-gray-900 rounded-lg p-4 overflow-x-auto max-h-96">
                   <button
                     onClick={() => copyToClipboard(JSON.stringify(exampleAgentCard, null, 2))}
@@ -303,12 +348,6 @@ export default function HowToUse() {
                     {JSON.stringify(exampleAgentCard, null, 2)}
                   </pre>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  {t(
-                    '이 JSON 파일을 웹 서버의 /.well-known/agent-card.json 경로에 호스팅하세요.',
-                    'Host this JSON file at /.well-known/agent-card.json on your web server.'
-                  )}
-                </p>
               </div>
 
               {/* Auto Sync Info */}
@@ -329,26 +368,26 @@ export default function HowToUse() {
           {/* Part 2: Using Registered Agents */}
           <section className="rounded-2xl border border-gray-200 bg-white p-6">
             <div className="flex items-center gap-2 mb-6">
-              <Terminal className="h-6 w-6 text-brand-500" />
+              <PlayCircle className="h-6 w-6 text-brand-500" />
               <h2 className="text-xl font-semibold text-gray-900">
                 {t('2. 등록된 에이전트 사용하기', '2. Using Registered Agents')}
               </h2>
             </div>
 
             <div className="space-y-6">
-              <p className="text-sm text-gray-600">
+              <p className="text-base text-gray-700">
                 {t(
                   '레지스트리에 등록된 에이전트를 실제로 호출하여 사용하는 방법입니다.',
                   'How to actually call and use agents registered in the registry.'
                 )}
               </p>
 
-              {/* Step 1: Get Agent Card */}
+              {/* Step 2-1: Get Agent Card */}
               <div>
                 <h3 className="font-semibold text-gray-900 mb-3">
-                  {t('Step 1: 에이전트 카드 가져오기', 'Step 1: Get Agent Card')}
+                  {t('2-1. 에이전트 카드 가져오기', '2-1. Get Agent Card')}
                 </h3>
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-base text-gray-700 mb-3">
                   {t(
                     '레지스트리 API에서 에이전트 메타데이터를 조회합니다:',
                     'Retrieve agent metadata from the registry API:'
@@ -384,24 +423,14 @@ export default function HowToUse() {
                     </pre>
                   </div>
                 </div>
-
-                {/* Registry API Note */}
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-xs text-blue-800">
-                    <strong>{t('참고:', 'Note:')}</strong> {t(
-                      'Registry API는 등록된 AgentCard를 반환합니다. 실제 에이전트 호출은 AgentCard의 url 필드를 사용하세요.',
-                      'The Registry API returns the registered AgentCard. Use the url field in the AgentCard to make actual agent calls.'
-                    )}
-                  </p>
-                </div>
               </div>
 
-              {/* Step 2: Call Agent */}
+              {/* Step 2-2: Call Agent */}
               <div>
                 <h3 className="font-semibold text-gray-900 mb-3">
-                  {t('Step 2: 에이전트 호출하기', 'Step 2: Call the Agent')}
+                  {t('2-2. 에이전트 호출하기', '2-2. Call the Agent')}
                 </h3>
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-base text-gray-700 mb-3">
                   {t(
                     'Agent Card의 url과 preferred_transport를 사용하여 에이전트에 메시지를 전송합니다.',
                     'Send a message to the agent using the url and preferred_transport from the Agent Card.'
@@ -416,7 +445,7 @@ export default function HowToUse() {
                   <div className="relative">
                     <div className="bg-gray-900 rounded-lg p-4 overflow-x-auto">
                       <pre className="text-xs text-gray-100 font-mono">
-{`curl -X POST https://api.example.com/chatbot \\
+{`curl -X POST http://api.example.com/chatbot \\
   -H "Content-Type: application/json" \\
   -d '{
   "jsonrpc": "2.0",
@@ -441,7 +470,7 @@ export default function HowToUse() {
                     </div>
                     <button
                       onClick={() => {
-                        const cmd = `curl -X POST https://api.example.com/chatbot \\
+                        const cmd = `curl -X POST http://api.example.com/chatbot \\
   -H "Content-Type: application/json" \\
   -d '{
   "jsonrpc": "2.0",
@@ -493,12 +522,22 @@ export default function HowToUse() {
 }`}
                   </pre>
                 </div>
+
+                {/* Proxy Note */}
+                <div className="mt-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded-lg">
+                  <p className="text-sm text-yellow-900">
+                    <strong>{t('💡 참고:', '💡 Note:')}</strong> {t(
+                      '사내에서는 proxy 정책으로 인해 no-proxy 옵션이 필요할 수 있습니다.',
+                      'Within the company network, you may need the no-proxy option due to proxy policies.'
+                    )}
+                  </p>
+                </div>
               </div>
 
-              {/* Step 3: Use Skills */}
+              {/* Step 2-3: Use Skills */}
               <div>
                 <h3 className="font-semibold text-gray-900 mb-3">
-                  {t('Step 3: 스킬 활용하기', 'Step 3: Use Skills')}
+                  {t('2-3. 스킬 활용하기', '2-3. Use Skills')}
                 </h3>
                 <p className="text-sm text-gray-600 mb-3">
                   {t(
@@ -570,12 +609,6 @@ export default function HowToUse() {
                       'Check inputModes and outputModes of each skill to use appropriate data formats'
                     )}
                   </li>
-                  <li>
-                    {t(
-                      'A2A v0.3.0은 tasks/get, tasks/cancel 메서드도 제공하여 작업 상태 조회 및 취소가 가능합니다',
-                      'A2A v0.3.0 also provides tasks/get and tasks/cancel methods for task status queries and cancellation'
-                    )}
-                  </li>
                 </ul>
               </div>
             </div>
@@ -584,7 +617,7 @@ export default function HowToUse() {
           {/* Part 3: Deleting Agents */}
           <section className="rounded-2xl border border-gray-200 bg-white p-6">
             <div className="flex items-center gap-2 mb-6">
-              <Terminal className="h-6 w-6 text-brand-500" />
+              <Trash2 className="h-6 w-6 text-brand-500" />
               <h2 className="text-xl font-semibold text-gray-900">
                 {t('3. 에이전트 삭제하기', '3. Deleting Your Agent')}
               </h2>
@@ -593,7 +626,7 @@ export default function HowToUse() {
             <div className="space-y-6">
               {/* Overview */}
               <div>
-                <p className="text-gray-600 mb-4">
+                <p className="text-base text-gray-700 mb-4">
                   {t(
                     'Registry에서 에이전트를 삭제하려면 AgentCard 소유권을 증명해야 합니다. AgentCard URL을 제어할 수 있는 사람만 에이전트를 삭제할 수 있습니다.',
                     'To delete your agent from the registry, you must prove ownership of the AgentCard. Only those who control the AgentCard URL can delete the agent.'
@@ -606,12 +639,12 @@ export default function HowToUse() {
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">
                   {t('삭제 절차', 'Deletion Process')}
                 </h3>
-                <ol className="list-decimal list-inside space-y-3 text-gray-600">
+                <ol className="list-decimal list-inside space-y-3 text-gray-700">
                   <li>
                     <span className="font-medium text-gray-900">
                       {t('AgentCard에 x-registry 필드 추가', 'Add x-registry field to AgentCard')}
                     </span>
-                    <p className="ml-6 mt-2 text-sm">
+                    <p className="ml-6 mt-2 text-base">
                       {t(
                         'AgentCard JSON 파일에 x-registry.allowDelete 필드를 추가하고 true로 설정하세요:',
                         'Add the x-registry.allowDelete field to your AgentCard JSON and set it to true:'
@@ -634,7 +667,7 @@ export default function HowToUse() {
                     <span className="font-medium text-gray-900">
                       {t('Registry에서 Refresh', 'Refresh in Registry')}
                     </span>
-                    <p className="ml-6 mt-2 text-sm">
+                    <p className="ml-6 mt-2 text-base">
                       {t(
                         'Registry UI에서 해당 에이전트의 상세 페이지로 이동하여 초록색 "Refresh" 버튼을 클릭하세요. Registry가 최신 AgentCard를 다시 가져옵니다.',
                         'Go to the agent detail page in the Registry UI and click the green "Refresh" button. The registry will fetch the latest AgentCard.'
@@ -645,7 +678,7 @@ export default function HowToUse() {
                     <span className="font-medium text-gray-900">
                       {t('Delete 버튼 클릭', 'Click Delete button')}
                     </span>
-                    <p className="ml-6 mt-2 text-sm">
+                    <p className="ml-6 mt-2 text-base">
                       {t(
                         'Refresh 후 빨간색 "Delete" 버튼이 나타나면 클릭하여 에이전트를 삭제할 수 있습니다.',
                         'After refresh, the red "Delete" button will appear. Click it to delete your agent.'
@@ -656,9 +689,9 @@ export default function HowToUse() {
               </div>
 
               {/* Important notes */}
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="bg-yellow-50 border-l-4 border-yellow-500 rounded-lg p-4">
                 <h4 className="font-semibold text-yellow-900 mb-2">
-                  {t('중요 사항', 'Important Notes')}
+                  {t('⚠️ 중요 사항', '⚠️ Important Notes')}
                 </h4>
                 <ul className="list-disc list-inside space-y-1 text-sm text-yellow-800">
                   <li>
@@ -744,9 +777,9 @@ export default function HowToUse() {
                       <tr>
                         <td className="px-4 py-3 font-mono text-xs text-brand-600">homepage</td>
                         <td className="px-4 py-3 text-gray-700">
-                          {t('에이전트 홈페이지 URL', 'Agent homepage URL')}
+                          {t('에이전트 홈페이지 URL (Confluence 링크, Frontend Web UI 등 자유롭게 기술)', 'Agent homepage URL (Confluence link, Frontend Web UI, etc. - flexible description)')}
                         </td>
-                        <td className="px-4 py-3 font-mono text-xs text-gray-600">https://example.com/agent</td>
+                        <td className="px-4 py-3 font-mono text-xs text-gray-600">http://example.com/agent</td>
                       </tr>
                       <tr>
                         <td className="px-4 py-3 font-mono text-xs text-brand-600">usageDescription</td>
@@ -773,7 +806,7 @@ export default function HowToUse() {
     "contact": "agent-owner@example.com",
     "owner": "knoxid",
     "department": "AI Research Team",
-    "homepage": "https://example.com/your-agent",
+    "homepage": "http://example.com/your-agent",
     "usageDescription": "Send JSONRPC 2.0 requests to this endpoint"
   }
 }`}
