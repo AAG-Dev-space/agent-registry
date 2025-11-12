@@ -47,11 +47,23 @@ class AgentService:
         if not agent_url:
             raise ValueError("Agent URL is required")
 
-        # Check if agent already exists
+        # Check if agent with same name already exists
         result = await self.db.execute(
             select(AgentModel).where(AgentModel.name == agent_id)
         )
         existing = result.scalar_one_or_none()
+
+        # Check if another agent with the same URL already exists
+        url_result = await self.db.execute(
+            select(AgentModel).where(
+                AgentModel.agent_card['url'].astext == agent_url
+            )
+        )
+        existing_by_url = url_result.scalar_one_or_none()
+
+        # If an agent with the same URL exists and it's not the same agent, reject
+        if existing_by_url and existing_by_url.name != agent_id:
+            raise ValueError(f"An agent with URL '{agent_url}' already exists (agent name: '{existing_by_url.name}')")
 
         if existing:
             # Update existing agent
