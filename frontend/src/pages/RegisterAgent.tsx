@@ -245,10 +245,10 @@ export default function RegisterAgent() {
               <div className="space-y-4 mt-4">
                 {/* Required Fields */}
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">1. {t('필수 필드', 'Required Fields')}</h4>
+                  <h4 className="text-base font-semibold text-gray-900 mb-2">1. {t('필수 필드', 'Required Fields')}</h4>
                   <div className="space-y-3">
                     <div>
-                      <p className="text-sm font-semibold text-gray-900 mb-2">{t('기본 정보:', 'Basic Information:')}</p>
+                      <p className="text-base font-semibold text-gray-900 mb-2">{t('기본 정보:', 'Basic Information:')}</p>
                       <ul className="text-sm text-gray-700 space-y-2">
                         <li className="flex items-start gap-2">
                           <span className="text-red-500 mt-0.5">•</span>
@@ -273,7 +273,7 @@ export default function RegisterAgent() {
                       </ul>
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-gray-900 mb-2">{t('x-registry 확장 필드:', 'x-registry Extension Fields:')}</p>
+                      <p className="text-base font-semibold text-gray-900 mb-2">{t('x-registry 확장 필드:', 'x-registry Extension Fields:')}</p>
                       <ul className="text-sm text-gray-700 space-y-2">
                         <li className="flex items-start gap-2">
                           <span className="text-red-500 mt-0.5">•</span>
@@ -306,7 +306,7 @@ export default function RegisterAgent() {
 
                 {/* Optional Fields with Defaults */}
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">2. {t('선택 필드 (기본값 자동 할당)', 'Optional Fields (Auto-assigned Defaults)')}</h4>
+                  <h4 className="text-base font-semibold text-gray-900 mb-2">2. {t('선택 필드 (기본값 자동 할당)', 'Optional Fields (Auto-assigned Defaults)')}</h4>
                   <p className="text-sm text-gray-600 mb-3">
                     {t('다음 필드들은 생략할 수 있으며, 생략 시 Registry가 자동으로 기본값을 할당합니다.', 'The following fields can be omitted, and the Registry will automatically assign default values.')}
                   </p>

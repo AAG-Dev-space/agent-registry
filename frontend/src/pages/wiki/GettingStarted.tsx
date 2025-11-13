@@ -132,10 +132,10 @@ export default function HowToUse() {
 
               {/* Registration Process */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                <h3 className="text-base font-semibold text-gray-900 mb-2">
                   {t('등록 절차', 'Registration Process')}
                 </h3>
-                <ol className="text-sm text-gray-700 space-y-1.5 ml-5 list-decimal">
+                <ol className="text-base text-gray-700 space-y-1.5 ml-5 list-decimal">
                   <li>{t('AgentCard JSON 파일 작성', 'Create AgentCard JSON file')}</li>
                   <li>{t('웹 서버에 정적 파일로 호스팅', 'Host as static file on web server')}</li>
                   <li>{t('URL이 공개적으로 접근 가능한지 확인', 'Verify URL is publicly accessible')}</li>
@@ -147,7 +147,7 @@ export default function HowToUse() {
 
               {/* Recommended URL Format */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                <h3 className="text-base font-semibold text-gray-900 mb-3">
                   {t('권장 URL 형식', 'Recommended URL Format')}
                 </h3>
                 <div className="relative">
@@ -539,7 +539,7 @@ export default function HowToUse() {
                 <h3 className="font-semibold text-gray-900 mb-3">
                   {t('2-3. 스킬 활용하기', '2-3. Use Skills')}
                 </h3>
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-base text-gray-600 mb-3">
                   {t(
                     'Agent Card의 skills 정보를 참고하여 적절한 프롬프트를 작성하세요:',
                     'Reference the skills information in the Agent Card to write appropriate prompts:'

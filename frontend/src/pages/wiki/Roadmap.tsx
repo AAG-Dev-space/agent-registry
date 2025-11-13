@@ -55,7 +55,7 @@ export default function Roadmap() {
               </button>
             </div>
 
-            <p className="text-sm text-gray-700">
+            <p className="text-base text-gray-700">
               {t(
                 'AI 에이전트 간의 효율적인 협업과 상호 운용성을 실현하는 중앙 레지스트리',
                 'A central registry enabling efficient collaboration and interoperability between AI agents'
@@ -229,7 +229,7 @@ export default function Roadmap() {
                       {t('완료', 'Completed')}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-base text-gray-600">
                     {t(
                       '기본 기능 구현 (에이전트 등록, 삭제, 조회, 검색)',
                       'Core features (agent registration, deletion, retrieval, search)'
@@ -248,7 +248,7 @@ export default function Roadmap() {
                       {t('완료', 'Completed')}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-base text-gray-600">
                     {t(
                       '사용성 개선 및 가이드 추가, 버그 수정',
                       'Usability improvements, documentation updates, bug fixes'
@@ -267,7 +267,7 @@ export default function Roadmap() {
                       {t('완료', 'Completed')}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">
+                  <p className="text-base text-gray-600 mb-2">
                     {t(
                       '백업을 위한 DB 구현',
                       'Database implementation for backup'
@@ -291,7 +291,7 @@ export default function Roadmap() {
                       {t('진행 중', 'In Progress')}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-base text-gray-600">
                     {t(
                       '안정화 및 프로덕션 준비 완료',
                       'Stabilization and production-ready'
@@ -307,7 +307,7 @@ export default function Roadmap() {
             <h2 className="text-xl font-semibold text-gray-900 mb-3">
               {t('피드백 & 제안', 'Feedback & Suggestions')}
             </h2>
-            <p className="text-sm text-gray-700 mb-4">
+            <p className="text-base text-gray-700 mb-4">
               {t(
                 '개선 아이디어나 버그 리포트가 있으시면 GitHub에서 이슈로 등록해 주세요.',
                 'If you have improvement ideas or bug reports, please submit them as GitHub issues.'

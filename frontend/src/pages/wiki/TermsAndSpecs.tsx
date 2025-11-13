@@ -81,7 +81,7 @@ export default function TermsAndSpecs() {
               </h2>
             </div>
 
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-base text-gray-600 mb-4">
               {t(
                 'A2A 프로토콜을 준수하는 에이전트가 반드시 구현해야 하는 사항들입니다.',
                 'Requirements that agents must implement to comply with the A2A protocol.'
@@ -94,7 +94,7 @@ export default function TermsAndSpecs() {
                 <h3 className="font-semibold text-gray-900 mb-2">
                   1. {t('전송 프로토콜 (Transport)', 'Transport Protocol')}
                 </h3>
-                <ul className="space-y-2 text-sm text-gray-700">
+                <ul className="space-y-2 text-base text-gray-700">
                   <li className="flex items-start gap-2">
                     <CheckCircle2 className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
                     <span>
@@ -124,7 +124,7 @@ export default function TermsAndSpecs() {
                 <h3 className="font-semibold text-gray-900 mb-2">
                   2. {t('핵심 메서드 (Core Methods)', 'Core Methods')}
                 </h3>
-                <p className="text-sm text-gray-600 mb-2">
+                <p className="text-base text-gray-600 mb-2">
                   {t('다음 3가지 메서드는 필수로 구현해야 합니다:', 'The following 3 methods are mandatory:')}
                 </p>
                 <div className="bg-purple-50 rounded-lg p-3 mb-2">
@@ -144,7 +144,7 @@ export default function TermsAndSpecs() {
                 <h3 className="font-semibold text-gray-900 mb-2">
                   3. {t('전송 방식 선언 및 AgentCard 발견 경로', 'Transport Declaration and AgentCard Discovery Path')}
                 </h3>
-                <p className="text-sm text-gray-700 mb-3">
+                <p className="text-base text-gray-700 mb-3">
                   {t(
                     'Agent는 Agent Card를 제공해야 하고, Agent Card 내에서 preferredTransport 및 additionalInterfaces 필드를 통해 자신이 지원하는 전송 방식을 선언해야 합니다.',
                     'Agents must provide an Agent Card and declare their supported transport methods through preferredTransport and additionalInterfaces fields in the Agent Card.'
@@ -184,7 +184,7 @@ export default function TermsAndSpecs() {
               </h2>
             </div>
 
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-base text-gray-600 mb-4">
               {t(
                 'AgentCard는 에이전트의 메타데이터를 기술하는 JSON 문서로, 모든 A2A 에이전트는 반드시 제공해야 합니다.',
                 'AgentCard is a JSON document describing agent metadata. All A2A agents must provide it.'
@@ -210,7 +210,7 @@ export default function TermsAndSpecs() {
             <div className="space-y-4">
               {/* Required Fields */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                <h3 className="text-base font-semibold text-gray-900 mb-2">
                   1. {t('필수 필드', 'Required Fields')}
                 </h3>
                 <p className="text-sm text-gray-600 mb-3">
@@ -221,7 +221,7 @@ export default function TermsAndSpecs() {
                 </p>
                 <div className="space-y-3">
                   <div>
-                    <p className="text-sm font-semibold text-gray-900 mb-2">{t('기본 정보:', 'Basic Information:')}</p>
+                    <p className="text-base font-semibold text-gray-900 mb-2">{t('기본 정보:', 'Basic Information:')}</p>
                     <ul className="space-y-2 text-sm text-gray-700">
                       <li className="flex items-start gap-2">
                         <span className="text-red-500 mt-0.5">•</span>
@@ -246,7 +246,7 @@ export default function TermsAndSpecs() {
                     </ul>
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900 mb-2">{t('x-registry 확장 필드:', 'x-registry Extension Fields:')}</p>
+                    <p className="text-base font-semibold text-gray-900 mb-2">{t('x-registry 확장 필드:', 'x-registry Extension Fields:')}</p>
                     <ul className="space-y-2 text-sm text-gray-700">
                       <li className="flex items-start gap-2">
                         <span className="text-red-500 mt-0.5">•</span>
@@ -279,7 +279,7 @@ export default function TermsAndSpecs() {
 
               {/* Optional Fields */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                <h3 className="text-base font-semibold text-gray-900 mb-2">
                   2. {t('선택 필드 (기본값 자동 할당)', 'Optional Fields (Auto-assigned Defaults)')}
                 </h3>
                 <p className="text-sm text-gray-600 mb-3">
@@ -314,7 +314,7 @@ export default function TermsAndSpecs() {
 
               {/* A2A Spec Reference */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                <h3 className="text-base font-semibold text-gray-900 mb-2">
                   3. {t('A2A 스펙 참조 (권장 필드)', 'A2A Spec Reference (Recommended)')}
                 </h3>
                 <p className="text-sm text-gray-600 mb-3">
@@ -364,7 +364,7 @@ export default function TermsAndSpecs() {
             </div>
 
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
-              <p className="text-sm text-gray-700">
+              <p className="text-base text-gray-700">
                 {t(
                   'A2A 스펙은 레지스트리를 의무 사양으로 정의하지 않지만, "발견 메커니즘" 중 하나로 카탈로그/레지스트리를 명시합니다. 엔터프라이즈 환경에서 다음 기능들을 구현하는 것을 권장합니다.',
                   'The A2A spec does not mandate registries but lists catalogs/registries as discovery mechanisms. The following features are recommended for enterprise environments.'
@@ -378,7 +378,7 @@ export default function TermsAndSpecs() {
                 <h3 className="font-semibold text-gray-900 mb-2">
                   1. {t('인덱싱 & 디스커버리', 'Indexing & Discovery')}
                 </h3>
-                <ul className="space-y-2 text-sm text-gray-700">
+                <ul className="space-y-2 text-base text-gray-700">
                   <li className="flex items-start gap-2">
                     <span className="text-blue-500 mt-0.5">•</span>
                     <span>
@@ -399,7 +399,7 @@ export default function TermsAndSpecs() {
                 <h3 className="font-semibold text-gray-900 mb-2">
                   2. {t('전송·기능 기반 라우팅 힌트', 'Transport & Capability-based Routing Hints')}
                 </h3>
-                <p className="text-sm text-gray-700">
+                <p className="text-base text-gray-700">
                   {t(
                     'preferredTransport, additionalInterfaces, capabilities, skills 기준으로 호출 전략(예: 스트리밍 지원 여부, 푸시 지원 여부)을 클라이언트에 노출합니다.',
                     'Expose calling strategies (e.g., streaming support, push support) to clients based on preferredTransport, additionalInterfaces, capabilities, and skills.'
