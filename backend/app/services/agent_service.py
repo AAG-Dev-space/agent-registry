@@ -1,6 +1,5 @@
 """Agent business logic service."""
 
-import asyncio
 import logging
 import time
 from datetime import UTC, datetime
@@ -92,6 +91,13 @@ class AgentService:
 
         else:
             # Create new agent
+            # For manually registered agents (no agent_card_url), force allowDelete=True
+            if not agent_card.get("agent_card_url"):
+                if "x-registry" not in agent_card:
+                    agent_card["x-registry"] = {}
+                agent_card["x-registry"]["allowDelete"] = True
+                logger.info(f"Manual registration: forced x-registry.allowDelete=True for {agent_id}")
+
             agent_model = AgentModel(
                 name=agent_id,
                 agent_card=agent_card,
@@ -460,8 +466,69 @@ class AgentService:
         await self.db.commit()
         logger.info(f"Health status updated for {agent_name}: {health.status} (failures: {health.failure_count})")
 
+    async def ping_agent_endpoint(self, agent_url: str) -> dict:
+        """Check if agent endpoint is responding properly (fallback when agent_card_url is missing).
+
+        Sends GET request to verify the agent endpoint is actually working.
+        Only HTTP 200 is considered success to avoid false positives.
+
+        Args:
+            agent_url: Agent endpoint URL from agent_card.url
+
+        Returns:
+            Dictionary with ping result:
+            {
+                "success": bool,
+                "error": str | None,
+                "response_time_ms": int | None
+            }
+        """
+        start_time = time.time()
+
+        try:
+            async with httpx.AsyncClient(
+                timeout=10.0,
+                follow_redirects=True,
+                trust_env=False,
+                proxy=None,
+            ) as client:
+                # Send GET request to check if agent endpoint is responding properly
+                response = await client.get(agent_url)
+                response_time_ms = int((time.time() - start_time) * 1000)
+
+                if response.status_code == 200:
+                    return {
+                        "success": True,
+                        "response_time_ms": response_time_ms,
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "error": f"HTTP {response.status_code}: {response.reason_phrase}",
+                        "response_time_ms": response_time_ms,
+                    }
+
+        except httpx.TimeoutException:
+            response_time_ms = int((time.time() - start_time) * 1000)
+            return {
+                "success": False,
+                "error": "Request timeout (>10s)",
+                "response_time_ms": response_time_ms,
+            }
+        except Exception as e:
+            response_time_ms = int((time.time() - start_time) * 1000)
+            return {
+                "success": False,
+                "error": str(e),
+                "response_time_ms": response_time_ms,
+            }
+
     async def sync_agent_card(self, agent_id: str) -> dict:
         """Sync agent's AgentCard from its URL and update health status.
+
+        Supports two modes:
+        1. AgentCard URL mode: Fetch AgentCard JSON from agent_card_url
+        2. Agent URL mode (fallback): Ping agent endpoint URL when agent_card_url is missing
 
         Args:
             agent_id: Agent name/ID
@@ -484,53 +551,87 @@ class AgentService:
             }
 
         agent_card_url = agent.get("agent_card_url")
-        if not agent_card_url:
+
+        # Mode 1: AgentCard URL-based health check (fetch and validate AgentCard)
+        if agent_card_url:
+            # Fetch AgentCard
+            verification = await self.verify_agent_card_url(agent_card_url)
+
+            # Update health status
+            await self._update_health_status(
+                agent_name=agent_id,
+                success=verification["success"],
+                response_time_ms=verification.get("response_time_ms"),
+                error=verification.get("error"),
+            )
+
+            if not verification["success"]:
+                return {
+                    "success": False,
+                    "error": verification["error"],
+                    "response_time_ms": verification.get("response_time_ms"),
+                }
+
+            # Update agent card in database
+            result = await self.db.execute(
+                select(AgentModel).where(AgentModel.name == agent_id)
+            )
+            agent_model = result.scalar_one_or_none()
+
+            if agent_model:
+                agent_model.agent_card = verification["agent_card"]
+                agent_model.updated_at = utc_now()
+                await self.db.commit()
+                await self.db.refresh(agent_model)
+
+                logger.info(f"AgentCard synced for: {agent_id}")
+                return {
+                    "success": True,
+                    "agent": agent_model.to_dict(),
+                    "response_time_ms": verification.get("response_time_ms"),
+                }
+
             return {
                 "success": False,
-                "error": "Agent does not have agent_card_url configured",
+                "error": "Failed to update agent in database",
             }
 
-        # Fetch AgentCard
-        verification = await self.verify_agent_card_url(agent_card_url)
+        # Mode 2: Agent URL-based health check (fallback for offline/static agents)
+        else:
+            agent_card = agent.get("agent_card", {})
+            agent_url = agent_card.get("url")
 
-        # Update health status
-        await self._update_health_status(
-            agent_name=agent_id,
-            success=verification["success"],
-            response_time_ms=verification.get("response_time_ms"),
-            error=verification.get("error"),
-        )
+            if not agent_url:
+                return {
+                    "success": False,
+                    "error": "Agent has neither agent_card_url nor agent_card.url configured",
+                }
 
-        if not verification["success"]:
-            return {
-                "success": False,
-                "error": verification["error"],
-                "response_time_ms": verification.get("response_time_ms"),
-            }
+            # Ping agent endpoint
+            ping_result = await self.ping_agent_endpoint(agent_url)
 
-        # Update agent card in database
-        result = await self.db.execute(
-            select(AgentModel).where(AgentModel.name == agent_id)
-        )
-        agent_model = result.scalar_one_or_none()
+            # Update health status based on ping result
+            await self._update_health_status(
+                agent_name=agent_id,
+                success=ping_result["success"],
+                response_time_ms=ping_result.get("response_time_ms"),
+                error=ping_result.get("error"),
+            )
 
-        if agent_model:
-            agent_model.agent_card = verification["agent_card"]
-            agent_model.updated_at = utc_now()
-            await self.db.commit()
-            await self.db.refresh(agent_model)
+            if not ping_result["success"]:
+                return {
+                    "success": False,
+                    "error": f"Agent endpoint unreachable: {ping_result.get('error')}",
+                    "response_time_ms": ping_result.get("response_time_ms"),
+                }
 
-            logger.info(f"AgentCard synced for: {agent_id}")
+            # For offline agents, we don't update agent_card (it's static)
+            logger.info(f"Agent endpoint health check passed for: {agent_id}")
             return {
                 "success": True,
-                "agent": agent_model.to_dict(),
-                "response_time_ms": verification.get("response_time_ms"),
+                "agent": agent,
+                "response_time_ms": ping_result.get("response_time_ms"),
             }
-
-        return {
-            "success": False,
-            "error": "Failed to update agent in database",
-        }
 
     async def sync_all_agents(self) -> dict:
         """Sync all agents' AgentCards and update health statuses.

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { AgentCard, RegisterAgentRequest, AgentSearchRequest, AgentSearchResponse } from '../types/agent';
+import type { AgentCard, AgentSearchRequest, AgentSearchResponse } from '../types/agent';
 
 // Use /api for Docker deployment (proxied by nginx)
 // Set VITE_API_URL environment variable for different backends
@@ -22,11 +22,9 @@ apiClient.interceptors.request.use((config) => {
 });
 
 export const agentApi = {
-  // Register a new agent
-  registerAgent: async (agentCard: AgentCard): Promise<{ success: boolean; agent_id: string }> => {
-    const response = await apiClient.post<{ success: boolean; agent_id: string }>('/v1/agents', {
-      agent_card: agentCard,
-    } as RegisterAgentRequest);
+  // Register a new agent (direct JSON)
+  registerAgent: async (agentCard: AgentCard): Promise<AgentCard> => {
+    const response = await apiClient.post<AgentCard>('/v1/agents', agentCard);
     return response.data;
   },
 
@@ -73,8 +71,10 @@ export const agentApi = {
   },
 
   // Delete agent
-  deleteAgent: async (agentId: string): Promise<{ success: boolean }> => {
-    const response = await apiClient.delete<{ success: boolean }>(`/v1/agents/${agentId}`);
+  deleteAgent: async (agentId: string, token?: string): Promise<{ success: boolean }> => {
+    const response = await apiClient.delete<{ success: boolean }>(`/v1/agents/${agentId}`, {
+      headers: token ? { 'x-registry-token': token } : {},
+    });
     return response.data;
   },
 

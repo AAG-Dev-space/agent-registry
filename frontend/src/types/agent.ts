@@ -52,6 +52,7 @@ export interface AgentCard {
   health_status?: HealthStatus;
   health_check?: HealthCheckConfig;
   agent_card?: Record<string, any>; // Raw AgentCard from backend
+  agent_card_url?: string; // URL to fetch AgentCard (for URL-based agents)
   'x-registry'?: AgentRegistryConfig; // Registry extension field
   created_at?: string;
   updated_at?: string;

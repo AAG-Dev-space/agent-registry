@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Loader2, AlertCircle, Copy, Check, Code, CheckCircle, XCircle, AlertTriangle, Activity, RefreshCw, Trash2 } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Loader2, AlertCircle, Copy, Check, Code, CheckCircle, XCircle, AlertTriangle, Activity, RefreshCw, Trash2, X, Key } from 'lucide-react';
 import { agentApi } from '../api/client';
 import type { AgentCard, HealthStatus } from '../types/agent';
 
@@ -13,6 +13,8 @@ export default function AgentDetail() {
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteToken, setDeleteToken] = useState('');
 
   useEffect(() => {
     if (agentId) {
@@ -81,22 +83,48 @@ export default function AgentDetail() {
     } catch (err: any) {
       console.error('Failed to refresh agent card:', err);
       alert(err.response?.data?.detail || 'Failed to refresh AgentCard');
+
+      // Reload agent to get updated health status even after error
+      try {
+        const reloadedAgent = await agentApi.getAgent(decodeURIComponent(agentId));
+        setAgent(reloadedAgent);
+      } catch (reloadErr) {
+        console.error('Failed to reload agent after refresh error:', reloadErr);
+      }
     } finally {
       setRefreshing(false);
     }
   };
 
-  // Handle delete agent
-  const handleDelete = async () => {
+  // Handle delete agent (token-based for manual agents)
+  const handleDelete = () => {
     if (!agentId || !agent) return;
 
-    if (!confirm(`Are you sure you want to delete agent "${agent.name}"?`)) {
-      return;
+    // Check if this is a manual agent (no agent_card_url)
+    const hasAgentCardUrl = agent.agent_card_url;
+
+    if (!hasAgentCardUrl) {
+      // Manual agent - show token input modal
+      setShowDeleteModal(true);
+    } else {
+      // URL-based agent - use original confirmation flow
+      if (!confirm(`Are you sure you want to delete agent "${agent.name}"?`)) {
+        return;
+      }
+      handleDeleteWithToken(undefined);
     }
+  };
+
+  // Delete agent with optional token
+  const handleDeleteWithToken = async (token?: string) => {
+    if (!agentId || !agent) return;
 
     try {
       setDeleting(true);
-      await agentApi.deleteAgent(decodeURIComponent(agentId));
+
+      // Call deleteAgent with optional token
+      await agentApi.deleteAgent(decodeURIComponent(agentId), token);
+
       alert('Agent deleted successfully!');
       navigate('/agents');
     } catch (err: any) {
@@ -104,6 +132,8 @@ export default function AgentDetail() {
       alert(err.response?.data?.detail || 'Failed to delete agent');
     } finally {
       setDeleting(false);
+      setShowDeleteModal(false);
+      setDeleteToken('');
     }
   };
 
@@ -557,6 +587,82 @@ export default function AgentDetail() {
           </div>
         )}
       </div>
+
+      {/* Delete Token Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Key className="h-5 w-5 text-red-600" />
+                <h3 className="text-lg font-semibold text-gray-900">Delete Agent</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteToken('');
+                }}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Warning Message */}
+            <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm font-semibold text-red-900 mb-2">
+                ⚠️ 경고
+              </p>
+              <p className="text-sm text-red-800">
+                이 에이전트를 삭제하려면 등록 시 설정한 <strong>deleteToken</strong>을 입력해야 합니다.
+              </p>
+            </div>
+
+            {/* Agent Name */}
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-1">삭제할 에이전트:</p>
+              <p className="text-base font-semibold text-gray-900">{agent.name}</p>
+            </div>
+
+            {/* Token Input */}
+            <div className="mb-6">
+              <label htmlFor="deleteToken" className="block text-sm font-medium text-gray-700 mb-2">
+                Delete Token
+              </label>
+              <input
+                id="deleteToken"
+                type="text"
+                value={deleteToken}
+                onChange={(e) => setDeleteToken(e.target.value)}
+                placeholder="등록 시 설정한 deleteToken 입력"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-base"
+                autoComplete="off"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteToken('');
+                }}
+                className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={() => handleDeleteWithToken(deleteToken)}
+                disabled={!deleteToken.trim() || deleting}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-300 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                {deleting ? '삭제 중...' : '삭제'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

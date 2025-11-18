@@ -3,7 +3,7 @@
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Header
 from pydantic import BaseModel, HttpUrl
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -176,13 +176,19 @@ async def sync_agent_card(
 async def delete_agent(
     agent_id: str,
     db: Annotated[AsyncSession, Depends(get_db)],
+    x_registry_token: Annotated[str | None, Header()] = None,
 ):
     """Delete an agent with ownership verification.
 
-    Verification process:
-    1. Fetch the agent's current AgentCard from its registered URL
-    2. Check if x-registry.allowDelete is true
-    3. Only delete if verification passes
+    Verification methods (priority order):
+    1. Token-based (for offline/static agents):
+       - Provide x-registry-token header matching x-registry.deleteToken in AgentCard
+    2. URL-based (for online agents):
+       - Fetch current AgentCard from agent_card_url and check allowDelete
+
+    Args:
+        agent_id: Agent name/ID
+        x_registry_token: Optional delete token (via x-registry-token header)
 
     Returns:
         204 No Content if successful
@@ -190,12 +196,13 @@ async def delete_agent(
     Raises:
         404: Agent not found
         403: Delete not allowed (verification failed)
+        400: No verification method available
         500: Internal error
     """
     try:
         service = AgentService(db)
 
-        # 1. Get agent to retrieve agent_card_url
+        # 1. Get agent from database
         agent = await service.get_agent(agent_id)
         if not agent:
             raise HTTPException(
@@ -203,34 +210,67 @@ async def delete_agent(
                 detail=f"Agent not found: {agent_id}"
             )
 
-        # 2. Verify ownership via AgentCard
-        agent_card_url = agent.get("agent_card_url")
-        if not agent_card_url:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Agent does not have agent_card_url configured"
-            )
+        # 2. Check x-registry.allowDelete first (default: True)
+        agent_card = agent.get("agent_card", {})
+        x_registry = agent_card.get("x-registry", {})
+        allow_delete = x_registry.get("allowDelete", True)
 
-        is_allowed, reason = await verify_delete_permission(
-            agent_card_url=agent_card_url
-        )
-
-        if not is_allowed:
+        if not allow_delete:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Delete not allowed: {reason}"
+                detail="Delete not allowed: x-registry.allowDelete is set to false"
             )
 
-        # 3. Perform deletion
-        deleted = await service.delete_agent(agent_id)
-        if not deleted:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Agent not found: {agent_id}"
+        # 3. Verification Method 1: Token-based (for offline/static agents)
+        if x_registry_token:
+            stored_token = x_registry.get("deleteToken")
+
+            if stored_token and stored_token == x_registry_token:
+                # Token matches - allow deletion
+                deleted = await service.delete_agent(agent_id)
+                if not deleted:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail=f"Agent not found: {agent_id}"
+                    )
+
+                logger.info(f"Agent deleted via token verification: {agent_id}")
+                return None
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Delete not allowed: Invalid or missing deleteToken"
+                )
+
+        # 4. Verification Method 2: URL-based (for online agents)
+        agent_card_url = agent.get("agent_card_url")
+        if agent_card_url:
+            is_allowed, reason = await verify_delete_permission(
+                agent_card_url=agent_card_url
             )
 
-        logger.info(f"Agent deleted after verification: {agent_id}")
-        return None
+            if not is_allowed:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Delete not allowed: {reason}"
+                )
+
+            # URL verification passed - allow deletion
+            deleted = await service.delete_agent(agent_id)
+            if not deleted:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Agent not found: {agent_id}"
+                )
+
+            logger.info(f"Agent deleted via URL verification: {agent_id}")
+            return None
+
+        # 5. No verification method available
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot verify deletion: provide x-registry-token header or configure agent_card_url"
+        )
 
     except HTTPException:
         raise

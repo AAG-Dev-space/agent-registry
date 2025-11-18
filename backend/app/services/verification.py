@@ -48,10 +48,10 @@ async def verify_delete_permission(agent_card_url: str) -> Tuple[bool, str]:
         # 2. Check x-registry extension field
         registry_config = agent_card.get("x-registry", {})
 
-        # 3. Check allowDelete flag
-        allow_delete = registry_config.get("allowDelete", False)
+        # 3. Check allowDelete flag (default: True)
+        allow_delete = registry_config.get("allowDelete", True)
         if not allow_delete:
-            return False, "AgentCard does not allow deletion (x-registry.allowDelete is not true)"
+            return False, "AgentCard does not allow deletion (x-registry.allowDelete is set to false)"
 
         # All checks passed
         return True, "Deletion allowed"
