@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from pgvector.sqlalchemy import Vector
 from sqlalchemy import Column, DateTime, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import relationship
 
 from .base import Base
 
@@ -38,6 +39,14 @@ class AgentModel(Base):
         default=utc_now,
         onupdate=utc_now,
         nullable=False,
+    )
+
+    # Relationship to AgentInstanceModel
+    instances = relationship(
+        "AgentInstanceModel",
+        back_populates="agent",
+        cascade="all, delete-orphan",
+        lazy="selectin"
     )
 
     def to_dict(self):
