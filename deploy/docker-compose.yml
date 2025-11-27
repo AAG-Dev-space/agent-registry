@@ -36,6 +36,12 @@ services:
       - DATABASE_URL=postgresql+asyncpg://a2a_user:${POSTGRES_PASSWORD:-a2a_password_change_me}@postgres:5432/a2a_registry
       - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+    volumes:
+      # Mount Docker socket for agent loader to manage containers
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      # Allow backend container to access host network
+      - "host.docker.internal:host-gateway"
     networks:
       - a2a-network
     depends_on:
