@@ -230,7 +230,7 @@ class AgentService:
         return agents_with_health, total_count
 
     async def delete_agent(self, agent_id: str) -> bool:
-        """Delete an agent.
+        """Delete an agent and all its running instances.
 
         Args:
             agent_id: Agent name/ID
@@ -246,7 +246,10 @@ class AgentService:
         if not agent:
             return False
 
-        # Delete health status first (if exists)
+        # 5.3: Delete all agent instances first
+        await self._delete_all_agent_instances(agent_id)
+
+        # Delete health status (if exists)
         health_result = await self.db.execute(
             select(HealthStatusModel).where(HealthStatusModel.agent_name == agent_id)
         )
@@ -338,19 +341,25 @@ class AgentService:
                         "response_time_ms": response_time_ms,
                     }
 
-                # Validate required fields
+                # Validate required fields per A2A Protocol v0.3.0
                 validation_errors = []
 
-                # Check basic required fields
-                basic_required_fields = {
+                # A2A v0.3.0 MUST fields
+                a2a_required_fields = {
+                    "protocolVersion": "Protocol version",
                     "name": "Agent name",
-                    "description": "Agent description",
                     "url": "Agent endpoint URL",
-                    "preferredTransport": "Transport protocol (JSONRPC, REST, gRPC)"
+                    "version": "Agent version",
+                    "preferredTransport": "Transport protocol (JSONRPC, REST, gRPC)",
+                    "capabilities": "Agent capabilities",
+                    "defaultInputModes": "Default input modes",
+                    "defaultOutputModes": "Default output modes",
                 }
 
-                for field, field_name in basic_required_fields.items():
-                    if not agent_card.get(field):
+                for field, field_name in a2a_required_fields.items():
+                    value = agent_card.get(field)
+                    # Allow empty dicts/lists for capabilities and modes, but they must exist
+                    if value is None or (field not in ["capabilities", "defaultInputModes", "defaultOutputModes"] and not value):
                         validation_errors.append(f"Missing required field: {field_name} ({field})")
 
                 # Check skills (must have at least one)
@@ -358,23 +367,11 @@ class AgentService:
                 if not skills or not isinstance(skills, list) or len(skills) == 0:
                     validation_errors.append("Missing required field: At least one skill is required (skills)")
 
-                # Check x-registry extension fields
-                x_registry = agent_card.get("x-registry", {})
-                if not x_registry or not isinstance(x_registry, dict):
-                    validation_errors.append("Missing required field: x-registry extension object")
-                else:
-                    x_registry_required_fields = {
-                        "contact": "Contact email",
-                        "owner": "Owner ID",
-                        "department": "Department",
-                        "homepage": "Agent homepage URL",
-                        "usageDescription": "Usage description",
-                        "allowDelete": "Delete permission flag"
-                    }
-
-                    for field, field_name in x_registry_required_fields.items():
-                        if field not in x_registry:
-                            validation_errors.append(f"Missing required field: {field_name} (x-registry.{field})")
+                # x-registry is OPTIONAL (ADK-generated AgentCards don't have it)
+                # We only validate its structure if present
+                x_registry = agent_card.get("x-registry")
+                if x_registry is not None and not isinstance(x_registry, dict):
+                    validation_errors.append("Invalid x-registry field: must be an object if provided")
 
                 # Validate preferredTransport value
                 if agent_card.get("preferredTransport"):
@@ -681,3 +678,62 @@ class AgentService:
             "failed": failed_count,
             "results": results,
         }
+
+    async def _delete_all_agent_instances(self, agent_name: str) -> None:
+        """Delete all Docker instances for an agent.
+
+        Args:
+            agent_name: Name of the agent
+
+        This is called before deleting an agent card to clean up running containers.
+        """
+        try:
+            # Import here to avoid circular import
+            from backend.app.models.agent_instance import AgentInstanceModel
+            from backend.app.services.docker_service import DockerService
+
+            # Find all instances for this agent
+            result = await self.db.execute(
+                select(AgentInstanceModel).where(
+                    AgentInstanceModel.agent_name == agent_name
+                )
+            )
+            instances = result.scalars().all()
+
+            if instances:
+                logger.info(
+                    f"Deleting {len(instances)} instance(s) for agent '{agent_name}'..."
+                )
+
+                docker_service = DockerService()
+
+                for instance in instances:
+                    try:
+                        # Stop and remove container
+                        if instance.container_id:
+                            docker_service.stop_container(instance.container_id)
+                            docker_service.remove_container(instance.container_id)
+                            logger.info(
+                                f"Deleted container {instance.container_id} "
+                                f"for instance {instance.id}"
+                            )
+
+                        # Delete instance from database
+                        await self.db.delete(instance)
+
+                    except Exception as e:
+                        logger.warning(
+                            f"Failed to delete instance {instance.id}: {e}. "
+                            f"Continuing with other instances..."
+                        )
+
+                await self.db.commit()
+                logger.info(
+                    f"Successfully deleted all instances for agent '{agent_name}'"
+                )
+            else:
+                logger.info(f"No instances found for agent '{agent_name}'")
+
+        except Exception as e:
+            logger.error(f"Error deleting instances for agent '{agent_name}': {e}")
+            # Don't raise - we still want to delete the agent card
