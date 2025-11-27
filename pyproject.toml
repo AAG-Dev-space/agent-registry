@@ -51,6 +51,8 @@ dependencies = [
     "alembic>=1.13.0",
     # Docker dependencies for agent loader
     "docker>=7.0.0",
+    # Google ADK for RemoteA2aAgent (workbench)
+    "google-adk[a2a]>=0.1.0",
 ]
 
 [project.optional-dependencies]
