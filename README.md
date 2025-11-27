@@ -1,269 +1,240 @@
 # A2A Agent Registry
 
+[![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue.svg)](https://www.postgresql.org/)
+
 AI 에이전트를 등록, 검색, 관리하는 중앙 레지스트리 시스템입니다.
+**A2A (Agent-to-Agent) Protocol v0.3.0** 구현체입니다.
 
-## 주요 기능
+## 🎯 주요 기능
 
-### 1. URL 기반 에이전트 관리
-- **에이전트 등록**: AgentCard URL만 입력하면 자동으로 fetch 및 등록
-- **에이전트 조회**: 등록된 에이전트 목록 조회 및 상세 정보 확인
-- **에이전트 삭제**: URL 소유권 검증 후 삭제 가능
-- **스킬 관리**: 에이전트의 스킬(기능) 등록 및 조회
+### 1. 이중 등록 모드 (Dual Registration)
 
-### 2. 자동 동기화 시스템
-- **주기적 폴링**: 하루 1회 모든 에이전트의 AgentCard URL 확인
-- **변경 감지**: 해시 비교를 통한 자동 변경사항 감지
-- **상태 관리**: active/inactive/deprecated 자동 상태 전이
-- **실패 관리**: 연속 실패 횟수 기록 및 모니터링
+#### URL 기반 등록 (URL-based Registration)
+- **AgentCard URL 제공**: `/.well-known/agent-card.json` 호스팅
+- **자동 동기화**: 매일 새벽 3시 자동 갱신
+- **URL 소유권 검증**: 별도 인증 불필요
+- **권장 사용**: 동적으로 변경되는 에이전트
 
-### 3. URL 소유권 기반 인증
-- **인증 불필요**: 별도의 회원가입, 로그인 절차 없음
-- **URL 소유권**: AgentCard를 호스팅하는 것 자체가 소유권 증명
-- **권장 경로**: `/.well-known/agent-card.json`
+#### 수동 등록 (Manual Registration)
+- **JSON 직접 입력**: AgentCard를 레지스트리에 직접 제출
+- **호스팅 불필요**: URL 없이 등록 가능
+- **토큰 기반 삭제**: `x-registry.deleteToken` 사용
+- **권장 사용**: 오프라인 또는 정적 에이전트
 
-### 4. 데이터 영속성
-- **PostgreSQL + pgvector**: 프로덕션급 관계형 데이터베이스
-- **JSONB 지원**: 유연한 스키마로 agent card 저장
-- **Vector Search**: pgvector를 활용한 semantic search 지원
-- **트랜잭션 관리**: ACID 보장으로 데이터 무결성 유지
+### 2. 자동 헬스 모니터링
 
-## 디렉터리 구조
+#### AgentCard URL Health Check
+- **대상**: URL 기반 등록 에이전트
+- **방식**: AgentCard fetch + 검증
+- **주기**: 일일 1회 (새벽 3시)
+- **상태 전이**: unknown → active → inactive → deprecated
 
-### 전체 구조
-```
-a2a-registry/
-├── backend/              # FastAPI 백엔드 서버
-│   ├── app/             # 애플리케이션 메인 디렉토리
-│   │   ├── __init__.py
-│   │   ├── main.py      # FastAPI 앱 생성 및 라이프사이클
-│   │   ├── api/         # API 엔드포인트 (버전별)
-│   │   │   └── v1/
-│   │   │       ├── __init__.py
-│   │   │       ├── agents.py      # Agent CRUD 엔드포인트
-│   │   │       ├── extensions.py  # Extension 엔드포인트
-│   │   │       ├── health.py      # Health check 엔드포인트
-│   │   │       └── auth.py        # 인증 엔드포인트
-│   │   ├── core/        # 핵심 모듈
-│   │   │   ├── __init__.py
-│   │   │   ├── config.py          # 설정 관리
-│   │   │   ├── database.py        # DB 연결 및 세션
-│   │   │   ├── security.py        # JWT, 인증 로직
-│   │   │   └── deps.py            # 의존성 주입
-│   │   ├── models/      # Database 모델 (SQLAlchemy)
-│   │   │   ├── __init__.py
-│   │   │   ├── agent.py           # Agent DB 모델
-│   │   │   ├── extension.py       # Extension DB 모델
-│   │   │   ├── health.py          # HealthStatus DB 모델
-│   │   │   └── user.py            # User DB 모델
-│   │   ├── schemas/     # API 스키마 (Pydantic)
-│   │   │   ├── __init__.py
-│   │   │   ├── agent.py           # Agent 요청/응답 스키마
-│   │   │   ├── extension.py       # Extension 스키마
-│   │   │   └── auth.py            # Auth 스키마
-│   │   └── services/    # 비즈니스 로직
-│   │       ├── __init__.py
-│   │       ├── agent_service.py   # Agent 비즈니스 로직
-│   │       ├── extension_service.py # Extension 비즈니스 로직
-│   │       ├── health_service.py  # Health check 로직
-│   │       └── vector_service.py  # Vector search 로직
-│   ├── graphql/         # GraphQL API (선택적)
-│   ├── proto/           # gRPC (선택적)
-│   ├── cli.py           # CLI 진입점
-│   └── exceptions.py    # 예외 정의
-│
-├── frontend/            # React + TypeScript 프론트엔드
-│   ├── src/
-│   │   ├── components/  # UI 컴포넌트
-│   │   ├── contexts/    # React Context (AuthContext)
-│   │   ├── pages/       # 페이지 컴포넌트
-│   │   ├── types/       # TypeScript 타입 정의
-│   │   └── utils/       # 유틸리티 함수 (API client)
-│   ├── package.json
-│   └── vite.config.ts
-│
-├── deploy/              # 배포 관련
-│   ├── docker-compose.yml  # Docker Compose 설정
-│   ├── Dockerfile.backend  # Backend 이미지
-│   └── Dockerfile.frontend # Frontend 이미지
-│
-├── config/              # 설정 파일
-│   └── roles.yaml       # 역할 정의 및 기본 사용자
-│
-├── tests/               # 테스트 코드
-├── .env.example         # 환경 변수 예시
-├── pyproject.toml       # Python 프로젝트 설정
-└── README.md
-```
+#### Agent Endpoint Health Check
+- **대상**: 수동 등록 에이전트
+- **방식**: 에이전트 URL로 HTTP GET 요청
+- **주기**: 수동 Refresh만 (자동 sync 없음)
+- **성공 기준**: HTTP 200만 허용
 
-### Backend 아키텍처 (레이어 구조)
+### 3. 소유권 기반 삭제 검증
 
-```
-┌─────────────────────────────────────────────┐
-│           Frontend (React)                  │
-└─────────────────┬───────────────────────────┘
-                  │ HTTP Request
-                  ↓
-┌─────────────────────────────────────────────┐
-│  API Layer (api/v1/)                        │
-│  - HTTP 요청/응답 처리                       │
-│  - 인증/권한 확인                            │
-│  - 입력 검증 (Pydantic schemas)             │
-└─────────────────┬───────────────────────────┘
-                  │
-                  ↓
-┌─────────────────────────────────────────────┐
-│  Service Layer (services/)                  │
-│  - 비즈니스 로직                             │
-│  - 트랜잭션 관리                             │
-│  - 여러 DB 작업 조합                         │
-│  - 외부 서비스 호출                          │
-└─────────────────┬───────────────────────────┘
-                  │
-                  ↓
-┌─────────────────────────────────────────────┐
-│  Data Layer (models/)                       │
-│  - SQLAlchemy ORM 모델                      │
-│  - DB 테이블 매핑                            │
-│  - CRUD 작업                                 │
-└─────────────────┬───────────────────────────┘
-                  │
-                  ↓
-┌─────────────────────────────────────────────┐
-│  PostgreSQL + pgvector                      │
-│  - agents 테이블                             │
-│  - extensions 테이블                         │
-│  - health_status 테이블                      │
-│  - users 테이블                              │
-└─────────────────────────────────────────────┘
-```
-
-### 데이터 흐름 예시 (Agent 등록)
-
-```
-1. Frontend
-   POST /api/v1/agents
-   { "name": "my-agent", "url": "...", ... }
-
-2. API Layer (api/v1/agents.py)
-   - JWT 토큰 검증
-   - AgentCard 스키마 검증
-   - AgentService 호출
-
-3. Service Layer (services/agent_service.py)
-   - 비즈니스 검증 (중복 체크, URL 유효성)
-   - Agent 생성/업데이트
-   - Health status 초기화
-   - Vector embedding 생성
-   - 트랜잭션 커밋
-
-4. Data Layer (models/agent.py)
-   - AgentModel 인스턴스 생성
-   - SQLAlchemy로 INSERT/UPDATE
-
-5. PostgreSQL
-   - agents 테이블에 저장
-   - health_status 테이블에 초기 상태 저장
-```
-
-## API 엔드포인트
-
-### Backend API (http://localhost:7601)
-
-모든 엔드포인트는 **Public API**입니다 (인증 불필요).
-
-#### 에이전트 관리
-
-| Method | Endpoint | 설명 | Request Body |
-|--------|----------|------|--------------|
-| `GET` | `/api/v1/agents` | 등록된 에이전트 목록 조회 | - |
-| `POST` | `/api/v1/agents/register-by-url` | AgentCard URL로 에이전트 등록 | `{"agent_card_url": "https://..."}` |
-| `GET` | `/api/v1/agents/{name}` | 특정 에이전트 상세 정보 조회 | - |
-| `DELETE` | `/api/v1/agents/{name}` | 에이전트 삭제 (소유권 검증) | - |
-| `POST` | `/api/v1/agents/{name}/sync` | 에이전트 AgentCard 수동 동기화 | - |
-| `POST` | `/api/v1/agents/search` | 에이전트 검색 | `{"query": "...", "tags": [...]}` |
-| `POST` | `/api/v1/agents/verify` | AgentCard URL 검증 (등록 없이) | `{"url": "https://..."}` |
-| `POST` | `/api/v1/agents` | AgentCard 직접 등록 (레거시) | `{AgentCard JSON}` |
-
-#### 엔드포인트 상세 설명
-
-**1. 에이전트 등록 (권장 방식)**
+#### Token-based Deletion (Priority 1)
 ```bash
-curl -X POST http://localhost:7601/api/v1/agents/register-by-url \
-  -H "Content-Type: application/json" \
-  -d '{"agent_card_url": "https://myagent.com/.well-known/agent-card.json"}'
+# 수동 등록 에이전트
+DELETE /api/v1/agents/{name}
+Headers: x-registry-token: <your-secret-token>
 ```
-- Registry가 자동으로 URL에서 AgentCard를 fetch
-- 검증 후 DB에 저장
-- Health status 자동 초기화
 
-**2. 에이전트 동기화**
+#### URL-based Deletion (Priority 2)
 ```bash
-curl -X POST http://localhost:7601/api/v1/agents/{name}/sync
+# URL 기반 등록 에이전트
+DELETE /api/v1/agents/{name}
+# AgentCard를 재fetch하여 allowDelete 확인
 ```
-- 수동으로 AgentCard를 최신 버전으로 업데이트
-- Health status도 함께 갱신
-- 응답: 업데이트된 Agent 정보
 
-**3. 에이전트 삭제**
-```bash
-curl -X DELETE http://localhost:7601/api/v1/agents/{name}
-```
-- AgentCard의 `x-registry.allowDelete: true` 확인 후 삭제
-- URL 소유권 기반 검증
-- 성공 시 204 No Content 응답
+### 4. 실시간 AgentCard 검증
+- **필수 필드 체크**: name, url, preferredTransport, skills
+- **프로토콜 검증**: JSONRPC/REST/gRPC만 허용
+- **x-registry 검증**: 레지스트리 전용 확장 필드
+- **실시간 피드백**: 검증 에러 상세 메시지
 
-**4. URL 검증 (등록 전 확인)**
-```bash
-curl -X POST http://localhost:7601/api/v1/agents/verify \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://myagent.com/.well-known/agent-card.json"}'
-```
-- AgentCard URL이 유효한지 미리 확인
-- DB에 저장하지 않음 (검증만)
-- 응답: AgentCard 내용 및 응답 시간
-
-### Frontend Routes (http://localhost:5173)
-- `/` - 홈페이지 (에이전트 목록)
-- `/register` - 에이전트 등록 페이지
-- `/agents` - 에이전트 목록
-- `/agents/:id` - 에이전트 상세
-- `/wiki/*` - 문서 페이지
-
-## 빠른 시작
+## �� 빠른 시작
 
 ### Docker Compose로 실행 (권장)
 
 ```bash
 # 1. 이미지 빌드
-cd deploy
+cd ssai_agent_registry/deploy
 ./build.sh
 
 # 2. 서비스 시작
 docker compose up -d
 
 # 3. 서비스 접근
-# - Frontend: http://localhost:7600
-# - Backend API: http://localhost:7601
-# - PostgreSQL: localhost:5432
+# Frontend: http://localhost:7600
+# Backend API: http://localhost:7601
+# API Docs: http://localhost:7601/docs
 ```
 
 ### 개발 모드 (로컬)
 
+**Backend:**
 ```bash
-# Backend 서버 (포트 8000)
-cd backend
-python -m app.main
-
-# Frontend 서버 (포트 5173)
-cd frontend
-npm install
-npm run dev
+cd ssai_agent_registry/backend
+python -m app.main  # Port 8000
 ```
 
-### AgentCard 준비 및 등록
+**Frontend:**
+```bash
+cd ssai_agent_registry/frontend
+npm install
+npm run dev  # Port 5173
+```
 
-Agent 서버에 AgentCard JSON 파일을 호스팅하세요:
+## 📋 API 엔드포인트
 
+### 에이전트 관리
+
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| `POST` | `/api/v1/agents/register-by-url` | URL 기반 등록 |
+| `POST` | `/api/v1/agents` | 수동 등록 (JSON 직접) |
+| `POST` | `/api/v1/agents/verify` | AgentCard URL 검증 (등록 안 함) |
+| `GET` | `/api/v1/agents` | 에이전트 목록 조회 |
+| `GET` | `/api/v1/agents/{name}` | 에이전트 상세 조회 |
+| `POST` | `/api/v1/agents/{name}/sync` | 수동 동기화 + 헬스 체크 |
+| `DELETE` | `/api/v1/agents/{name}` | 에이전트 삭제 (소유권 검증) |
+| `POST` | `/api/v1/agents/search` | 에이전트 검색 |
+
+### 헬스 체크
+
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| `GET` | `/health` | 서버 헬스 체크 |
+
+**자세한 API 문서**: http://localhost:7601/docs (Swagger UI)
+
+## 📁 프로젝트 구조
+
+```
+ssai_agent_registry/
+├── backend/                    # FastAPI 백엔드
+│   └── app/
+│       ├── main.py             # FastAPI 앱 진입점
+│       ├── api/v1/             # API 엔드포인트
+│       │   └── agents.py       # 에이전트 CRUD
+│       ├── core/               # 핵심 모듈
+│       │   ├── config.py       # 환경 설정
+│       │   ├── database.py     # DB 연결
+│       │   └── deps.py         # 의존성 주입
+│       ├── models/             # SQLAlchemy 모델
+│       │   ├── agent.py        # AgentModel
+│       │   └── health.py       # HealthStatusModel
+│       ├── schemas/            # Pydantic 스키마
+│       │   └── agent.py        # 요청/응답 스키마
+│       ├── services/           # 비즈니스 로직
+│       │   ├── agent_service.py
+│       │   └── verification.py
+│       └── scheduler.py        # APScheduler (일일 sync)
+│
+├── frontend/                   # React 프론트엔드
+│   └── src/
+│       ├── pages/              # 페이지 컴포넌트
+│       │   ├── Home.tsx        # 에이전트 목록
+│       │   ├── RegisterAgent.tsx  # 등록 페이지 (URL/Manual)
+│       │   ├── AgentDetail.tsx    # 상세 페이지
+│       │   └── wiki/           # Wiki 문서
+│       ├── components/         # UI 컴포넌트
+│       ├── api/                # API 클라이언트
+│       └── contexts/           # React Context (i18n)
+│
+├── deploy/                     # Docker 배포
+│   ├── docker-compose.yml      # 서비스 오케스트레이션
+│   ├── Dockerfile.backend      # Backend 이미지
+│   ├── Dockerfile.frontend     # Frontend 이미지
+│   ├── build.sh                # 빌드 스크립트
+│   ├── backup_db.sh            # DB 백업
+│   └── restore_db.sh           # DB 복원
+│
+├── CLAUDE.md                   # Claude Code 가이드
+├── README.md                   # 프로젝트 개요 (이 파일)
+└── README_DETAIL.md            # 상세 문서 (2000+ 줄)
+```
+
+## 🏗️ 아키텍처
+
+### 시스템 구조
+
+```
+┌─────────────┐
+│   Browser   │
+└──────┬──────┘
+       │ HTTP
+       ▼
+┌─────────────────────────────┐
+│  Frontend (React + Nginx)   │
+│  - Agent List               │
+│  - Register Agent (2 modes) │
+│  - Agent Detail             │
+│  - Statistics               │
+└──────┬──────────────────────┘
+       │ REST API
+       ▼
+┌─────────────────────────────┐
+│  Backend (FastAPI)          │
+│  ┌─────────────────────┐    │
+│  │  API Layer          │    │
+│  └──────┬──────────────┘    │
+│         │                   │
+│  ┌──────▼──────────────┐    │
+│  │  Service Layer      │    │
+│  │  - AgentService     │    │
+│  │  - Verification     │    │
+│  └──────┬──────────────┘    │
+│         │                   │
+│  ┌──────▼──────────────┐    │
+│  │  Model Layer        │    │
+│  │  - AgentModel       │    │
+│  │  - HealthStatus     │    │
+│  └──────┬──────────────┘    │
+│         │                   │
+│  ┌──────▼──────────────┐    │
+│  │  Scheduler          │    │
+│  │  Daily Sync (3 AM)  │    │
+│  └─────────────────────┘    │
+└──────┬──────────────────────┘
+       │ SQLAlchemy
+       ▼
+┌─────────────────────────────┐
+│  PostgreSQL 16 + pgvector   │
+│  - agents                   │
+│  - health_status            │
+└─────────────────────────────┘
+```
+
+### 데이터베이스 스키마
+
+**agents 테이블:**
+- `name` (PK): 에이전트 이름
+- `agent_card_url` (nullable): AgentCard 호스팅 URL
+- `agent_card` (JSONB): 전체 AgentCard JSON
+- `created_at`, `updated_at`
+
+**health_status 테이블:**
+- `agent_name` (PK, FK): agents.name
+- `status`: active/inactive/deprecated/unknown
+- `last_check_at`: 마지막 헬스 체크 시각
+- `failure_count`: 연속 실패 횟수 (0~3+)
+- `last_response_time_ms`: 응답 시간
+- `last_error`: 에러 메시지
+
+## 📖 사용 예시
+
+### 1. URL 기반 등록
+
+**AgentCard 호스팅:**
 ```json
 // https://myagent.com/.well-known/agent-card.json
 {
@@ -271,62 +242,233 @@ Agent 서버에 AgentCard JSON 파일을 호스팅하세요:
   "name": "my-agent",
   "description": "My AI Agent",
   "url": "https://myagent.com",
-  "version": "1.0.0",
   "preferredTransport": "JSONRPC",
-  "capabilities": {
-    "streaming": false,
-    "pushNotifications": false
-  },
-  "defaultInputModes": ["text/plain"],
-  "defaultOutputModes": ["text/plain"],
-  "skills": [...]
+  "skills": [
+    {
+      "id": "chat",
+      "name": "Chat",
+      "description": "Conversational AI",
+      "tags": ["nlp", "chatbot"],
+      "inputModes": ["text/plain"],
+      "outputModes": ["text/plain"]
+    }
+  ],
+  "x-registry": {
+    "contact": "admin@myagent.com",
+    "owner": "my-company",
+    "department": "AI Team",
+    "homepage": "https://myagent.com",
+    "usageDescription": "Send JSONRPC requests to /api",
+    "allowDelete": true
+  }
 }
 ```
 
-Registry에 AgentCard URL만 입력하면 자동으로 등록됩니다:
-
+**등록 요청:**
 ```bash
-curl -X POST http://localhost:7601/api/v1/agents \
+curl -X POST http://localhost:7601/api/v1/agents/register-by-url \
   -H "Content-Type: application/json" \
   -d '{"agent_card_url": "https://myagent.com/.well-known/agent-card.json"}'
 ```
 
-## 기술 스택
+### 2. 수동 등록
+
+**Web UI 사용:**
+1. http://localhost:7600/register 접속
+2. **Manual** 탭 선택
+3. AgentCard JSON 입력 (샘플 복사 버튼 제공)
+4. 실시간 검증 확인
+5. **Register** 클릭
+
+**중요:** `x-registry.deleteToken` 필드 반드시 설정 (삭제 시 필요)
+
+### 3. 에이전트 삭제
+
+**수동 등록 에이전트:**
+1. Agent Detail 페이지에서 **Delete** 버튼 클릭
+2. `deleteToken` 입력 모달 표시
+3. 등록 시 설정한 토큰 입력
+4. **삭제** 클릭
+
+**URL 기반 에이전트:**
+1. AgentCard의 `allowDelete: true` 확인
+2. Agent Detail 페이지에서 **Delete** 버튼 클릭
+3. 확인 다이얼로그에서 **OK** 클릭
+
+## 🔧 기술 스택
 
 ### Backend
 - **FastAPI**: 고성능 Python 웹 프레임워크
 - **SQLAlchemy 2.0**: 비동기 ORM
-- **PostgreSQL**: 프로덕션 데이터베이스
-- **pgvector**: Vector similarity search
+- **PostgreSQL 16**: 프로덕션 데이터베이스
+- **pgvector**: Vector similarity search (향후 사용)
 - **asyncpg**: PostgreSQL 비동기 드라이버
-- **Pydantic**: 데이터 검증 및 직렬화
-- **httpx**: HTTP 클라이언트 (AgentCard fetch용)
-- **APScheduler**: 백그라운드 작업 스케줄링
+- **Pydantic**: 데이터 검증
+- **httpx**: 비동기 HTTP 클라이언트
+- **APScheduler**: 백그라운드 스케줄링
 
 ### Frontend
 - **React 19**: UI 라이브러리
 - **TypeScript**: 타입 안정성
 - **Vite**: 빌드 도구
-- **Tailwind CSS**: 유틸리티 기반 CSS 프레임워크
-- **React Router**: 라우팅
+- **Tailwind CSS**: 유틸리티 CSS
+- **React Router**: 클라이언트 라우팅
 - **Axios**: HTTP 클라이언트
+- **Lucide React**: 아이콘
 
-## 개발 계획
+### Infrastructure
+- **Docker Compose**: 컨테이너 오케스트레이션
+- **Nginx**: 정적 파일 서빙 + 리버스 프록시
 
-### 완료
-- ✅ URL 기반 AgentCard 등록 시스템
-- ✅ 자동 동기화 (하루 1회 폴링)
-- ✅ A2A v0.3.0 스펙 준수
-- ✅ Wiki 문서 (한/영)
+## 🛠️ 관리 및 운영
 
-### 진행 중
-- 🚧 AgentCard 기반 삭제/수정 권한 검증 ([todo_auth.md](todo_auth.md))
+### 데이터베이스 백업
 
-### 예정
-- 📊 Agent 통계 대시보드
-- 🔍 고급 검색 (Vector search)
+```bash
+cd deploy
+./backup_db.sh
+```
 
----
-## 라이선스
+백업 파일: `backups/a2a_registry_backup_YYYYMMDD_HHMMSS.sql.gz`
+
+### 데이터베이스 복원
+
+```bash
+cd deploy
+./restore_db.sh backups/a2a_registry_backup_20251119_030000.sql.gz
+```
+
+### 로그 확인
+
+```bash
+# 전체 로그
+docker compose logs -f
+
+# Backend만
+docker compose logs -f backend
+
+# Frontend만
+docker compose logs -f frontend
+```
+
+### 서비스 재시작
+
+```bash
+docker compose restart backend
+docker compose restart frontend
+```
+
+### 헬스 체크
+
+```bash
+# Backend
+curl http://localhost:7601/health
+
+# Frontend
+curl http://localhost:7600
+```
+
+## 📚 문서
+
+- **[README_DETAIL.md](README_DETAIL.md)** - 상세 문서 (2000+ 줄)
+  - 시스템 아키텍처
+  - 데이터베이스 설계
+  - API 명세
+  - 배포 가이드
+  - 개발 가이드
+  - 운영 가이드
+
+- **[CLAUDE.md](CLAUDE.md)** - Claude Code 개발 가이드
+  - 프로젝트 개요
+  - 코드 구조
+  - 개발 명령어
+  - A2A 프로토콜 준수 사항
+
+- **[a2a_spec_v0.3.0.md](a2a_spec_v0.3.0.md)** - A2A 프로토콜 명세
+
+- **[todo_auth.md](todo_auth.md)** - 인증/권한 계획 (완료)
+
+## 🗺️ 로드맵
+
+### ✅ 완료된 기능
+- URL 기반 AgentCard 등록
+- 수동 AgentCard 등록 (JSON 직접 입력)
+- 자동 헬스 모니터링 (일일 sync)
+- 토큰 기반 삭제 검증
+- Agent URL 헬스 체크 fallback
+- 실시간 JSON 검증
+- 다국어 지원 (한국어/영어)
+- Delete 모달 UI (토큰 입력)
+- A2A v0.3.0 프로토콜 준수
+
+### 🚧 진행 중
+- 통계 대시보드
+- 사용량 분석
+
+### 📋 계획 중
+- Vector 기반 시맨틱 검색
+- 카테고리별 에이전트 분류
+- 인증/권한 시스템 (선택적)
+- API Rate Limiting
+- Webhook 알림
+
+## ⚙️ 환경 변수
+
+### Backend (.env)
+
+```bash
+# Database
+DATABASE_URL=postgresql+asyncpg://a2a_user:password@postgres:5432/a2a_registry
+
+# Security
+SECRET_KEY=your-secret-key-here
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+
+# CORS
+ALLOWED_ORIGINS=["http://localhost:5173","http://localhost:7600"]
+
+# Debug
+DEBUG=false
+```
+
+### Frontend (.env)
+
+```bash
+VITE_API_URL=/api
+```
+
+## 🧪 테스트
+
+```bash
+cd backend
+
+# 전체 테스트
+pytest
+
+# 커버리지 포함
+pytest --cov=backend/app --cov-report=term-missing
+
+# 특정 테스트
+pytest backend/tests/endpoints/test_agents.py
+```
+
+## 🤝 기여 방법
+
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
+
+## 📝 라이선스
 
 MIT License
+
+## 📞 문의
+
+- Issues: [GitHub Issues](repository-url/issues)
+- Email: [연락처]
+
+---
+
+**Made with ❤️ by A2A Team**
