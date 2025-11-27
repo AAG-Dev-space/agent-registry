@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Loader2, AlertCircle, Copy, Check, Code, CheckCircle, XCircle, AlertTriangle, Activity, RefreshCw, Trash2, X, Key } from 'lucide-react';
-import { agentApi } from '../api/client';
+import { ArrowLeft, ExternalLink, Loader2, AlertCircle, Copy, Check, Code, CheckCircle, XCircle, AlertTriangle, Activity, RefreshCw, Trash2, X, Key, Play, Send } from 'lucide-react';
+import { agentApi, workbenchApi, type ChatSession, type ChatMessage } from '../api/client';
 import type { AgentCard, HealthStatus } from '../types/agent';
+import { useLanguage } from '../contexts/LanguageContext';
 
 export default function AgentDetail() {
   const { agentId } = useParams<{ agentId: string }>();
   const navigate = useNavigate();
+  const { language } = useLanguage();
   const [agent, setAgent] = useState<AgentCard | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,6 +17,13 @@ export default function AgentDetail() {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteToken, setDeleteToken] = useState('');
+
+  // Workbench states
+  const [session, setSession] = useState<ChatSession | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   useEffect(() => {
     if (agentId) {
@@ -30,11 +39,77 @@ export default function AgentDetail() {
       setError(null);
       const data = await agentApi.getAgent(decodeURIComponent(agentId));
       setAgent(data);
+
+      // Initialize chat session
+      await initChatSession(data.name);
     } catch (err) {
       setError('Failed to load agent details');
       console.error('Error loading agent:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const initChatSession = async (agentName: string) => {
+    try {
+      const sessionData = await workbenchApi.createSession(agentName);
+      setSession(sessionData);
+    } catch (err) {
+      console.error('Failed to create chat session:', err);
+      setChatError(
+        language === 'ko'
+          ? '채팅 세션 생성에 실패했습니다.'
+          : 'Failed to create chat session.'
+      );
+    }
+  };
+
+  const sendMessage = async () => {
+    if (!input.trim() || !session || chatLoading) return;
+
+    const userMessage = input;
+    setInput('');
+    setChatError(null);
+
+    // Create temporary user message to show immediately
+    const tempUserMsg: ChatMessage = {
+      message_id: `temp-${Date.now()}`,
+      session_id: session.session_id,
+      role: 'user',
+      content: { text: userMessage },
+      created_at: new Date().toISOString(),
+    };
+
+    // Add user message immediately
+    setMessages((prev) => [...prev, tempUserMsg]);
+    setChatLoading(true);
+
+    try {
+      const [userMsg, agentMsg] = await workbenchApi.sendMessage(session.session_id, userMessage);
+      // Replace temp message with real messages
+      setMessages((prev) => {
+        const filtered = prev.filter(m => m.message_id !== tempUserMsg.message_id);
+        return [...filtered, userMsg, agentMsg];
+      });
+    } catch (err) {
+      console.error('Failed to send message:', err);
+      setChatError(
+        language === 'ko'
+          ? '메시지 전송에 실패했습니다.'
+          : 'Failed to send message.'
+      );
+      // Remove temp message and re-add to input
+      setMessages((prev) => prev.filter(m => m.message_id !== tempUserMsg.message_id));
+      setInput(userMessage);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
   };
 
@@ -586,6 +661,121 @@ export default function AgentDetail() {
             </pre>
           </div>
         )}
+
+        {/* Agent Playground */}
+        <div className="rounded-2xl border border-indigo-200 bg-white p-6 md:p-8 mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Play className="h-5 w-5 text-indigo-600" />
+            <h2 className="text-base font-semibold text-gray-900">
+              {language === 'ko' ? 'Agent Playground' : 'Agent Playground'}
+            </h2>
+          </div>
+
+          {/* Chat Messages */}
+          <div className="bg-gray-50 rounded-xl border border-gray-200 mb-4 h-[400px] overflow-y-auto p-4">
+            {messages.length === 0 && (
+              <div className="text-center py-12">
+                <svg
+                  className="mx-auto h-12 w-12 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+                <p className="mt-4 text-gray-600 text-sm">
+                  {language === 'ko'
+                    ? 'Agent와 대화를 시작해보세요!'
+                    : 'Start a conversation with the agent!'}
+                </p>
+              </div>
+            )}
+
+            {messages.map((message) => (
+              <div
+                key={message.message_id}
+                className={`flex mb-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                    message.role === 'user'
+                      ? 'bg-indigo-600 text-white'
+                      : message.content.error
+                      ? 'bg-red-100 text-red-900'
+                      : 'bg-gray-100 text-gray-900'
+                  }`}
+                >
+                  <div className="text-sm whitespace-pre-wrap break-words">{message.content.text}</div>
+                  <div className="text-xs opacity-70 mt-1">
+                    {new Date(message.created_at).toLocaleTimeString()}
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {chatLoading && messages.length > 0 && (
+              <div className="flex justify-start mb-3">
+                <div className="bg-gray-100 rounded-2xl px-4 py-3">
+                  <div className="flex space-x-2">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Error Message */}
+          {chatError && (
+            <div className="mb-3 p-3 bg-red-100 text-red-700 rounded-lg text-sm">{chatError}</div>
+          )}
+
+          {/* Input Area */}
+          <div className="flex space-x-3">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder={
+                language === 'ko'
+                  ? '메시지를 입력하세요... (Enter로 전송)'
+                  : 'Type a message... (Press Enter to send)'
+              }
+              disabled={chatLoading || !session}
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
+            <button
+              onClick={sendMessage}
+              disabled={!input.trim() || chatLoading || !session}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            >
+              {chatLoading ? (
+                <Loader2 className="animate-spin h-5 w-5" />
+              ) : (
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                  />
+                </svg>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Delete Token Modal */}

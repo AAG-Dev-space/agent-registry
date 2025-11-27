@@ -5,7 +5,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import List, Optional
 
-from google.adk.agents.remote_a2a_agent import AGENT_CARD_WELL_KNOWN_PATH, RemoteA2aAgent
+import httpx
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -152,21 +152,14 @@ class WorkbenchService:
             await self.db.refresh(error_message)
             return user_message, error_message
 
-        # Connect to agent via RemoteA2aAgent
+        # Connect to agent via JSONRPC (ADK A2A Protocol)
         try:
-            agent_card_url = f"http://host.docker.internal:{instance.port}{AGENT_CARD_WELL_KNOWN_PATH}"
-            logger.info(f"Connecting to agent at {agent_card_url}")
+            agent_url = f"http://host.docker.internal:{instance.port}"
+            logger.info(f"Connecting to agent at {agent_url}")
 
-            remote_agent = RemoteA2aAgent(
-                name=session.agent_name,
-                description=f"Remote agent instance at port {instance.port}",
-                agent_card=agent_card_url,
-            )
-
-            # Send message to agent (using ADK's invoke method)
-            # Note: This is a simplified version - actual implementation may vary
-            # based on ADK API
-            response = await self._invoke_agent(remote_agent, content)
+            # Send message to agent via JSONRPC
+            msg_id = str(uuid.uuid4())
+            response = await self._invoke_agent_via_jsonrpc(agent_url, content, msg_id)
 
             # Save agent response
             agent_message = ChatMessageModel(
@@ -202,28 +195,121 @@ class WorkbenchService:
 
         return user_message, agent_message
 
-    async def _invoke_agent(self, remote_agent: RemoteA2aAgent, message: str) -> str:
-        """Invoke remote agent and get response.
+    async def _invoke_agent_via_jsonrpc(
+        self, agent_url: str, message: str, message_id: str
+    ) -> str:
+        """Invoke remote ADK agent via JSONRPC protocol.
 
-        Note: This is a placeholder implementation.
-        The actual implementation depends on ADK's RemoteA2aAgent API.
+        Based on ADK's A2A protocol implementation, sends a JSONRPC request
+        to the agent's endpoint with the message format:
+        {
+          "jsonrpc": "2.0",
+          "method": "message/send",
+          "params": {
+            "message": {
+              "messageId": "...",
+              "role": "user",
+              "parts": [{"text": "..."}]
+            }
+          },
+          "id": "..."
+        }
 
         Args:
-            remote_agent: RemoteA2aAgent instance
-            message: User message
+            agent_url: Base URL of the agent (e.g., "http://localhost:8001")
+            message: User message text
+            message_id: Unique message ID
 
         Returns:
             str: Agent response text
+
+        Raises:
+            Exception: If JSONRPC call fails or response format is invalid
         """
-        # TODO: Implement actual ADK invocation
-        # This might involve:
-        # - Calling remote_agent.invoke() or similar method
-        # - Handling JSONRPC protocol
-        # - Processing agent response artifacts
-        #
-        # For now, return a placeholder
-        logger.warning("_invoke_agent is not fully implemented - using placeholder")
-        return f"[Placeholder response from {remote_agent.name}]"
+        try:
+            jsonrpc_request = {
+                "jsonrpc": "2.0",
+                "method": "message/send",
+                "params": {
+                    "message": {
+                        "messageId": message_id,
+                        "role": "user",
+                        "parts": [{"text": message}],
+                    }
+                },
+                "id": message_id,
+            }
+
+            logger.info(f"Sending JSONRPC request to {agent_url}: {jsonrpc_request}")
+
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                response = await client.post(
+                    agent_url,
+                    json=jsonrpc_request,
+                    headers={"Content-Type": "application/json"},
+                )
+                response.raise_for_status()
+                result = response.json()
+
+            logger.info(f"Received JSONRPC response: {result}")
+
+            # Parse response
+            if "error" in result:
+                error_msg = result["error"].get("message", "Unknown error")
+                raise Exception(f"Agent returned error: {error_msg}")
+
+            if "result" not in result:
+                raise Exception("Invalid JSONRPC response: missing 'result' field")
+
+            # Extract agent response from result
+            # ADK returns: {"result": {"status": {"message": {...}}, "history": [...]}}
+            task_result = result["result"]
+
+            # Check task status
+            if "status" in task_result:
+                status = task_result["status"]
+                if status.get("state") == "failed":
+                    # Task failed - extract error message
+                    error_msg = "Agent task failed"
+                    if "message" in status:
+                        msg = status["message"]
+                        if isinstance(msg, dict) and "parts" in msg:
+                            error_text = " ".join(
+                                part.get("text", "") for part in msg["parts"]
+                            )
+                            error_msg = f"Agent task failed: {error_text}"
+                    return error_msg
+
+                # Task succeeded - extract response message
+                if "message" in status:
+                    msg = status["message"]
+                    if isinstance(msg, dict) and "parts" in msg:
+                        # Combine all text parts
+                        response_text = " ".join(
+                            part.get("text", "") for part in msg["parts"]
+                        )
+                        return response_text if response_text else "No response"
+
+            # Fallback: try to extract from history
+            if "history" in task_result and task_result["history"]:
+                history = task_result["history"]
+                # Find last agent message
+                for msg in reversed(history):
+                    if msg.get("role") == "agent" and "parts" in msg:
+                        response_text = " ".join(
+                            part.get("text", "") for part in msg["parts"]
+                        )
+                        return response_text if response_text else "No response"
+
+            # No valid response found
+            return "Agent did not return a valid response"
+
+        except httpx.HTTPError as e:
+            logger.error(f"HTTP error invoking agent: {e}", exc_info=True)
+            raise Exception(f"Failed to connect to agent: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error invoking agent via JSONRPC: {e}", exc_info=True)
+            raise
 
     async def get_history(
         self,

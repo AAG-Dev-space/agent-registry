@@ -85,4 +85,65 @@ export const agentApi = {
   },
 };
 
+// Workbench API types
+export interface ChatSession {
+  session_id: string;
+  agent_name: string;
+  created_at: string;
+  last_message_at: string;
+  message_count: number;
+}
+
+export interface ChatMessage {
+  message_id: string;
+  session_id: string;
+  role: 'user' | 'agent' | 'system';
+  content: {
+    text: string;
+    error?: boolean;
+  };
+  created_at: string;
+}
+
+export const workbenchApi = {
+  // Create new chat session
+  createSession: async (agentName: string): Promise<ChatSession> => {
+    const response = await apiClient.post<ChatSession>('/v1/workbench/sessions', {
+      agent_name: agentName,
+    });
+    return response.data;
+  },
+
+  // Get session details
+  getSession: async (sessionId: string): Promise<ChatSession> => {
+    const response = await apiClient.get<ChatSession>(`/v1/workbench/sessions/${sessionId}`);
+    return response.data;
+  },
+
+  // Send message to agent
+  sendMessage: async (sessionId: string, content: string): Promise<[ChatMessage, ChatMessage]> => {
+    const response = await apiClient.post<[ChatMessage, ChatMessage]>(
+      `/v1/workbench/sessions/${sessionId}/messages`,
+      { content }
+    );
+    return response.data;
+  },
+
+  // Get chat history
+  getHistory: async (sessionId: string): Promise<ChatMessage[]> => {
+    const response = await apiClient.get<ChatMessage[]>(
+      `/v1/workbench/sessions/${sessionId}/history`
+    );
+    return response.data;
+  },
+
+  // Delete session
+  deleteSession: async (sessionId: string): Promise<{ success: boolean }> => {
+    const response = await apiClient.delete<{ success: boolean }>(
+      `/v1/workbench/sessions/${sessionId}`
+    );
+    return response.data;
+  },
+};
+
 export default apiClient;

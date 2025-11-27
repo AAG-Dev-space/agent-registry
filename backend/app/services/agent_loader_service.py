@@ -79,20 +79,31 @@ class AgentLoaderService:
             logger.error(f"Failed to pull image {docker_image}: {e}")
             raise
 
-        # 4. Start container
+        # 4. Fix localhost URLs in env_vars to use host.docker.internal
+        fixed_env_vars = {}
+        for key, value in env_vars.items():
+            if isinstance(value, str) and "localhost" in value:
+                # Replace localhost with host.docker.internal for container network access
+                fixed_value = value.replace("localhost", "host.docker.internal")
+                fixed_env_vars[key] = fixed_value
+                logger.info(f"Fixed env var {key}: {value} -> {fixed_value}")
+            else:
+                fixed_env_vars[key] = value
+
+        # 5. Start container
         try:
             container_info = self.docker.start_container(
                 image_name=docker_image,
                 container_name=container_name,
                 port=port,
-                env_vars=env_vars,
+                env_vars=fixed_env_vars,
                 internal_port=internal_port,
             )
         except Exception as e:
             logger.error(f"Failed to start container {container_name}: {e}")
             raise
 
-        # 5. Wait for container to be ready, fetch AgentCard, and register agent
+        # 6. Wait for container to be ready, fetch AgentCard, and register agent
         actual_agent_name = temp_name  # Default to temp name
         agent_card_registered = False
 
@@ -165,10 +176,10 @@ class AgentLoaderService:
             port=port,
             internal_port=internal_port,
             status="starting",
-            env_vars=env_vars,
-            llm_model=env_vars.get("AGENT_MODEL"),
-            llm_api_base=env_vars.get("AGENT_API_BASE"),
-            llm_api_key=env_vars.get("AGENT_API_KEY"),
+            env_vars=fixed_env_vars,
+            llm_model=fixed_env_vars.get("AGENT_MODEL"),
+            llm_api_base=fixed_env_vars.get("AGENT_API_BASE"),
+            llm_api_key=fixed_env_vars.get("AGENT_API_KEY"),
             started_at=datetime.now(UTC).replace(tzinfo=None),
         )
 

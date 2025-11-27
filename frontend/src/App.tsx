@@ -3,6 +3,7 @@ import { LanguageProvider } from './contexts/LanguageContext';
 import Layout from './components/Layout';
 import AgentList from './pages/AgentList';
 import AgentDetail from './pages/AgentDetail';
+import AgentWorkbench from './pages/AgentWorkbench';
 import Statistics from './pages/Statistics';
 import RegisterAgent from './pages/RegisterAgent';
 import Health from './pages/Health';
@@ -19,6 +20,7 @@ function App() {
             <Route index element={<Navigate to="/agents" replace />} />
             <Route path="agents" element={<AgentList />} />
             <Route path="agents/:agentId" element={<AgentDetail />} />
+            <Route path="workbench/:agentName" element={<AgentWorkbench />} />
             <Route path="statistics" element={<Statistics />} />
             <Route path="wiki/getting-started" element={<GettingStarted />} />
             <Route path="wiki/roadmap" element={<Roadmap />} />
