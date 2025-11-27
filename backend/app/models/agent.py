@@ -49,6 +49,14 @@ class AgentModel(Base):
         lazy="selectin"
     )
 
+    # Relationship to ChatSessionModel
+    chat_sessions = relationship(
+        "ChatSessionModel",
+        back_populates="agent",
+        cascade="all, delete-orphan",
+        lazy="selectin"
+    )
+
     def to_dict(self):
         """Convert model to dictionary."""
         # Return agent_card fields + metadata
