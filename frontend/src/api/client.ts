@@ -92,6 +92,7 @@ export interface ChatSession {
   created_at: string;
   last_message_at: string;
   message_count: number;
+  first_message_preview?: string;
 }
 
 export interface ChatMessage {
@@ -106,6 +107,12 @@ export interface ChatMessage {
 }
 
 export const workbenchApi = {
+  // List all sessions for an agent
+  listSessions: async (agentName: string): Promise<ChatSession[]> => {
+    const response = await apiClient.get<ChatSession[]>(`/v1/workbench/agents/${agentName}/sessions`);
+    return response.data;
+  },
+
   // Create new chat session
   createSession: async (agentName: string): Promise<ChatSession> => {
     const response = await apiClient.post<ChatSession>('/v1/workbench/sessions', {
@@ -130,8 +137,8 @@ export const workbenchApi = {
   },
 
   // Get chat history
-  getHistory: async (sessionId: string): Promise<ChatMessage[]> => {
-    const response = await apiClient.get<ChatMessage[]>(
+  getHistory: async (sessionId: string): Promise<{messages: ChatMessage[]}> => {
+    const response = await apiClient.get<{messages: ChatMessage[]}>(
       `/v1/workbench/sessions/${sessionId}/history`
     );
     return response.data;

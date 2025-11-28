@@ -50,6 +50,7 @@ async def create_session(
             created_at=session.created_at.isoformat(),
             last_message_at=session.last_message_at.isoformat(),
             message_count=0,
+            first_message_preview=None,
         )
 
     except ValueError as e:
@@ -63,6 +64,52 @@ async def create_session(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create session",
+        )
+
+
+@router.get("/agents/{agent_name}/sessions", response_model=list[SessionResponse])
+async def list_agent_sessions(
+    agent_name: str,
+    db: AsyncSession = Depends(get_db),
+) -> list[SessionResponse]:
+    """List all chat sessions for an agent.
+
+    Args:
+        agent_name: Agent name
+        db: Database session
+
+    Returns:
+        List of SessionResponse
+
+    Raises:
+        404: Agent not found
+    """
+    service = WorkbenchService(db)
+
+    try:
+        sessions = await service.list_agent_sessions(agent_name)
+
+        return [
+            SessionResponse(
+                session_id=session.session_id,
+                agent_name=session.agent_name,
+                created_at=session.created_at.isoformat(),
+                last_message_at=session.last_message_at.isoformat(),
+                message_count=len(session.messages) if session.messages else 0,
+                first_message_preview=(
+                    session.messages[0].content.get("text", "")[:100]
+                    if session.messages and len(session.messages) > 0 and session.messages[0].role == "user"
+                    else None
+                ),
+            )
+            for session in sessions
+        ]
+
+    except ValueError as e:
+        logger.error(f"Agent not found: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e),
         )
 
 
@@ -98,6 +145,11 @@ async def get_session(
         created_at=session.created_at.isoformat(),
         last_message_at=session.last_message_at.isoformat(),
         message_count=len(session.messages) if session.messages else 0,
+        first_message_preview=(
+            session.messages[0].content.get("text", "")[:100]
+            if session.messages and len(session.messages) > 0 and session.messages[0].role == "user"
+            else None
+        ),
     )
 
 

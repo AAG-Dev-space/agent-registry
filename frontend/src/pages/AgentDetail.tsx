@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Loader2, AlertCircle, Copy, Check, Code, CheckCircle, XCircle, AlertTriangle, Activity, RefreshCw, Trash2, X, Key, Play, Send } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Loader2, AlertCircle, Copy, Check, Code, CheckCircle, XCircle, AlertTriangle, Activity, RefreshCw, Trash2, X, Key, Play, Send, MessageSquare } from 'lucide-react';
 import { agentApi, workbenchApi, type ChatSession, type ChatMessage } from '../api/client';
 import type { AgentCard, HealthStatus } from '../types/agent';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -286,6 +286,14 @@ export default function AgentDetail() {
 
             {/* Action Buttons */}
             <div className="flex flex-col gap-2 ml-4">
+              <button
+                onClick={() => navigate(`/workbench/${encodeURIComponent(agent.name)}`)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+              >
+                <MessageSquare className="h-4 w-4" />
+                {language === 'ko' ? 'Workbench 열기' : 'Open Workbench'}
+              </button>
+
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
@@ -672,111 +680,112 @@ export default function AgentDetail() {
           </div>
 
           {/* Chat Messages */}
-          <div className="bg-gray-50 rounded-xl border border-gray-200 mb-4 h-[400px] overflow-y-auto p-4">
-            {messages.length === 0 && (
-              <div className="text-center py-12">
-                <svg
-                  className="mx-auto h-12 w-12 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
-                <p className="mt-4 text-gray-600 text-sm">
-                  {language === 'ko'
-                    ? 'Agent와 대화를 시작해보세요!'
-                    : 'Start a conversation with the agent!'}
-                </p>
-              </div>
-            )}
-
-            {messages.map((message) => (
-              <div
-                key={message.message_id}
-                className={`flex mb-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-[70%] rounded-2xl px-4 py-3 ${
-                    message.role === 'user'
-                      ? 'bg-indigo-600 text-white'
-                      : message.content.error
-                      ? 'bg-red-100 text-red-900'
-                      : 'bg-gray-100 text-gray-900'
-                  }`}
-                >
-                  <div className="text-sm whitespace-pre-wrap break-words">{message.content.text}</div>
-                  <div className="text-xs opacity-70 mt-1">
-                    {new Date(message.created_at).toLocaleTimeString()}
+          <div className="space-y-4">
+              <div className="bg-gray-50 rounded-xl border border-gray-200 h-[400px] overflow-y-auto p-4">
+                {messages.length === 0 && (
+                  <div className="text-center py-12">
+                    <svg
+                      className="mx-auto h-12 w-12 text-gray-400"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                      />
+                    </svg>
+                    <p className="mt-4 text-gray-600 text-sm">
+                      {language === 'ko'
+                        ? 'Agent와 대화를 시작해보세요!'
+                        : 'Start a conversation with the agent!'}
+                    </p>
                   </div>
-                </div>
-              </div>
-            ))}
+                )}
 
-            {chatLoading && messages.length > 0 && (
-              <div className="flex justify-start mb-3">
-                <div className="bg-gray-100 rounded-2xl px-4 py-3">
-                  <div className="flex space-x-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
+                {messages.map((message) => (
+                  <div
+                    key={message.message_id}
+                    className={`flex mb-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[70%] rounded-2xl px-4 py-3 ${
+                        message.role === 'user'
+                          ? 'bg-indigo-600 text-white'
+                          : message.content.error
+                          ? 'bg-red-100 text-red-900'
+                          : 'bg-gray-100 text-gray-900'
+                      }`}
+                    >
+                      <div className="text-sm whitespace-pre-wrap break-words">{message.content.text}</div>
+                      <div className="text-xs opacity-70 mt-1">
+                        {new Date(message.created_at).toLocaleTimeString()}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ))}
+
+                {chatLoading && messages.length > 0 && (
+                  <div className="flex justify-start mb-3">
+                    <div className="bg-gray-100 rounded-2xl px-4 py-3">
+                      <div className="flex space-x-2">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Error Message */}
-          {chatError && (
-            <div className="mb-3 p-3 bg-red-100 text-red-700 rounded-lg text-sm">{chatError}</div>
-          )}
-
-          {/* Input Area */}
-          <div className="flex space-x-3">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={
-                language === 'ko'
-                  ? '메시지를 입력하세요... (Enter로 전송)'
-                  : 'Type a message... (Press Enter to send)'
-              }
-              disabled={chatLoading || !session}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            />
-            <button
-              onClick={sendMessage}
-              disabled={!input.trim() || chatLoading || !session}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-            >
-              {chatLoading ? (
-                <Loader2 className="animate-spin h-5 w-5" />
-              ) : (
-                <svg
-                  className="h-5 w-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                  />
-                </svg>
+              {/* Error Message */}
+              {chatError && (
+                <div className="p-3 bg-red-100 text-red-700 rounded-lg text-sm">{chatError}</div>
               )}
-            </button>
-          </div>
+
+              {/* Input Area */}
+              <div className="flex space-x-3">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder={
+                    language === 'ko'
+                      ? '메시지를 입력하세요... (Enter로 전송)'
+                      : 'Type a message... (Press Enter to send)'
+                  }
+                  disabled={chatLoading || !session}
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!input.trim() || chatLoading || !session}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  {chatLoading ? (
+                    <Loader2 className="animate-spin h-5 w-5" />
+                  ) : (
+                    <svg
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                      />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            </div>
         </div>
-      </div>
 
       {/* Delete Token Modal */}
       {showDeleteModal && (
@@ -853,6 +862,7 @@ export default function AgentDetail() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -25,6 +25,10 @@ class SessionResponse(BaseModel):
         None,
         description="Number of messages in session",
     )
+    first_message_preview: Optional[str] = Field(
+        None,
+        description="Preview of the first user message (max 100 chars)",
+    )
 
 
 class SendMessageRequest(BaseModel):

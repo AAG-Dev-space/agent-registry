@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Loader2, AlertCircle, Bot, Wrench, Database, ArrowRight, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Loader2, AlertCircle, Bot, Wrench, Database, ArrowRight, CheckCircle, XCircle, AlertTriangle, MessageSquare } from 'lucide-react';
 import { agentApi } from '../api/client';
 import type { AgentCard as AgentCardType, HealthStatus } from '../types/agent';
 
 export default function AgentList() {
+  const navigate = useNavigate();
   const [agents, setAgents] = useState<AgentCardType[]>([]);
   const [filteredAgents, setFilteredAgents] = useState<AgentCardType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -194,54 +195,72 @@ export default function AgentList() {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {filteredAgents.map((agent) => (
-                  <Link
+                  <div
                     key={agent.name}
-                    to={`/agents/${encodeURIComponent(agent.name)}`}
-                    className="block rounded-2xl border border-gray-200 bg-white p-5 md:p-6 transition-all hover:shadow-theme-md group"
+                    className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6 transition-all hover:shadow-theme-md flex flex-col"
                   >
-                    {/* Icon and Status */}
-                    <div className="flex items-center justify-between mb-5">
-                      <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
-                        {getIconForAgent(agent.name)}
+                    <Link
+                      to={`/agents/${encodeURIComponent(agent.name)}`}
+                      className="flex-1 group"
+                    >
+                      {/* Icon and Status */}
+                      <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center justify-center w-12 h-12 bg-gray-100 rounded-xl">
+                          {getIconForAgent(agent.name)}
+                        </div>
+                        {getHealthBadge(agent.health_status)}
                       </div>
-                      {getHealthBadge(agent.health_status)}
-                    </div>
 
-                    {/* Agent Name */}
-                    <h3 className="text-base font-medium text-gray-900 mb-2">
-                      {agent.name}
-                    </h3>
+                      {/* Agent Name */}
+                      <h3 className="text-base font-medium text-gray-900 mb-2">
+                        {agent.name}
+                      </h3>
 
-                    {/* Description */}
-                    <p className="text-sm text-gray-500 mb-4 line-clamp-3">
-                      {agent.description}
-                    </p>
+                      {/* Description */}
+                      <p className="text-sm text-gray-500 mb-4 line-clamp-3">
+                        {agent.description}
+                      </p>
 
-                    {/* Tags */}
-                    {agent.agent_card?.skills && agent.agent_card.skills.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {agent.agent_card.skills.slice(0, 3).map((skill, idx) => (
-                          <span
-                            key={idx}
-                            className="px-3 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700"
-                          >
-                            {skill.id}
-                          </span>
-                        ))}
-                        {agent.agent_card.skills.length > 3 && (
-                          <span className="px-3 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
-                            +{agent.agent_card.skills.length - 3}
-                          </span>
-                        )}
+                      {/* Tags */}
+                      {agent.agent_card?.skills && agent.agent_card.skills.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {agent.agent_card.skills.slice(0, 3).map((skill, idx) => (
+                            <span
+                              key={idx}
+                              className="px-3 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700"
+                            >
+                              {skill.id}
+                            </span>
+                          ))}
+                          {agent.agent_card.skills.length > 3 && (
+                            <span className="px-3 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700">
+                              +{agent.agent_card.skills.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* View Details Link */}
+                      <div className="flex items-center gap-2 text-sm font-medium text-brand-500 group-hover:gap-3 transition-all">
+                        <span>View details</span>
+                        <ArrowRight className="h-4 w-4" />
                       </div>
-                    )}
+                    </Link>
 
-                    {/* View Details Link */}
-                    <div className="flex items-center gap-2 text-sm font-medium text-brand-500 group-hover:gap-3 transition-all">
-                      <span>View details</span>
-                      <ArrowRight className="h-4 w-4" />
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 mt-4 pt-4 border-t border-gray-100">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/workbench/${encodeURIComponent(agent.name)}`);
+                        }}
+                        className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
+                      >
+                        <MessageSquare className="h-4 w-4" />
+                        Playground
+                      </button>
                     </div>
-                  </Link>
+                  </div>
                 ))}
               </div>
             )}

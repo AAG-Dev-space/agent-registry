@@ -1,9 +1,11 @@
 """Workbench service for managing chat sessions and A2A communication."""
 
 import logging
+import time
 import uuid
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import httpx
 from sqlalchemy import select
@@ -15,6 +17,59 @@ from backend.app.models.agent_instance import AgentInstanceModel
 from backend.app.models.chat_session import ChatMessageModel, ChatSessionModel
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class TraceEvent:
+    """Single trace event in agent execution flow.
+
+    Captures execution events like agent start/end, LLM requests/responses,
+    and tool calls/responses for observability and debugging.
+    """
+
+    event_id: str
+    event_type: Literal[
+        "agent_start",
+        "agent_end",
+        "llm_request",
+        "llm_response",
+        "tool_call",
+        "tool_response",
+        "error",
+    ]
+    timestamp: str  # ISO 8601 format
+    duration_ms: Optional[int] = None  # For *_end/*_response events
+
+    # Event-specific data
+    agent_name: Optional[str] = None
+    tool_name: Optional[str] = None
+    tool_input: Optional[Dict[str, Any]] = None
+    tool_output: Optional[str] = None
+    llm_request: Optional[str] = None  # Prompt
+    llm_response: Optional[str] = None  # Response
+    error_message: Optional[str] = None
+
+    # Metadata
+    parent_id: Optional[str] = None  # For hierarchical traces
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "event_id": self.event_id,
+            "event_type": self.event_type,
+            "timestamp": self.timestamp,
+            "duration_ms": self.duration_ms,
+            "agent_name": self.agent_name,
+            "tool_name": self.tool_name,
+            "tool_input": self.tool_input,
+            "tool_output": self.tool_output,
+            "llm_request": self.llm_request,
+            "llm_response": self.llm_response,
+            "error_message": self.error_message,
+            "parent_id": self.parent_id,
+            "metadata": self.metadata,
+        }
 
 
 class WorkbenchService:
@@ -58,6 +113,35 @@ class WorkbenchService:
 
         logger.info(f"Created chat session {session.session_id} for agent '{agent_name}'")
         return session
+
+    async def list_agent_sessions(self, agent_name: str) -> List[ChatSessionModel]:
+        """List all chat sessions for an agent.
+
+        Args:
+            agent_name: Agent name
+
+        Returns:
+            List of ChatSessionModel
+
+        Raises:
+            ValueError: If agent not found
+        """
+        # Verify agent exists
+        result = await self.db.execute(
+            select(AgentModel).where(AgentModel.name == agent_name)
+        )
+        agent = result.scalar_one_or_none()
+        if not agent:
+            raise ValueError(f"Agent '{agent_name}' not found")
+
+        # Get all sessions for this agent, ordered by last_message_at desc
+        result = await self.db.execute(
+            select(ChatSessionModel)
+            .where(ChatSessionModel.agent_name == agent_name)
+            .options(selectinload(ChatSessionModel.messages))
+            .order_by(ChatSessionModel.last_message_at.desc())
+        )
+        return list(result.scalars().all())
 
     async def get_session(self, session_id: str) -> Optional[ChatSessionModel]:
         """Get a chat session by ID.
@@ -157,23 +241,33 @@ class WorkbenchService:
             agent_url = f"http://host.docker.internal:{instance.port}"
             logger.info(f"Connecting to agent at {agent_url}")
 
-            # Send message to agent via JSONRPC
+            # Send message to agent via JSONRPC and capture trace
             msg_id = str(uuid.uuid4())
-            response = await self._invoke_agent_via_jsonrpc(agent_url, content, msg_id)
+            response, trace = await self._invoke_agent_via_jsonrpc(
+                agent_url, content, msg_id, agent_name=session.agent_name
+            )
 
-            # Save agent response
+            # Save agent response with trace data
             agent_message = ChatMessageModel(
                 message_id=str(uuid.uuid4()),
                 session_id=session_id,
                 role="agent",
-                content={"text": response},
+                content={"text": response, "trace": trace},
                 created_at=datetime.now(UTC).replace(tzinfo=None),
             )
             self.db.add(agent_message)
 
         except Exception as e:
             logger.error(f"Error communicating with agent: {e}")
-            # Save error message
+            # Save error message with error trace event
+            error_trace = [
+                {
+                    "event_id": "1",
+                    "event_type": "error",
+                    "timestamp": datetime.now(UTC).isoformat(),
+                    "error_message": str(e),
+                }
+            ]
             agent_message = ChatMessageModel(
                 message_id=str(uuid.uuid4()),
                 session_id=session_id,
@@ -181,6 +275,7 @@ class WorkbenchService:
                 content={
                     "text": f"Error communicating with agent: {str(e)}",
                     "error": True,
+                    "trace": error_trace,
                 },
                 created_at=datetime.now(UTC).replace(tzinfo=None),
             )
@@ -196,9 +291,9 @@ class WorkbenchService:
         return user_message, agent_message
 
     async def _invoke_agent_via_jsonrpc(
-        self, agent_url: str, message: str, message_id: str
-    ) -> str:
-        """Invoke remote ADK agent via JSONRPC protocol.
+        self, agent_url: str, message: str, message_id: str, agent_name: str = "unknown"
+    ) -> tuple[str, List[Dict[str, Any]]]:
+        """Invoke remote ADK agent via JSONRPC protocol with trace capture.
 
         Based on ADK's A2A protocol implementation, sends a JSONRPC request
         to the agent's endpoint with the message format:
@@ -219,13 +314,27 @@ class WorkbenchService:
             agent_url: Base URL of the agent (e.g., "http://localhost:8001")
             message: User message text
             message_id: Unique message ID
+            agent_name: Name of the agent for trace events
 
         Returns:
-            str: Agent response text
+            tuple[str, List[Dict]]: (response_text, trace_events)
 
         Raises:
             Exception: If JSONRPC call fails or response format is invalid
         """
+        trace_events: List[TraceEvent] = []
+        start_time = time.time()
+        start_timestamp = datetime.now(UTC).isoformat()
+
+        # Event 1: Agent Start
+        agent_start_event = TraceEvent(
+            event_id="1",
+            event_type="agent_start",
+            timestamp=start_timestamp,
+            agent_name=agent_name,
+        )
+        trace_events.append(agent_start_event)
+
         try:
             jsonrpc_request = {
                 "jsonrpc": "2.0",
@@ -241,6 +350,17 @@ class WorkbenchService:
             }
 
             logger.info(f"Sending JSONRPC request to {agent_url}: {jsonrpc_request}")
+
+            # Event 2: LLM Request (mock - we don't know exact timing, so we estimate)
+            llm_request_time = time.time()
+            llm_request_event = TraceEvent(
+                event_id="2",
+                event_type="llm_request",
+                timestamp=datetime.now(UTC).isoformat(),
+                llm_request=message,
+                parent_id="1",
+            )
+            trace_events.append(llm_request_event)
 
             async with httpx.AsyncClient(timeout=30.0) as client:
                 response = await client.post(
@@ -263,52 +383,124 @@ class WorkbenchService:
 
             # Extract agent response from result
             # ADK returns: {"result": {"status": {"message": {...}}, "history": [...]}}
+            # OR with trace: {"result": {"status": "response text", "trace": [...]}}
             task_result = result["result"]
+            response_text = "No response"
 
-            # Check task status
-            if "status" in task_result:
-                status = task_result["status"]
-                if status.get("state") == "failed":
-                    # Task failed - extract error message
-                    error_msg = "Agent task failed"
-                    if "message" in status:
-                        msg = status["message"]
-                        if isinstance(msg, dict) and "parts" in msg:
-                            error_text = " ".join(
+            # Check if agent provides real trace data (new format with observability)
+            real_trace_events = None
+            if isinstance(task_result, dict) and "trace" in task_result:
+                real_trace_events = task_result["trace"]
+                logger.info(f"✅ Received {len(real_trace_events)} real trace events from agent")
+
+            # Extract response text
+            if isinstance(task_result, dict):
+                # New format: {"status": "response", "trace": [...]}
+                if "status" in task_result:
+                    status = task_result["status"]
+                    if isinstance(status, str):
+                        response_text = status
+                    elif isinstance(status, dict):
+                        # Old format: {"status": {"state": "...", "message": {...}}}
+                        if status.get("state") == "failed":
+                            # Task failed - extract error message
+                            error_msg = "Agent task failed"
+                            if "message" in status:
+                                msg = status["message"]
+                                if isinstance(msg, dict) and "parts" in msg:
+                                    error_text = " ".join(
+                                        part.get("text", "") for part in msg["parts"]
+                                    )
+                                    error_msg = f"Agent task failed: {error_text}"
+                            response_text = error_msg
+
+                        # Task succeeded - extract response message
+                        elif "message" in status:
+                            msg = status["message"]
+                            if isinstance(msg, dict) and "parts" in msg:
+                                # Combine all text parts
+                                response_text = " ".join(
+                                    part.get("text", "") for part in msg["parts"]
+                                )
+                                if not response_text:
+                                    response_text = "No response"
+
+                # Fallback: try to extract from history
+                if response_text == "No response" and "history" in task_result and task_result["history"]:
+                    history = task_result["history"]
+                    # Find last agent message
+                    for msg in reversed(history):
+                        if msg.get("role") == "agent" and "parts" in msg:
+                            response_text = " ".join(
                                 part.get("text", "") for part in msg["parts"]
                             )
-                            error_msg = f"Agent task failed: {error_text}"
-                    return error_msg
+                            if response_text:
+                                break
 
-                # Task succeeded - extract response message
-                if "message" in status:
-                    msg = status["message"]
-                    if isinstance(msg, dict) and "parts" in msg:
-                        # Combine all text parts
-                        response_text = " ".join(
-                            part.get("text", "") for part in msg["parts"]
-                        )
-                        return response_text if response_text else "No response"
+            # Use real trace if available, otherwise generate mock trace
+            if real_trace_events:
+                # Real trace from agent
+                trace_dicts = real_trace_events
+            else:
+                # Mock trace (fallback for agents without observability)
+                logger.info("⚠️ Agent does not provide trace, using mock trace")
 
-            # Fallback: try to extract from history
-            if "history" in task_result and task_result["history"]:
-                history = task_result["history"]
-                # Find last agent message
-                for msg in reversed(history):
-                    if msg.get("role") == "agent" and "parts" in msg:
-                        response_text = " ".join(
-                            part.get("text", "") for part in msg["parts"]
-                        )
-                        return response_text if response_text else "No response"
+                # Event 3: LLM Response (mock)
+                llm_response_time = time.time()
+                llm_duration = int((llm_response_time - llm_request_time) * 1000)
+                llm_response_event = TraceEvent(
+                    event_id="3",
+                    event_type="llm_response",
+                    timestamp=datetime.now(UTC).isoformat(),
+                    duration_ms=llm_duration,
+                    llm_response=response_text,
+                    parent_id="2",
+                )
+                trace_events.append(llm_response_event)
 
-            # No valid response found
-            return "Agent did not return a valid response"
+                # Event 4: Agent End (mock)
+                end_time = time.time()
+                total_duration = int((end_time - start_time) * 1000)
+                agent_end_event = TraceEvent(
+                    event_id="4",
+                    event_type="agent_end",
+                    timestamp=datetime.now(UTC).isoformat(),
+                    duration_ms=total_duration,
+                    agent_name=agent_name,
+                    parent_id="1",
+                )
+                trace_events.append(agent_end_event)
+
+                # Convert trace events to dict format
+                trace_dicts = [event.to_dict() for event in trace_events]
+
+            return response_text, trace_dicts
 
         except httpx.HTTPError as e:
             logger.error(f"HTTP error invoking agent: {e}", exc_info=True)
+            # Add error event
+            error_event = TraceEvent(
+                event_id=str(len(trace_events) + 1),
+                event_type="error",
+                timestamp=datetime.now(UTC).isoformat(),
+                error_message=f"Failed to connect to agent: {str(e)}",
+                parent_id="1",
+            )
+            trace_events.append(error_event)
+            trace_dicts = [event.to_dict() for event in trace_events]
             raise Exception(f"Failed to connect to agent: {str(e)}")
         except Exception as e:
             logger.error(f"Error invoking agent via JSONRPC: {e}", exc_info=True)
+            # Add error event if not already added
+            if not any(ev.event_type == "error" for ev in trace_events):
+                error_event = TraceEvent(
+                    event_id=str(len(trace_events) + 1),
+                    event_type="error",
+                    timestamp=datetime.now(UTC).isoformat(),
+                    error_message=str(e),
+                    parent_id="1",
+                )
+                trace_events.append(error_event)
             raise
 
     async def get_history(
