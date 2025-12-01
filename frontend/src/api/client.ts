@@ -106,6 +106,108 @@ export interface ChatMessage {
   created_at: string;
 }
 
+// Agent Loader API types
+export interface AgentInstance {
+  id: string;
+  agent_name: string;
+  docker_image: string;
+  container_id: string;
+  container_name: string;
+  port: number;
+  internal_port: number;
+  status: string;
+  docker_status?: string;
+  env_vars: Record<string, string>;
+  llm_model?: string;
+  llm_api_base?: string;
+  llm_api_key?: string;
+  created_at: string;
+  started_at?: string;
+  stopped_at?: string;
+}
+
+export interface StartInstanceRequest {
+  docker_image: string;
+  agent_name?: string;
+  port?: number;
+  env_vars?: Record<string, string>;
+  internal_port?: number;
+}
+
+export const agentLoaderApi = {
+  // Start new instance
+  startInstance: async (request: StartInstanceRequest): Promise<AgentInstance> => {
+    const response = await apiClient.post<AgentInstance>('/v1/agent-loader/start', request);
+    return response.data;
+  },
+
+  // List instances
+  listInstances: async (params?: {
+    agent_name?: string;
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{ instances: AgentInstance[]; total: number }> => {
+    const response = await apiClient.get('/v1/agent-loader/instances', { params });
+    return response.data;
+  },
+
+  // Get instance by ID
+  getInstance: async (instanceId: string): Promise<AgentInstance> => {
+    const response = await apiClient.get<AgentInstance>(`/v1/agent-loader/instances/${instanceId}`);
+    return response.data;
+  },
+
+  // Stop instance
+  stopInstance: async (instanceId: string): Promise<{ success: boolean; message: string }> => {
+    const response = await apiClient.post(`/v1/agent-loader/instances/${instanceId}/stop`);
+    return response.data;
+  },
+
+  // Delete instance
+  deleteInstance: async (instanceId: string): Promise<{ success: boolean; message: string }> => {
+    const response = await apiClient.delete(`/v1/agent-loader/instances/${instanceId}`);
+    return response.data;
+  },
+
+  // Get instance logs
+  getLogs: async (instanceId: string, tail?: number): Promise<{ logs: string }> => {
+    const response = await apiClient.get(`/v1/agent-loader/instances/${instanceId}/logs`, {
+      params: { tail },
+    });
+    return response.data;
+  },
+};
+
+// Docker Registry API types
+export interface DockerRepository {
+  repository: string;
+  tags: string[];
+  image_count: number;
+}
+
+export const dockerRegistryApi = {
+  // List all repositories
+  listRepositories: async (): Promise<{ repositories: string[] }> => {
+    const response = await apiClient.get<{ repositories: string[] }>('/v1/docker-registry/repositories');
+    return response.data;
+  },
+
+  // List tags for a specific repository
+  listTags: async (repository: string): Promise<{ name: string; tags: string[] | null }> => {
+    const response = await apiClient.get<{ name: string; tags: string[] | null }>(
+      `/v1/docker-registry/repositories/${repository}/tags`
+    );
+    return response.data;
+  },
+
+  // List all images with their tags
+  listImages: async (): Promise<DockerRepository[]> => {
+    const response = await apiClient.get<DockerRepository[]>('/v1/docker-registry/images');
+    return response.data;
+  },
+};
+
 export const workbenchApi = {
   // List all sessions for an agent
   listSessions: async (agentName: string): Promise<ChatSession[]> => {

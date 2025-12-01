@@ -37,6 +37,14 @@ export default function Layout() {
                 Agents
               </Link>
               <Link
+                to="/docker-images"
+                className={`text-sm font-medium transition-colors ${
+                  isActive('/docker-images') ? 'text-gray-900' : 'text-gray-700 hover:text-brand-500'
+                }`}
+              >
+                Docker Images
+              </Link>
+              <Link
                 to="/statistics"
                 className={`text-sm font-medium transition-colors ${
                   isActive('/statistics') ? 'text-gray-900' : 'text-gray-700 hover:text-brand-500'

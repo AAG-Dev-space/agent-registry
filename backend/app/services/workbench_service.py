@@ -210,13 +210,14 @@ class WorkbenchService:
         )
         self.db.add(user_message)
 
-        # Get agent instance
+        # Get agent instance (latest running instance if multiple exist)
         result = await self.db.execute(
             select(AgentInstanceModel)
             .where(AgentInstanceModel.agent_name == session.agent_name)
             .where(AgentInstanceModel.status == "running")
+            .order_by(AgentInstanceModel.created_at.desc())
         )
-        instance = result.scalar_one_or_none()
+        instance = result.scalars().first()
 
         if not instance:
             # No running instance - save error message

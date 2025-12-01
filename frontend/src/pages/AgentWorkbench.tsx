@@ -314,102 +314,108 @@ export default function AgentWorkbench() {
         </div>
       </div>
 
-      <div className="flex max-w-7xl mx-auto">
+      <div className="flex max-w-7xl mx-auto h-[calc(100vh-88px)]">
         {/* Session Sidebar */}
         {showSidebar && (
-          <div className="w-64 bg-white border-r border-gray-200 min-h-screen p-4">
-            <h2 className="text-sm font-semibold text-gray-700 mb-3">
-              {language === 'ko' ? '대화 세션' : 'Chat Sessions'}
-            </h2>
-            <div className="space-y-2">
-              {sessions.length === 0 && (
-                <p className="text-sm text-gray-500 text-center py-8">
-                  {language === 'ko' ? '세션이 없습니다' : 'No sessions'}
-                </p>
-              )}
-              {sessions.map((session) => (
-                <div
-                  key={session.session_id}
-                  className={`p-3 rounded-lg cursor-pointer hover:bg-gray-50 ${
-                    currentSession?.session_id === session.session_id
-                      ? 'bg-indigo-50 border border-indigo-200'
-                      : 'bg-white border border-gray-200'
-                  }`}
-                  onClick={() => loadSession(session)}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-500">
-                        {formatDate(session.created_at)}
-                      </p>
-                      {session.first_message_preview && (
-                        <p className="text-sm font-medium text-gray-900 mt-1 truncate">
-                          {session.first_message_preview}
+          <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
+            <div className="p-4 border-b border-gray-200">
+              <h2 className="text-sm font-semibold text-gray-700">
+                {language === 'ko' ? '대화 세션' : 'Chat Sessions'}
+              </h2>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="space-y-2">
+                {sessions.length === 0 && (
+                  <p className="text-sm text-gray-500 text-center py-8">
+                    {language === 'ko' ? '세션이 없습니다' : 'No sessions'}
+                  </p>
+                )}
+                {sessions.map((session) => (
+                  <div
+                    key={session.session_id}
+                    className={`p-3 rounded-lg cursor-pointer hover:bg-gray-50 ${
+                      currentSession?.session_id === session.session_id
+                        ? 'bg-indigo-50 border border-indigo-200'
+                        : 'bg-white border border-gray-200'
+                    }`}
+                    onClick={() => loadSession(session)}
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500">
+                          {formatDate(session.created_at)}
                         </p>
-                      )}
-                      <p className="text-xs text-gray-500 mt-1">
-                        {session.message_count} {language === 'ko' ? '메시지' : 'messages'}
-                      </p>
+                        {session.first_message_preview && (
+                          <p className="text-sm font-medium text-gray-900 mt-1 truncate">
+                            {session.first_message_preview}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">
+                          {session.message_count} {language === 'ko' ? '메시지' : 'messages'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteSession(session.session_id);
+                        }}
+                        className="text-gray-400 hover:text-red-500 ml-2 flex-shrink-0"
+                      >
+                        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                          />
+                        </svg>
+                      </button>
                     </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteSession(session.session_id);
-                      }}
-                      className="text-gray-400 hover:text-red-500 ml-2 flex-shrink-0"
-                    >
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                        />
-                      </svg>
-                    </button>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}
 
         {/* Chat Area */}
-        <div className="flex-1 px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex-1 flex flex-col px-4 sm:px-6 lg:px-8 py-8">
           {!currentSession ? (
-            <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-              <svg
-                className="mx-auto h-16 w-16 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                />
-              </svg>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">
-                {language === 'ko' ? '세션을 선택하거나 새로 만드세요' : 'Select or create a new session'}
-              </h3>
-              <p className="mt-2 text-gray-600">
-                {language === 'ko'
-                  ? '왼쪽 사이드바에서 기존 세션을 선택하거나 새 세션을 만들어 대화를 시작하세요.'
-                  : 'Select an existing session from the sidebar or create a new one to start chatting.'}
-              </p>
-              <button
-                onClick={createNewSession}
-                className="mt-6 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-              >
-                {language === 'ko' ? '+ 새 세션 시작하기' : '+ Start New Session'}
-              </button>
+            <div className="flex-1 flex items-center justify-center">
+              <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+                <svg
+                  className="mx-auto h-16 w-16 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                  />
+                </svg>
+                <h3 className="mt-4 text-lg font-medium text-gray-900">
+                  {language === 'ko' ? '세션을 선택하거나 새로 만드세요' : 'Select or create a new session'}
+                </h3>
+                <p className="mt-2 text-gray-600">
+                  {language === 'ko'
+                    ? '왼쪽 사이드바에서 기존 세션을 선택하거나 새 세션을 만들어 대화를 시작하세요.'
+                    : 'Select an existing session from the sidebar or create a new one to start chatting.'}
+                </p>
+                <button
+                  onClick={createNewSession}
+                  className="mt-6 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
+                >
+                  {language === 'ko' ? '+ 새 세션 시작하기' : '+ Start New Session'}
+                </button>
+              </div>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className="flex-1 flex flex-col bg-white rounded-2xl shadow-lg overflow-hidden">
               {/* Messages */}
-              <div className="h-[600px] overflow-y-auto p-6 space-y-4">
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
                 {messages.length === 0 && (
                   <div className="text-center py-12">
                     <svg

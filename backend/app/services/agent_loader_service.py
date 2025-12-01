@@ -106,11 +106,13 @@ class AgentLoaderService:
         # 6. Wait for container to be ready, fetch AgentCard, and register agent
         actual_agent_name = temp_name  # Default to temp name
         agent_card_registered = False
+        container_is_ready = False
 
         try:
             is_ready = await self._wait_for_container_ready(port, timeout=60)
 
             if is_ready:
+                container_is_ready = True
                 # Fetch AgentCard
                 agent_card = await self._fetch_agent_card(port)
 
@@ -167,6 +169,9 @@ class AgentLoaderService:
                 await self.db.commit()
                 logger.info(f"Created placeholder agent: {temp_name}")
 
+        # Set status based on container readiness
+        initial_status = "running" if container_is_ready else "starting"
+
         instance = AgentInstanceModel(
             id=instance_id,
             agent_name=actual_agent_name,
@@ -175,7 +180,7 @@ class AgentLoaderService:
             container_name=container_name,
             port=port,
             internal_port=internal_port,
-            status="starting",
+            status=initial_status,
             env_vars=fixed_env_vars,
             llm_model=fixed_env_vars.get("AGENT_MODEL"),
             llm_api_base=fixed_env_vars.get("AGENT_API_BASE"),
@@ -189,7 +194,7 @@ class AgentLoaderService:
 
         logger.info(
             f"Successfully started instance: {instance_id} "
-            f"(agent: {actual_agent_name}, container: {container_name}, port: {port})"
+            f"(agent: {actual_agent_name}, container: {container_name}, port: {port}, status: {initial_status})"
         )
 
         return instance.to_dict()
@@ -575,6 +580,9 @@ class AgentLoaderService:
             # Use host.docker.internal to access host ports from within container
             agent_card_url = f"http://host.docker.internal:{port}/.well-known/agent-card.json"
             agent_card["agent_card_url"] = agent_card_url
+
+            # Update the agent URL to match the current port
+            agent_card["url"] = f"http://host.docker.internal:{port}"
 
             # Register agent in database
             from backend.app.services.agent_service import AgentService

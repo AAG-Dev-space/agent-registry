@@ -6,6 +6,7 @@ import AgentDetail from './pages/AgentDetail';
 import AgentWorkbench from './pages/AgentWorkbench';
 import Statistics from './pages/Statistics';
 import RegisterAgent from './pages/RegisterAgent';
+import DockerImages from './pages/DockerImages';
 import Health from './pages/Health';
 import GettingStarted from './pages/wiki/GettingStarted';
 import Roadmap from './pages/wiki/Roadmap';
@@ -22,6 +23,7 @@ function App() {
             <Route path="agents/:agentId" element={<AgentDetail />} />
             <Route path="workbench/:agentName" element={<AgentWorkbench />} />
             <Route path="statistics" element={<Statistics />} />
+            <Route path="docker-images" element={<DockerImages />} />
             <Route path="wiki/getting-started" element={<GettingStarted />} />
             <Route path="wiki/roadmap" element={<Roadmap />} />
             <Route path="wiki/terms-and-specs" element={<TermsAndSpecs />} />
