@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ExternalLink, Loader2, AlertCircle, Copy, Check, Code, CheckCircle, XCircle, AlertTriangle, Activity, RefreshCw, Trash2, X, Key, Play, Send, MessageSquare } from 'lucide-react';
-import { agentApi, workbenchApi, type ChatSession, type ChatMessage } from '../api/client';
-import type { AgentCard, HealthStatus } from '../types/agent';
+import { ArrowLeft, ExternalLink, Loader2, AlertCircle, Copy, Check, Code, CheckCircle, XCircle, AlertTriangle, Activity, RefreshCw, Trash2, X, Key, Play, MessageSquare, Package } from 'lucide-react';
+import { agentApi, workbenchApi, agentLoaderApi, type ChatSession, type ChatMessage, type AgentInstance } from '../api/client';
+import type { AgentCard } from '../types/agent';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function AgentDetail() {
@@ -17,6 +17,11 @@ export default function AgentDetail() {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteToken, setDeleteToken] = useState('');
+
+  // Instance states
+  const [instances, setInstances] = useState<AgentInstance[]>([]);
+  const [instancesLoading, setInstancesLoading] = useState(false);
+  const [deletingInstances, setDeletingInstances] = useState(false);
 
   // Workbench states
   const [session, setSession] = useState<ChatSession | null>(null);
@@ -42,11 +47,26 @@ export default function AgentDetail() {
 
       // Initialize chat session
       await initChatSession(data.name);
+
+      // Load instances for this agent
+      await loadInstances(data.name);
     } catch (err) {
       setError('Failed to load agent details');
       console.error('Error loading agent:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadInstances = async (agentName: string) => {
+    try {
+      setInstancesLoading(true);
+      const data = await agentLoaderApi.listInstances({ agent_name: agentName });
+      setInstances(data.instances || []);
+    } catch (err) {
+      console.error('Failed to load instances:', err);
+    } finally {
+      setInstancesLoading(false);
     }
   };
 
@@ -212,6 +232,44 @@ export default function AgentDetail() {
     }
   };
 
+  // Delete all instances (12.2)
+  const handleDeleteAllInstances = async () => {
+    if (!agent || instances.length === 0) return;
+
+    const confirmMessage = language === 'ko'
+      ? `이 Agent의 모든 Docker 인스턴스 (${instances.length}개)를 삭제하시겠습니까?\n\n삭제된 인스턴스:\n${instances.map(i => `- ${i.container_name} (Port: ${i.port})`).join('\n')}`
+      : `Are you sure you want to delete all ${instances.length} Docker instance(s) for this agent?\n\nInstances to be deleted:\n${instances.map(i => `- ${i.container_name} (Port: ${i.port})`).join('\n')}`;
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      setDeletingInstances(true);
+
+      // Delete all instances
+      const deletePromises = instances.map(instance =>
+        agentLoaderApi.deleteInstance(instance.id)
+      );
+
+      await Promise.all(deletePromises);
+
+      alert(
+        language === 'ko'
+          ? `${instances.length}개의 인스턴스가 성공적으로 삭제되었습니다.`
+          : `Successfully deleted ${instances.length} instance(s).`
+      );
+
+      // Reload instances
+      await loadInstances(agent.name);
+    } catch (err: any) {
+      console.error('Failed to delete instances:', err);
+      alert(err.response?.data?.detail || 'Failed to delete instances');
+    } finally {
+      setDeletingInstances(false);
+    }
+  };
+
 
   if (loading) {
     return (
@@ -354,6 +412,85 @@ export default function AgentDetail() {
             </div>
           </div>
         </div>
+
+        {/* Running Instances Section (12.2) */}
+        {instances.length > 0 && (
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6 md:p-8 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Package className="h-5 w-5 text-blue-600" />
+                <h2 className="text-base font-semibold text-gray-900">
+                  {language === 'ko' ? 'Docker 인스턴스' : 'Docker Instances'}
+                  {' '}
+                  <span className="text-sm text-gray-600">({instances.length})</span>
+                </h2>
+              </div>
+              <button
+                onClick={handleDeleteAllInstances}
+                disabled={deletingInstances || instances.length === 0}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <Trash2 className="h-4 w-4" />
+                {deletingInstances
+                  ? (language === 'ko' ? '삭제 중...' : 'Deleting...')
+                  : (language === 'ko' ? '모든 인스턴스 삭제' : 'Delete All Instances')}
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              {instances.map((instance) => (
+                <div
+                  key={instance.id}
+                  className="p-4 bg-white rounded-lg border border-blue-200 hover:border-blue-300 transition-colors"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <code className="text-sm font-mono text-gray-900 font-semibold">
+                          {instance.container_name}
+                        </code>
+                        {instance.status === 'running' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-medium">
+                            <CheckCircle className="h-3 w-3" />
+                            Running
+                          </span>
+                        )}
+                        {instance.status === 'starting' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs font-medium">
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Starting
+                          </span>
+                        )}
+                        {instance.status === 'stopped' && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs font-medium">
+                            <XCircle className="h-3 w-3" />
+                            Stopped
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-gray-600">
+                        <div>
+                          <span className="font-medium">Port:</span> {instance.port}
+                        </div>
+                        <div>
+                          <span className="font-medium">Image:</span>{' '}
+                          <code className="text-xs">{instance.docker_image.split('/').pop()}</code>
+                        </div>
+                        <div>
+                          <span className="font-medium">Model:</span> {instance.llm_model || 'N/A'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Started:</span>{' '}
+                          {instance.started_at ? new Date(instance.started_at).toLocaleString() : 'N/A'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* URL Section */}
         <div className="rounded-2xl border border-gray-200 bg-white p-6 md:p-8 mb-6">

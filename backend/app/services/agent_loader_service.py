@@ -91,6 +91,7 @@ class AgentLoaderService:
                 fixed_env_vars[key] = value
 
         # 5. Start container
+        container_info = None
         try:
             container_info = self.docker.start_container(
                 image_name=docker_image,
@@ -107,6 +108,7 @@ class AgentLoaderService:
         actual_agent_name = temp_name  # Default to temp name
         agent_card_registered = False
         container_is_ready = False
+        container_id = container_info["container_id"]
 
         try:
             is_ready = await self._wait_for_container_ready(port, timeout=60)
@@ -131,52 +133,47 @@ class AgentLoaderService:
                     agent_card_registered = True
                     logger.info(f"Successfully registered agent '{actual_agent_name}' from AgentCard")
                 else:
-                    logger.warning(f"Failed to fetch AgentCard, using temp name: {temp_name}")
+                    logger.warning(f"Failed to fetch AgentCard - will clean up container")
             else:
-                logger.warning(f"Container not ready within timeout, using temp name: {temp_name}")
+                logger.warning(f"Container not ready within timeout - will clean up container")
 
         except Exception as e:
             logger.error(f"Error during AgentCard fetch: {e}")
 
-        # 6. Create database record with actual agent name
-        # Note: If AgentCard fetch failed, agent might not exist in DB
-        # So we create a placeholder agent entry if needed
+        # 12.1: If container failed to start properly, clean it up immediately
         if not agent_card_registered:
-            from backend.app.models.agent import AgentModel
-            result = await self.db.execute(
-                select(AgentModel).where(AgentModel.name == temp_name)
+            logger.error(
+                f"Container {container_name} (ID: {container_id[:12]}) failed to start properly. "
+                f"Cleaning up container and aborting instance creation."
             )
-            temp_agent = result.scalar_one_or_none()
 
-            if not temp_agent:
-                # Create placeholder agent
-                temp_agent = AgentModel(
-                    name=temp_name,
-                    agent_card={
-                        "name": temp_name,
-                        "url": f"http://localhost:{port}",
-                        "description": "Temporary agent (AgentCard fetch failed)",
-                        "protocolVersion": "0.3.0",
-                        "version": "0.0.1",
-                        "preferredTransport": "JSONRPC",
-                        "capabilities": {},
-                        "defaultInputModes": ["text/plain"],
-                        "defaultOutputModes": ["text/plain"],
-                        "skills": []
-                    }
-                )
-                self.db.add(temp_agent)
-                await self.db.commit()
-                logger.info(f"Created placeholder agent: {temp_name}")
+            # Stop and remove the failed container
+            try:
+                self.docker.stop_container(container_id, timeout=5)
+                logger.info(f"Stopped failed container: {container_id[:12]}")
+            except Exception as e:
+                logger.warning(f"Failed to stop container {container_id[:12]}: {e}")
 
-        # Set status based on container readiness
-        initial_status = "running" if container_is_ready else "starting"
+            try:
+                self.docker.remove_container(container_id)
+                logger.info(f"Removed failed container: {container_id[:12]}")
+            except Exception as e:
+                logger.warning(f"Failed to remove container {container_id[:12]}: {e}")
+
+            # Raise an error to indicate failure
+            raise RuntimeError(
+                f"Failed to start agent container: AgentCard could not be fetched. "
+                f"Container {container_name} has been removed."
+            )
+
+        # Set status to "running" since we only reach here if agent_card_registered is True
+        initial_status = "running"
 
         instance = AgentInstanceModel(
             id=instance_id,
             agent_name=actual_agent_name,
             docker_image=docker_image,
-            container_id=container_info["container_id"],
+            container_id=container_id,
             container_name=container_name,
             port=port,
             internal_port=internal_port,
