@@ -249,7 +249,7 @@ export default function AgentDetail() {
 
       // Delete all instances
       const deletePromises = instances.map(instance =>
-        agentLoaderApi.deleteInstance(instance.id)
+        agentLoaderApi.deleteInstance(instance.instance_id)
       );
 
       await Promise.all(deletePromises);
@@ -440,7 +440,7 @@ export default function AgentDetail() {
             <div className="space-y-3">
               {instances.map((instance) => (
                 <div
-                  key={instance.id}
+                  key={instance.instance_id}
                   className="p-4 bg-white rounded-lg border border-blue-200 hover:border-blue-300 transition-colors"
                 >
                   <div className="flex items-start justify-between">

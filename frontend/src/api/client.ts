@@ -108,7 +108,7 @@ export interface ChatMessage {
 
 // Agent Loader API types
 export interface AgentInstance {
-  id: string;
+  instance_id: string;  // Changed from 'id' to match backend schema
   agent_name: string;
   docker_image: string;
   container_id: string;
