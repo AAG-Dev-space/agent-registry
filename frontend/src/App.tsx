@@ -5,7 +5,6 @@ import AgentList from './pages/AgentList';
 import AgentDetail from './pages/AgentDetail';
 import AgentWorkbench from './pages/AgentWorkbench';
 import Statistics from './pages/Statistics';
-import RegisterAgent from './pages/RegisterAgent';
 import DockerImages from './pages/DockerImages';
 import Health from './pages/Health';
 import GettingStarted from './pages/wiki/GettingStarted';
@@ -27,7 +26,6 @@ function App() {
             <Route path="wiki/getting-started" element={<GettingStarted />} />
             <Route path="wiki/roadmap" element={<Roadmap />} />
             <Route path="wiki/terms-and-specs" element={<TermsAndSpecs />} />
-            <Route path="register" element={<RegisterAgent />} />
             <Route path="health" element={<Health />} />
           </Route>
         </Routes>

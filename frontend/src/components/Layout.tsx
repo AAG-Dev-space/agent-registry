@@ -37,14 +37,6 @@ export default function Layout() {
                 Agents
               </Link>
               <Link
-                to="/docker-images"
-                className={`text-sm font-medium transition-colors ${
-                  isActive('/docker-images') ? 'text-gray-900' : 'text-gray-700 hover:text-brand-500'
-                }`}
-              >
-                Docker Images
-              </Link>
-              <Link
                 to="/statistics"
                 className={`text-sm font-medium transition-colors ${
                   isActive('/statistics') ? 'text-gray-900' : 'text-gray-700 hover:text-brand-500'
@@ -99,10 +91,10 @@ export default function Layout() {
                 )}
               </div>
               <Link
-                to="/register"
-                className="inline-flex items-center justify-center rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-theme-xs hover:text-brand-600 transition-colors"
+                to="/docker-images"
+                className="inline-flex items-center justify-center rounded-lg bg-brand-500 px-4 py-2 text-sm font-medium text-white shadow-theme-xs hover:bg-brand-600 transition-colors"
               >
-                Submit Agent
+                Docker Images
               </Link>
             </nav>
           </div>
