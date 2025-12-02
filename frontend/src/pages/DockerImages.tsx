@@ -87,7 +87,8 @@ export default function DockerImages() {
       setStartingAgent(true);
       setStartError(null);
 
-      const dockerImage = `localhost:5000/${selectedImage.repository}:${selectedImage.tag}`;
+      // Use host.docker.internal:5100 for Harbor (Docker host access)
+      const dockerImage = `host.docker.internal:5100/${selectedImage.repository}:${selectedImage.tag}`;
 
       await agentLoaderApi.startInstance({
         docker_image: dockerImage,
@@ -158,8 +159,8 @@ export default function DockerImages() {
                 <p className="text-error-700 font-medium">{error}</p>
                 <p className="text-error-600 text-sm mt-1">
                   {language === 'ko'
-                    ? 'Docker Registry가 실행 중인지 확인하세요 (http://localhost:5000)'
-                    : 'Make sure Docker Registry is running (http://localhost:5000)'}
+                    ? 'Harbor Registry가 실행 중인지 확인하세요 (http://localhost:5100)'
+                    : 'Make sure Harbor Registry is running (http://localhost:5100)'}
                 </p>
               </div>
             </div>
@@ -253,7 +254,7 @@ export default function DockerImages() {
                     {language === 'ko' ? '선택한 이미지:' : 'Selected Image:'}
                   </p>
                   <code className="text-sm text-gray-900 font-mono break-all">
-                    localhost:5000/{selectedImage.repository}:{selectedImage.tag}
+                    localhost:5100/{selectedImage.repository}:{selectedImage.tag}
                   </code>
                 </div>
 

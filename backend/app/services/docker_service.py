@@ -1,12 +1,17 @@
 """Docker service for managing agent containers."""
 
 import logging
+import os
 from typing import Any, Dict, List, Optional
 
 import docker
 from docker.errors import APIError, DockerException, ImageNotFound, NotFound
 
 logger = logging.getLogger(__name__)
+
+# Docker Registry credentials from environment variables
+DOCKER_REGISTRY_USERNAME = os.getenv("DOCKER_REGISTRY_USERNAME", "")
+DOCKER_REGISTRY_PASSWORD = os.getenv("DOCKER_REGISTRY_PASSWORD", "")
 
 
 class DockerService:
@@ -25,7 +30,7 @@ class DockerService:
         """Pull Docker image from registry.
 
         Args:
-            image_name: Full image name (e.g., localhost:5000/personalized-shopping:v1.4.1)
+            image_name: Full image name (e.g., host.docker.internal:5100/agent-images/personalized-shopping:v1.7.0)
 
         Returns:
             Dict containing image information:
@@ -39,7 +44,18 @@ class DockerService:
         """
         try:
             logger.info(f"Pulling image: {image_name}")
-            image = self.client.images.pull(image_name)
+
+            # Prepare authentication config if credentials are available
+            auth_config = None
+            if DOCKER_REGISTRY_USERNAME and DOCKER_REGISTRY_PASSWORD:
+                auth_config = {
+                    'username': DOCKER_REGISTRY_USERNAME,
+                    'password': DOCKER_REGISTRY_PASSWORD
+                }
+                logger.info(f"Using registry authentication for user: {DOCKER_REGISTRY_USERNAME}")
+
+            # Pull image with authentication
+            image = self.client.images.pull(image_name, auth_config=auth_config)
 
             result = {
                 "image_id": image.id,
