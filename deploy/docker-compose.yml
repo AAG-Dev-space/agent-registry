@@ -43,9 +43,9 @@ services:
       # Mount Docker socket for agent loader to manage containers
       - /var/run/docker.sock:/var/run/docker.sock
     extra_hosts:
-      # Allow backend container to access host network and Harbor
+      # Allow backend container to access host network and Harbor as localhost
       - "host.docker.internal:host-gateway"
-      - "harbor.local:host-gateway"
+      - "localhost:host-gateway"
     networks:
       - a2a-network
     depends_on:
