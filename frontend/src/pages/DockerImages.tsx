@@ -87,8 +87,8 @@ export default function DockerImages() {
       setStartingAgent(true);
       setStartError(null);
 
-      // Use host.docker.internal:5100 for Harbor (Docker host access)
-      const dockerImage = `host.docker.internal:5100/${selectedImage.repository}:${selectedImage.tag}`;
+      // Use localhost:5100 for Harbor (mapped via extra_hosts)
+      const dockerImage = `localhost:5100/${selectedImage.repository}:${selectedImage.tag}`;
 
       await agentLoaderApi.startInstance({
         docker_image: dockerImage,

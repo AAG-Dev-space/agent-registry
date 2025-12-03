@@ -58,14 +58,16 @@ docker compose up -d
 
 ```bash
 # deploy/.env
-DOCKER_REGISTRY_URL=http://host.docker.internal:5000  # Private Docker Registry URL
+DOCKER_REGISTRY_URL=http://localhost:5100  # Private Docker Registry URL (Harbor)
 ```
 
 **지원 레지스트리:**
-- Harbor: `https://harbor.company.com`
+- Harbor: `http://localhost:5100` or `https://harbor.company.com`
 - GCR: `https://gcr.io/your-project`
 - Docker Hub: `https://registry-1.docker.io`
-- Local: `http://host.docker.internal:5000`
+- Local: `http://localhost:5000`
+
+**참고**: Harbor와 같이 hostname 검증을 하는 레지스트리는 `localhost`를 사용합니다 (`host.docker.internal` 대신).
 
 ## 📖 사용 방법
 

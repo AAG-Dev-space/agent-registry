@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/docker-registry", tags=["docker-registry"])
 
 # Docker Registry URL (can be configured via environment variable)
-DOCKER_REGISTRY_URL = os.getenv("DOCKER_REGISTRY_URL", "http://host.docker.internal:5000")
+DOCKER_REGISTRY_URL = os.getenv("DOCKER_REGISTRY_URL", "http://localhost:5000")
 DOCKER_REGISTRY_USERNAME = os.getenv("DOCKER_REGISTRY_USERNAME", "")
 DOCKER_REGISTRY_PASSWORD = os.getenv("DOCKER_REGISTRY_PASSWORD", "")
 

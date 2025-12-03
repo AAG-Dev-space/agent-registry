@@ -30,7 +30,7 @@ class DockerService:
         """Pull Docker image from registry.
 
         Args:
-            image_name: Full image name (e.g., host.docker.internal:5100/agent-images/personalized-shopping:v1.7.0)
+            image_name: Full image name (e.g., localhost:5100/agent-images/personalized-shopping:v1.7.0)
 
         Returns:
             Dict containing image information:
