@@ -6,8 +6,9 @@ Provides proxy access to private Docker Registry.
 
 import httpx
 import os
+import base64
 from fastapi import APIRouter, HTTPException, status
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import logging
 
 logger = logging.getLogger(__name__)
@@ -16,6 +17,22 @@ router = APIRouter(prefix="/docker-registry", tags=["docker-registry"])
 
 # Docker Registry URL (can be configured via environment variable)
 DOCKER_REGISTRY_URL = os.getenv("DOCKER_REGISTRY_URL", "http://host.docker.internal:5000")
+DOCKER_REGISTRY_USERNAME = os.getenv("DOCKER_REGISTRY_USERNAME", "")
+DOCKER_REGISTRY_PASSWORD = os.getenv("DOCKER_REGISTRY_PASSWORD", "")
+
+
+def get_auth_headers() -> Dict[str, str]:
+    """Get authentication headers for Docker Registry API.
+
+    Returns:
+        Dict with Authorization header if credentials are provided, empty dict otherwise
+    """
+    if DOCKER_REGISTRY_USERNAME and DOCKER_REGISTRY_PASSWORD:
+        # Docker Registry uses Basic Auth
+        credentials = f"{DOCKER_REGISTRY_USERNAME}:{DOCKER_REGISTRY_PASSWORD}"
+        encoded = base64.b64encode(credentials.encode()).decode()
+        return {"Authorization": f"Basic {encoded}"}
+    return {}
 
 
 @router.get("/repositories", response_model=Dict[str, List[str]])
@@ -31,10 +48,23 @@ async def list_repositories():
         }
     """
     try:
+        headers = get_auth_headers()
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(f"{DOCKER_REGISTRY_URL}/v2/_catalog")
+            response = await client.get(f"{DOCKER_REGISTRY_URL}/v2/_catalog", headers=headers)
             response.raise_for_status()
             return response.json()
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 401:
+            logger.error("Docker Registry authentication failed")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Docker Registry authentication failed. Check DOCKER_REGISTRY_USERNAME and DOCKER_REGISTRY_PASSWORD."
+            )
+        logger.error(f"Failed to fetch repositories from Docker Registry: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Cannot reach Docker Registry: {str(e)}"
+        )
     except httpx.HTTPError as e:
         logger.error(f"Failed to fetch repositories from Docker Registry: {e}")
         raise HTTPException(
@@ -60,11 +90,18 @@ async def list_tags(repository: str):
         }
     """
     try:
+        headers = get_auth_headers()
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(f"{DOCKER_REGISTRY_URL}/v2/{repository}/tags/list")
+            response = await client.get(f"{DOCKER_REGISTRY_URL}/v2/{repository}/tags/list", headers=headers)
             response.raise_for_status()
             return response.json()
     except httpx.HTTPStatusError as e:
+        if e.response.status_code == 401:
+            logger.error("Docker Registry authentication failed")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Docker Registry authentication failed. Check credentials."
+            )
         if e.response.status_code == 404:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -110,19 +147,24 @@ async def list_all_images():
         repositories = repositories_data.get("repositories", [])
 
         # Get tags for each repository
+        headers = get_auth_headers()
         images = []
         async with httpx.AsyncClient(timeout=10.0) as client:
             for repo in repositories:
                 try:
-                    response = await client.get(f"{DOCKER_REGISTRY_URL}/v2/{repo}/tags/list")
+                    response = await client.get(f"{DOCKER_REGISTRY_URL}/v2/{repo}/tags/list", headers=headers)
                     response.raise_for_status()
                     data = response.json()
                     tags = data.get("tags") or []
 
+                    # Extract hostname from DOCKER_REGISTRY_URL (e.g., http://host.docker.internal:5100 -> host.docker.internal:5100)
+                    registry_host = DOCKER_REGISTRY_URL.replace("http://", "").replace("https://", "")
+
                     images.append({
                         "repository": repo,
                         "tags": sorted(tags, reverse=True),  # Latest tags first
-                        "image_count": len(tags)
+                        "image_count": len(tags),
+                        "registry_url": registry_host  # Add registry URL for Frontend
                     })
                 except httpx.HTTPError as e:
                     logger.warning(f"Failed to fetch tags for {repo}: {e}")

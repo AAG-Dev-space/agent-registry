@@ -399,14 +399,14 @@ class AgentLoaderService:
 
     async def find_available_port(
         self,
-        start_port: int = 8000,
-        end_port: int = 8999,
+        start_port: int = 14000,
+        end_port: int = 14999,
     ) -> int:
         """Find an available port in the specified range.
 
         Args:
-            start_port: Start of port range
-            end_port: End of port range
+            start_port: Start of port range (default: 14000)
+            end_port: End of port range (default: 14999)
 
         Returns:
             Available port number

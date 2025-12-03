@@ -37,6 +37,8 @@ services:
       - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       - DOCKER_REGISTRY_URL=${DOCKER_REGISTRY_URL:-http://host.docker.internal:5000}
+      - DOCKER_REGISTRY_USERNAME
+      - DOCKER_REGISTRY_PASSWORD
     volumes:
       # Mount Docker socket for agent loader to manage containers
       - /var/run/docker.sock:/var/run/docker.sock
