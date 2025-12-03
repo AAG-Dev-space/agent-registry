@@ -79,16 +79,9 @@ class AgentLoaderService:
             logger.error(f"Failed to pull image {docker_image}: {e}")
             raise
 
-        # 4. Fix localhost URLs in env_vars to use host.docker.internal
-        fixed_env_vars = {}
-        for key, value in env_vars.items():
-            if isinstance(value, str) and "localhost" in value:
-                # Replace localhost with host.docker.internal for container network access
-                fixed_value = value.replace("localhost", "host.docker.internal")
-                fixed_env_vars[key] = fixed_value
-                logger.info(f"Fixed env var {key}: {value} -> {fixed_value}")
-            else:
-                fixed_env_vars[key] = value
+        # 4. No need to fix localhost URLs - agent containers can access localhost directly
+        # via extra_hosts mapping (localhost:host-gateway)
+        fixed_env_vars = env_vars
 
         # 5. Start container
         container_info = None
@@ -505,8 +498,8 @@ class AgentLoaderService:
         Returns:
             True if container is ready, False if timeout
         """
-        # Use host.docker.internal to access host ports from within container
-        agent_card_url = f"http://host.docker.internal:{port}/.well-known/agent-card.json"
+        # Use localhost to access host ports from within registry backend container
+        agent_card_url = f"http://localhost:{port}/.well-known/agent-card.json"
         start_time = time.time()
 
         logger.info(f"Waiting for container to be ready on port {port}...")
@@ -536,8 +529,8 @@ class AgentLoaderService:
         Returns:
             AgentCard dictionary if successful, None otherwise
         """
-        # Use host.docker.internal to access host ports from within container
-        agent_card_url = f"http://host.docker.internal:{port}/.well-known/agent-card.json"
+        # Use localhost to access host ports from within registry backend container
+        agent_card_url = f"http://localhost:{port}/.well-known/agent-card.json"
 
         try:
             async with httpx.AsyncClient(timeout=10.0) as client:
@@ -574,12 +567,12 @@ class AgentLoaderService:
         """
         try:
             # Add agent_card_url to the card for future syncs
-            # Use host.docker.internal to access host ports from within container
-            agent_card_url = f"http://host.docker.internal:{port}/.well-known/agent-card.json"
+            # Use localhost to access host ports from within registry backend container
+            agent_card_url = f"http://localhost:{port}/.well-known/agent-card.json"
             agent_card["agent_card_url"] = agent_card_url
 
             # Update the agent URL to match the current port
-            agent_card["url"] = f"http://host.docker.internal:{port}"
+            agent_card["url"] = f"http://localhost:{port}"
 
             # Register agent in database
             from backend.app.services.agent_service import AgentService

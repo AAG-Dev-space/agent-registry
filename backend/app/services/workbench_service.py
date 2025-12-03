@@ -239,7 +239,7 @@ class WorkbenchService:
 
         # Connect to agent via JSONRPC (ADK A2A Protocol)
         try:
-            agent_url = f"http://host.docker.internal:{instance.port}"
+            agent_url = f"http://localhost:{instance.port}"
             logger.info(f"Connecting to agent at {agent_url}")
 
             # Send message to agent via JSONRPC and capture trace

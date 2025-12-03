@@ -110,7 +110,10 @@ class DockerService:
                 name=container_name,
                 ports=ports,
                 environment=env_vars,
-                extra_hosts={"host.docker.internal": "host-gateway"},
+                extra_hosts={
+                    "host.docker.internal": "host-gateway",
+                    "localhost": "host-gateway"  # Allow agent to access host services via localhost
+                },
                 detach=True,
                 remove=False,  # Don't auto-remove so we can inspect logs
             )
