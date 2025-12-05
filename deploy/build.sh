@@ -14,12 +14,16 @@ ROOT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$ROOT_DIR"
 
 echo ""
-echo "[1/2] Backend 이미지 빌드 중..."
+echo "[1/3] Backend 이미지 빌드 중..."
 docker build -f deploy/Dockerfile.backend -t a2a-registry-backend:latest .
 
 echo ""
-echo "[2/2] Frontend 이미지 빌드 중..."
+echo "[2/3] Frontend 이미지 빌드 중..."
 docker build -f deploy/Dockerfile.frontend -t a2a-registry-frontend:latest .
+
+echo ""
+echo "[3/3] CopilotKit Workbench 이미지 빌드 중..."
+docker build -f copilot-workbench/Dockerfile -t a2a-registry-copilot-workbench:latest copilot-workbench
 
 echo ""
 echo "========================================="

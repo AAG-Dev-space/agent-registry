@@ -78,6 +78,29 @@ services:
       retries: 3
       start_period: 5s
 
+  copilot-workbench:
+    build:
+      context: ../copilot-workbench
+      dockerfile: Dockerfile
+    image: a2a-registry-copilot-workbench:latest
+    container_name: a2a-registry-copilot-workbench
+    restart: unless-stopped
+    ports:
+      - "7602:7602"
+    environment:
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - a2a-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:7602/"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
 networks:
   a2a-network:
     driver: bridge

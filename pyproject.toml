@@ -44,6 +44,8 @@ dependencies = [
     "redis>=5.0.0",
     "pyyaml>=6.0.0",
     "apscheduler>=3.10.0",
+    # CopilotKit Python SDK
+    "copilotkit>=0.1.0",
     # PostgreSQL dependencies
     "sqlalchemy[asyncio]>=2.0.0",
     "asyncpg>=0.29.0",

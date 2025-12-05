@@ -13,13 +13,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY pyproject.toml ./
 COPY backend ./backend
 
+# Copy AG-UI SDK
+COPY ag-ui-sdk /build/ag-ui-sdk
+
 # Install dependencies in a virtual environment
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install the package dependencies
+# Install AG-UI SDK first
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir .
+    pip install --no-cache-dir /build/ag-ui-sdk
+
+# Install the package dependencies
+RUN pip install --no-cache-dir .
 
 # Stage 2: Runtime
 FROM python:3.11-slim

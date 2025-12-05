@@ -22,10 +22,12 @@ Docker Registry 기반 AI 에이전트 배포 및 관리 시스템입니다.
 - **로그 조회**: 컨테이너 로그 실시간 확인
 - **버전 업데이트**: 같은 Agent의 새 버전 배포 시 자동 교체
 
-### 3. Agent Workbench (Playground)
-- **실시간 대화 테스트**: JSONRPC 기반 A2A Protocol 통신
-- **세션 관리**: 대화 세션 저장 및 재사용
-- **메시지 히스토리**: 전체 대화 내역 조회
+### 3. CopilotKit Workbench (Interactive Chat UI)
+- **CopilotKit 통합**: 현대적인 채팅 UI로 Agent와 대화
+- **AG-UI Protocol 지원**: SSE 스트리밍 기반 실시간 통신
+- **세션 관리**: 대화 저장 및 이어가기
+- **Recent Sessions**: 최근 5개 세션 빠른 접근
+- **히스토리 복원**: 이전 대화 클릭 시 전체 내역 자동 표시
 
 ### 4. 외부 Agent 등록 (API)
 - **URL 기반 등록**: AgentCard URL 제공 시 자동 등록
@@ -51,6 +53,7 @@ docker compose up -d
 # 4. 서비스 접근
 # Frontend: http://localhost:7600
 # Backend API: http://localhost:7601
+# CopilotKit Workbench: http://localhost:7602
 # API Docs: http://localhost:7601/docs
 ```
 
@@ -83,12 +86,23 @@ DOCKER_REGISTRY_URL=http://localhost:5100  # Private Docker Registry URL (Harbor
 5. **시작** 클릭
 6. Agent가 자동으로 컨테이너에 배포되고 Registry에 등록됨
 
-### 2. Agent Workbench에서 테스트
+### 2. CopilotKit Workbench에서 Agent 테스트
 
-1. Agent 목록에서 Agent 클릭
-2. **Open Workbench** 버튼 클릭
-3. 메시지 입력 후 Enter 또는 **전송** 클릭
-4. Agent 응답 확인
+1. **Agent 상세 페이지 접근**
+   - Agent 목록에서 Agent 클릭
+
+2. **Workbench 열기**
+   - **Workbench 열기** 버튼 클릭
+   - 모달 창에서 CopilotKit 채팅 UI 표시
+
+3. **대화하기**
+   - 메시지 입력 후 Enter
+   - Agent가 실시간으로 응답 (SSE 스트리밍)
+
+4. **세션 관리**
+   - **New Chat**: 새 대화 시작
+   - **Recent Sessions**: 이전 대화 클릭하여 이어가기
+   - 대화 히스토리 자동 복원
 
 ### 3. Agent 삭제
 
@@ -119,27 +133,34 @@ DOCKER_REGISTRY_URL=http://localhost:5100  # Private Docker Registry URL (Harbor
 | `DELETE` | `/api/v1/agent-loader/instances/{id}` | 인스턴스 삭제 |
 | `GET` | `/api/v1/agent-loader/instances/{id}/logs` | 컨테이너 로그 조회 |
 
-### Workbench (Playground)
+### Workbench (CopilotKit + AG-UI)
 | Method | Endpoint | 설명 |
 |--------|----------|------|
-| `POST` | `/api/v1/workbench/sessions` | 세션 생성 |
-| `POST` | `/api/v1/workbench/sessions/{id}/messages` | 메시지 전송 |
+| `POST` | `/api/v1/agui/run` | AG-UI 프로토콜 엔드포인트 (SSE) |
+| `GET` | `/api/v1/workbench/agents/{name}/sessions` | Agent별 세션 목록 |
 | `GET` | `/api/v1/workbench/sessions/{id}/history` | 대화 히스토리 조회 |
 | `DELETE` | `/api/v1/workbench/sessions/{id}` | 세션 삭제 |
+
+**CopilotKit Workbench**: http://localhost:7602/workbench/{agentName}
 
 **자세한 API 문서**: http://localhost:7601/docs
 
 ## 🏗️ 아키텍처
 
 ```
-┌─────────────────┐
-│  React Frontend │  ← Docker Images UI, Agent List, Workbench
-└────────┬────────┘
-         │ REST API
-         ▼
-┌─────────────────┐
-│  FastAPI Backend│  ← Agent Loader, Workbench, Registry
-└────────┬────────┘
+┌─────────────────┐      ┌──────────────────┐
+│  React Frontend │      │ CopilotKit UI    │
+│  (Agent List)   │      │  (Workbench)     │
+└────────┬────────┘      └────────┬─────────┘
+         │                        │
+         │ REST API               │ GraphQL → AG-UI (SSE)
+         ▼                        ▼
+┌──────────────────────────────────────────┐
+│         FastAPI Backend                  │
+│  - Agent Loader (Docker 관리)            │
+│  - AG-UI Protocol (SSE 스트리밍)          │
+│  - Workbench Sessions (대화 저장)        │
+└────────┬─────────────────────────────────┘
          │
     ┌────┴─────┬──────────────┐
     ▼          ▼              ▼
@@ -176,24 +197,31 @@ ssai_agent_registry/
 │   └── src/
 │       ├── pages/
 │       │   ├── AgentList.tsx         # Agent 목록
-│       │   ├── AgentDetail.tsx       # Agent 상세
-│       │   ├── AgentWorkbench.tsx    # Playground
+│       │   ├── AgentDetail.tsx       # Agent 상세 + Workbench 모달
 │       │   ├── DockerImages.tsx      # Docker Images
 │       │   └── wiki/                 # 문서
 │       └── api/client.ts             # API 클라이언트
 │
+├── copilot-workbench/          # CopilotKit Workbench (Next.js)
+│   ├── app/
+│   │   ├── api/copilotkit/     # GraphQL → AG-UI 브릿지
+│   │   └── workbench/[agentName]/ # 채팅 UI + 세션 관리
+│   ├── middleware.ts           # Backend API 프록시
+│   └── Dockerfile
+│
 └── deploy/
-    ├── docker-compose.yml      # 서비스 오케스트레이션
+    ├── docker-compose.yml      # 3개 서비스 (backend, frontend, copilot-workbench)
     ├── Dockerfile.backend
     ├── Dockerfile.frontend
-    ├── build.sh                # 빌드 스크립트
+    ├── build.sh                # 통합 빌드 스크립트
     └── .env.example            # 환경 변수 예시
 ```
 
 ## 🔧 기술 스택
 
-**Backend**: FastAPI, SQLAlchemy, PostgreSQL, Docker SDK, httpx, APScheduler
+**Backend**: FastAPI, SQLAlchemy, PostgreSQL, Docker SDK, httpx, APScheduler, AG-UI Protocol
 **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, React Router
+**CopilotKit Workbench**: Next.js 15, CopilotKit, @ag-ui/client, TypeScript
 **Infrastructure**: Docker Compose, Nginx, pgvector
 
 ## 🛠️ 관리 명령어
@@ -202,9 +230,11 @@ ssai_agent_registry/
 # 로그 확인
 docker compose logs -f backend
 docker compose logs -f frontend
+docker compose logs -f copilot-workbench
 
 # 서비스 재시작
 docker compose restart backend
+docker compose restart copilot-workbench
 
 # 데이터베이스 백업
 cd deploy

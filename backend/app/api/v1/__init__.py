@@ -6,6 +6,7 @@ from .agents import router as agents_router
 from .agent_loader import router as agent_loader_router
 from .workbench import router as workbench_router
 from .docker_registry import router as docker_registry_router
+from .agui_workbench import router as agui_workbench_router
 
 # Create main API v1 router
 api_router = APIRouter(prefix="/api/v1")
@@ -15,5 +16,6 @@ api_router.include_router(agents_router)
 api_router.include_router(agent_loader_router)
 api_router.include_router(workbench_router)
 api_router.include_router(docker_registry_router)
+api_router.include_router(agui_workbench_router)
 
 __all__ = ["api_router"]

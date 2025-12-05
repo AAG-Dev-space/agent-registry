@@ -17,6 +17,7 @@ export default function AgentDetail() {
   const [deleting, setDeleting] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteToken, setDeleteToken] = useState('');
+  const [showWorkbenchModal, setShowWorkbenchModal] = useState(false);
 
   // Instance states
   const [instances, setInstances] = useState<AgentInstance[]>([]);
@@ -35,6 +36,18 @@ export default function AgentDetail() {
       loadAgent();
     }
   }, [agentId]);
+
+  // Listen for messages from iframe to close workbench modal
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data.type === 'CLOSE_WORKBENCH') {
+        setShowWorkbenchModal(false);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, []);
 
   const loadAgent = async () => {
     if (!agentId) return;
@@ -345,8 +358,8 @@ export default function AgentDetail() {
             {/* Action Buttons */}
             <div className="flex flex-col gap-2 ml-4">
               <button
-                onClick={() => navigate(`/workbench/${encodeURIComponent(agent.name)}`)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
+                onClick={() => setShowWorkbenchModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-sm font-medium transition-colors shadow-sm"
               >
                 <MessageSquare className="h-4 w-4" />
                 {language === 'ko' ? 'Workbench 열기' : 'Open Workbench'}
@@ -923,6 +936,38 @@ export default function AgentDetail() {
               </div>
             </div>
         </div>
+
+      {/* Workbench Modal */}
+      {showWorkbenchModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
+          <div className="bg-white rounded-2xl w-full h-full max-w-[98vw] max-h-[98vh] flex flex-col shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-purple-600" />
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {agent.name} - Workbench
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowWorkbenchModal(false)}
+                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="h-5 w-5 text-gray-500" />
+              </button>
+            </div>
+
+            {/* Iframe Content */}
+            <div className="flex-1 overflow-hidden">
+              <iframe
+                src={`http://localhost:7602/workbench/${encodeURIComponent(agent.name)}`}
+                className="w-full h-full border-0"
+                title="CopilotKit Workbench"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Token Modal */}
       {showDeleteModal && (
