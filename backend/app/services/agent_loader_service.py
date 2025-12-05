@@ -79,9 +79,10 @@ class AgentLoaderService:
             logger.error(f"Failed to pull image {docker_image}: {e}")
             raise
 
-        # 4. No need to fix localhost URLs - agent containers can access localhost directly
-        # via extra_hosts mapping (localhost:host-gateway)
-        fixed_env_vars = env_vars
+        # 4. Add PORT and HOST environment variables to ensure agent listens on correct port
+        fixed_env_vars = env_vars.copy()
+        fixed_env_vars["PORT"] = str(internal_port)
+        fixed_env_vars["HOST"] = "0.0.0.0"
 
         # 5. Start container
         container_info = None
