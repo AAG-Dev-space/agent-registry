@@ -781,7 +781,7 @@ export default function AgentDetail() {
             {/* Iframe Content */}
             <div className="flex-1 overflow-hidden">
               <iframe
-                src={`http://localhost:7602/workbench/${encodeURIComponent(agent.name)}`}
+                src={`${window.location.protocol}//${window.location.hostname}:7602/workbench/${encodeURIComponent(agent.name)}`}
                 className="w-full h-full border-0"
                 title="CopilotKit Workbench"
               />
