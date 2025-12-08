@@ -30,6 +30,9 @@ class ChatSessionModel(Base):
         index=True
     )
 
+    # Context ID for conversation context (persistent across messages)
+    context_id = Column(String(36), nullable=True)  # UUID for A2A conversation context tracking
+
     # Timestamps
     created_at = Column(DateTime, default=utc_now, nullable=False)
     last_message_at = Column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)

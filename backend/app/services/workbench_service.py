@@ -195,10 +195,18 @@ class WorkbenchService:
         Raises:
             ValueError: If session not found or agent instance not available
         """
+        logger.info(f"[SEND_MESSAGE] Called with session_id={session_id}, content='{content[:50]}...'")
+
         # Get session
         session = await self.get_session(session_id)
         if not session:
             raise ValueError(f"Session '{session_id}' not found")
+
+        # Ensure session has a context_id for conversation context tracking
+        if not session.context_id:
+            session.context_id = str(uuid.uuid4())
+            await self.db.commit()
+            logger.info(f"Created new context_id for session: {session.context_id}")
 
         # Save user message
         user_message = ChatMessageModel(
@@ -242,10 +250,13 @@ class WorkbenchService:
             agent_url = f"http://localhost:{instance.port}"
             logger.info(f"Connecting to agent at {agent_url}")
 
+            # Get conversation history (exclude current message)
+            history_msgs = await self.get_history(session_id)
+
             # Send message to agent via JSONRPC and capture trace
             msg_id = str(uuid.uuid4())
             response, trace = await self._invoke_agent_via_jsonrpc(
-                agent_url, content, msg_id, agent_name=session.agent_name
+                agent_url, content, msg_id, agent_name=session.agent_name, history=history_msgs, context_id=session.context_id
             )
 
             # Save agent response with trace data
@@ -292,21 +303,21 @@ class WorkbenchService:
         return user_message, agent_message
 
     async def _invoke_agent_via_jsonrpc(
-        self, agent_url: str, message: str, message_id: str, agent_name: str = "unknown"
+        self, agent_url: str, message: str, message_id: str, agent_name: str = "unknown", history: List[ChatMessageModel] = None, context_id: str = None
     ) -> tuple[str, List[Dict[str, Any]]]:
         """Invoke remote ADK agent via JSONRPC protocol with trace capture.
 
-        Based on ADK's A2A protocol implementation, sends a JSONRPC request
-        to the agent's endpoint with the message format:
+        Based on A2A Protocol v0.3.0, sends a JSONRPC request to the agent's
+        endpoint with the message format:
         {
           "jsonrpc": "2.0",
           "method": "message/send",
           "params": {
             "message": {
-              "messageId": "...",
               "role": "user",
               "parts": [{"text": "..."}]
-            }
+            },
+            "history": [...]  // Optional: previous conversation messages
           },
           "id": "..."
         }
@@ -316,6 +327,7 @@ class WorkbenchService:
             message: User message text
             message_id: Unique message ID
             agent_name: Name of the agent for trace events
+            history: Optional list of previous ChatMessageModel objects
 
         Returns:
             tuple[str, List[Dict]]: (response_text, trace_events)
@@ -337,20 +349,68 @@ class WorkbenchService:
         trace_events.append(agent_start_event)
 
         try:
+            # Build message object (required by ADK)
+            message_obj = {
+                "messageId": message_id,
+                "role": "user",
+                "parts": [{"text": message}],
+            }
+
+            # Add contextId to message if provided (for conversation context tracking)
+            if context_id:
+                message_obj["contextId"] = context_id
+                logger.info(f"Adding contextId to message: {context_id}")
+
+            # Build task object with history (A2A Protocol format)
+            # Generate NEW taskId for each message (not reuse context_id)
+            task_id_for_task = str(uuid.uuid4())
+            task = {
+                "id": task_id_for_task,
+                "input": message_obj,
+            }
+
+            # Add contextId to task (for conversation context tracking)
+            if context_id:
+                task["contextId"] = context_id
+                logger.info(f"Using contextId for conversation: {context_id}, new taskId: {task_id_for_task}")
+
+            # Add history if provided (A2A Protocol 9.2 format)
+            if history:
+                history_list = []
+                for msg in history:
+                    # Exclude the current message from history to avoid duplication
+                    if msg.message_id == message_id:
+                        continue
+
+                    # Convert ChatMessageModel to A2A Message format
+                    if msg.role in ["user", "agent"]:
+                        history_msg = {
+                            "messageId": msg.message_id,
+                            "role": msg.role,
+                            "parts": [{"text": msg.content.get("text", "")}]
+                        }
+                        # Add contextId to history messages
+                        if context_id:
+                            history_msg["contextId"] = context_id
+                        history_list.append(history_msg)
+
+                if history_list:
+                    task["history"] = history_list
+                    logger.info(f"Including {len(history_list)} messages in history with contextId")
+
+            # Wrap in JSONRPC request format (ADK expects both message and task in params)
             jsonrpc_request = {
                 "jsonrpc": "2.0",
                 "method": "message/send",
                 "params": {
-                    "message": {
-                        "messageId": message_id,
-                        "role": "user",
-                        "parts": [{"text": message}],
-                    }
+                    "message": message_obj,
+                    "task": task
                 },
                 "id": message_id,
             }
 
-            logger.info(f"Sending JSONRPC request to {agent_url}: {jsonrpc_request}")
+            logger.info(f"Sending JSONRPC request to {agent_url}")
+            logger.info(f"JSONRPC request body: {jsonrpc_request}")
 
             # Event 2: LLM Request (mock - we don't know exact timing, so we estimate)
             llm_request_time = time.time()

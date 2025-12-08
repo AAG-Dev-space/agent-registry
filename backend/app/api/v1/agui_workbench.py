@@ -86,7 +86,8 @@ async def agui_run_agent(
             detail="Missing agent name (X-Agent-Name header, 'agent' query param, or 'agent_name' in body)"
         )
 
-    logger.info(f"AG-UI request for agent: {agent_name}")
+    logger.info(f"[AG-UI ENDPOINT] Request for agent: {agent_name}, thread_id: {thread_id}, {len(messages)} messages")
+    print(f"[AG-UI ENDPOINT] Request for agent: {agent_name}, thread_id: {thread_id}, {len(messages)} messages", flush=True)
 
     service = WorkbenchService(db)
 
@@ -103,6 +104,8 @@ async def agui_run_agent(
 
     async def event_generator():
         """Generate AG-UI events from A2A agent interaction."""
+        print(f"[EVENT_GENERATOR] Starting for thread_id={thread_id}, {len(messages)} messages", flush=True)
+        logger.info(f"[EVENT_GENERATOR] Starting for thread_id={thread_id}, {len(messages)} messages")
         try:
             # Handle initial connection (empty messages)
             if not messages:
@@ -112,12 +115,15 @@ async def agui_run_agent(
 
             # Extract user message content
             user_messages = [m for m in messages if m.get("role") == "user"]
+            logger.info(f"[AG-UI] Found {len(user_messages)} user messages out of {len(messages)} total messages")
+
             if not user_messages:
                 logger.warning(f"No user messages found in {len(messages)} messages")
                 return
 
             last_user_msg = user_messages[-1]
             user_content = last_user_msg.get("content", "")
+            logger.info(f"[AG-UI] Last user message content type: {type(user_content)}, value: {user_content}")
 
             # Handle different content formats
             if isinstance(user_content, dict):
@@ -126,6 +132,12 @@ async def agui_run_agent(
                 # Handle array of content parts
                 text_parts = [p.get("text", "") for p in user_content if p.get("type") == "text"]
                 user_content = " ".join(text_parts)
+
+            logger.info(f"[AG-UI] Processed user content: '{user_content}'")
+
+            if not user_content or not user_content.strip():
+                logger.warning(f"Empty user content after processing")
+                return
 
             # Call A2A agent via WorkbenchService
             logger.info(

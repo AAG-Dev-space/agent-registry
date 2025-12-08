@@ -10,6 +10,12 @@ from backend.app.api.v1 import api_router
 from backend.app.core.config import get_settings
 from backend.app.core.database import close_db, init_db
 
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
