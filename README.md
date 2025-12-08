@@ -25,6 +25,7 @@ Docker Registry 기반 AI 에이전트 배포 및 관리 시스템입니다.
 ### 3. CopilotKit Workbench (Interactive Chat UI)
 - **CopilotKit 통합**: 현대적인 채팅 UI로 Agent와 대화
 - **AG-UI Protocol 지원**: SSE 스트리밍 기반 실시간 통신
+- **Context ID 기반 대화 관리**: A2A Protocol의 contextId로 대화 맥락 유지
 - **세션 관리**: 대화 저장 및 이어가기
 - **Recent Sessions**: 최근 5개 세션 빠른 접근
 - **히스토리 복원**: 이전 대화 클릭 시 전체 내역 자동 표시
@@ -64,13 +65,7 @@ docker compose up -d
 DOCKER_REGISTRY_URL=http://localhost:5100  # Private Docker Registry URL (Harbor)
 ```
 
-**지원 레지스트리:**
-- Harbor: `http://localhost:5100` or `https://harbor.company.com`
-- GCR: `https://gcr.io/your-project`
-- Docker Hub: `https://registry-1.docker.io`
-- Local: `http://localhost:5000`
-
-**참고**: Harbor와 같이 hostname 검증을 하는 레지스트리는 `localhost`를 사용합니다 (`host.docker.internal` 대신).
+**참고**: Harbor는 hostname 검증을 하므로 `localhost`를 사용합니다 (`host.docker.internal` 대신).
 
 ## 📖 사용 방법
 
@@ -170,6 +165,72 @@ DOCKER_REGISTRY_URL=http://localhost:5100  # Private Docker Registry URL (Harbor
 └────────┘ └────────┘ └──────────────┘
 ```
 
+### 대화 데이터 흐름 (Context ID 기반)
+
+```
+1. 새 대화 시작
+   User → [CopilotKit UI] → Backend API
+   └─> POST /api/v1/workbench/agents/{name}/sessions
+       └─> ChatSessionModel 생성 (context_id: UUID 생성)
+       └─> Response: session_id, context_id
+
+2. 메시지 전송 (SSE 스트리밍)
+   User: "안녕하세요"
+   ↓
+   [CopilotKit UI]
+   ↓ GraphQL (stream: true)
+   [copilot-workbench] /api/copilotkit
+   ↓ AG-UI Protocol
+   [Backend] POST /api/v1/agui/run
+   ├─> ChatSessionModel에서 context_id 조회
+   ├─> 이전 메시지 히스토리 로드 (최근 10개)
+   ├─> JSONRPC 2.0 요청 생성:
+   │   {
+   │     "method": "task/run",
+   │     "params": {
+   │       "contextId": "550e8400-...",  # 세션의 context_id
+   │       "taskId": "new-uuid-...",      # 메시지마다 신규 생성
+   │       "task": {
+   │         "message": "안녕하세요",
+   │         "history": [...]              # 이전 대화 내역
+   │       }
+   │     }
+   │   }
+   ↓
+   [Agent Container] (JSONRPC 2.0 over HTTP)
+   ├─> context_id로 대화 맥락 유지
+   ├─> history로 이전 대화 참조
+   ↓
+   [Backend] SSE 이벤트 스트리밍
+   ├─> event: textDelta → "안녕하세요!"
+   ├─> event: textDelta → " 무엇을 도와드릴까요?"
+   ├─> event: complete
+   ↓
+   [CopilotKit UI] 실시간 렌더링
+   ↓
+   [Backend] ChatMessageModel 저장
+   └─> {user_message, assistant_message, context_id, task_id}
+
+3. 대화 이어가기 (같은 세션)
+   User: "이전 질문 기억하니?"
+   ↓
+   같은 context_id 사용 → Agent가 대화 맥락 유지
+   └─> Agent는 context_id로 이전 대화 기억
+
+4. 세션 삭제
+   DELETE /api/v1/workbench/sessions/{id}
+   ├─> ChatSessionModel 삭제 (DB에서만 제거)
+   ├─> ChatMessageModel 삭제 (CASCADE)
+   └─> Agent의 context는 유지됨 (Agent 내부 상태)
+       → 같은 context_id로 재시작 불가 (세션 정보 없음)
+```
+
+**핵심 개념**:
+- **context_id**: 세션별 고유 UUID, Agent가 대화 맥락을 유지하는 식별자
+- **task_id**: 메시지별 고유 UUID, 개별 작업 단위 식별
+- **history**: Backend가 DB에서 로드하여 Agent에 전달 (최근 10개 메시지)
+- **세션 삭제 시**: Registry DB 데이터만 제거, Agent는 독립적으로 context 유지
+
 ## 📁 프로젝트 구조
 
 ```
@@ -243,16 +304,3 @@ cd deploy
 # 헬스 체크
 curl http://localhost:7601/health
 ```
-
-## 📚 문서
-
-- **[CLAUDE.md](CLAUDE.md)** - 개발 가이드 (프로젝트 구조, API, 개발 명령어)
-- **[a2a_spec_v0.3.0.md](a2a_spec_v0.3.0.md)** - A2A 프로토콜 명세
-
-## 📝 라이선스
-
-MIT License
-
----
-
-**Made with ❤️ by A2A Team**
