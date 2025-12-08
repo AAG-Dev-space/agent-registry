@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, ExternalLink, Loader2, AlertCircle, Copy, Check, Code, CheckCircle, XCircle, AlertTriangle, Activity, RefreshCw, Trash2, X, Key, Play, MessageSquare, Package } from 'lucide-react';
 import { agentApi, workbenchApi, agentLoaderApi, type ChatSession, type ChatMessage, type AgentInstance } from '../api/client';
 import type { AgentCard } from '../types/agent';
@@ -8,6 +8,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 export default function AgentDetail() {
   const { agentId } = useParams<{ agentId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { language } = useLanguage();
   const [agent, setAgent] = useState<AgentCard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -36,6 +37,16 @@ export default function AgentDetail() {
       loadAgent();
     }
   }, [agentId]);
+
+  // Open Workbench modal if navigated from Playground button
+  useEffect(() => {
+    const state = location.state as { openWorkbench?: boolean };
+    if (state?.openWorkbench) {
+      setShowWorkbenchModal(true);
+      // Clear the state to prevent reopening on refresh
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.state]);
 
   // Listen for messages from iframe to close workbench modal
   useEffect(() => {

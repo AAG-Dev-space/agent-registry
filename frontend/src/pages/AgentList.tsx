@@ -252,7 +252,9 @@ export default function AgentList() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          navigate(`/workbench/${encodeURIComponent(agent.name)}`);
+                          navigate(`/agents/${encodeURIComponent(agent.name)}`, {
+                            state: { openWorkbench: true }
+                          });
                         }}
                         className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors"
                       >
